@@ -10,15 +10,14 @@ import kotlin.math.absoluteValue
 object MoneyFormat {
     const val SYMBOL = "₼"
 
-    /** ₼1,184.00 · ₼3,435 (whole = true) · −₼16.31 (signed = true and negative). */
-    fun format(money: Money, whole: Boolean = false, signed: Boolean = false): String {
+    /** ₼1,184.00, always two decimals · −₼16.31 (signed = true and negative). */
+    fun format(money: Money, signed: Boolean = false): String {
         val abs = money.minor.absoluteValue
         val major = abs / 100
         val minor = abs % 100
         val grouped = major.toString().reversed().chunked(3).joinToString(",").reversed()
-        val body = if (whole) grouped else "$grouped.${minor.toString().padStart(2, '0')}"
         val sign = if (signed && money.minor < 0) "−" else ""
-        return "$sign$SYMBOL$body"
+        return "$sign$SYMBOL$grouped.${minor.toString().padStart(2, '0')}"
     }
 
     const val HIDDEN = "$SYMBOL ••••"

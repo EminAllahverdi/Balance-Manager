@@ -8,7 +8,8 @@ import org.junit.Test
 class MoneyFormatTest {
     @Test fun formats() {
         assertThat(MoneyFormat.format(Money(118400))).isEqualTo("₼1,184.00")
-        assertThat(MoneyFormat.format(Money(343512), whole = true)).isEqualTo("₼3,435")
+        assertThat(MoneyFormat.format(Money(440))).isEqualTo("₼4.40")
+        assertThat(MoneyFormat.format(Money(499))).isEqualTo("₼4.99")
         assertThat(MoneyFormat.format(Money(-1631), signed = true)).isEqualTo("−₼16.31")
         assertThat(MoneyFormat.format(Money(5)))
             .isEqualTo("₼0.05")

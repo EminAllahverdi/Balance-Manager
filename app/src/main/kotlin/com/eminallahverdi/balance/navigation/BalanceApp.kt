@@ -1,5 +1,7 @@
 package com.eminallahverdi.balance.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -52,7 +55,15 @@ fun BalanceApp(onAdd: () -> Unit) {
     val isSelected = { tab: TopLevelTab -> destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true }
 
     Column(Modifier.fillMaxSize().background(BtTheme.colors.bgCanvas)) {
-        NavHost(nav, startDestination = HomeDestination, modifier = Modifier.weight(1f).statusBarsPadding()) {
+        NavHost(
+            navController = nav,
+            startDestination = HomeDestination,
+            modifier = Modifier.weight(1f).statusBarsPadding(),
+            enterTransition = { slideIntoContainer(forwardDirection()) },
+            exitTransition = { slideOutOfContainer(forwardDirection()) },
+            popEnterTransition = { slideIntoContainer(SlideDirection.End) },
+            popExitTransition = { slideOutOfContainer(SlideDirection.End) },
+        ) {
             composable<HomeDestination> { HomeRoute(onOpenSettings = { nav.navigate(SettingsDestination) { launchSingleTop = true } }) }
             composable<HistoryDestination> { NotBuiltYet("History") }
             composable<InsightsDestination> { NotBuiltYet("Insights") }
@@ -80,6 +91,13 @@ fun BalanceApp(onAdd: () -> Unit) {
             )
         }
     }
+}
+
+/** New screens come in from the end, except a tab to the left of the current one. */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.forwardDirection(): SlideDirection {
+    val from = TopLevelTab.entries.indexOfFirst { initialState.destination.hasRoute(it.route::class) }
+    val to = TopLevelTab.entries.indexOfFirst { targetState.destination.hasRoute(it.route::class) }
+    return if (to in 0 until from) SlideDirection.End else SlideDirection.Start
 }
 
 /** Stands in for a screen until its feature module lands. */

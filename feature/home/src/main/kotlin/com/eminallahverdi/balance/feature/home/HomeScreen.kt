@@ -31,9 +31,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -65,7 +70,9 @@ fun HomeRoute(onOpenSettings: () -> Unit, viewModel: HomeViewModel = hiltViewMod
 @Composable
 private fun HomeScreen(state: HomeUiState, vm: HomeViewModel, onOpenSettings: () -> Unit) {
     val c = BtTheme.colors
-    fun money(m: Money, whole: Boolean = false) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m, whole)
+    fun money(m: Money) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m)
+    // A balance can go below zero; totals of spending can't.
+    fun balance(m: Money) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m, signed = true)
 
     LazyColumn(
         Modifier.fillMaxSize().background(c.bgCanvas),
@@ -84,7 +91,7 @@ private fun HomeScreen(state: HomeUiState, vm: HomeViewModel, onOpenSettings: ()
             BtCard(bordered = true, shape = BtShapes.lg) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Overline("Total balance")
-                    Text(money(state.total), style = BtTheme.type.amountDisplay, color = c.textPrimary)
+                    Text(balance(state.total), style = BtTheme.type.amountDisplay, color = c.textPrimary)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(state.balances, key = { it.account.id }) { b ->
                             Row(
@@ -94,14 +101,14 @@ private fun HomeScreen(state: HomeUiState, vm: HomeViewModel, onOpenSettings: ()
                             ) {
                                 PersonDot(b.account.color, 6.dp)
                                 Text(b.account.name, style = BtTheme.type.caption, color = c.textSecondary)
-                                Text(money(b.balance), style = BtTheme.type.amountSmall, color = c.textPrimary)
+                                Text(balance(b.balance), style = BtTheme.type.amountSmall, color = c.textPrimary)
                             }
                         }
                     }
                     Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Stat("Spent this month", money(state.summary?.spent ?: Money.ZERO, whole = true), Icons.AutoMirrored.Rounded.TrendingDown, c.moneyExpense, Modifier.weight(1f))
-                        Stat("Income", money(state.summary?.income ?: Money.ZERO, whole = true), Icons.AutoMirrored.Rounded.TrendingUp, c.moneyIncome, Modifier.weight(1f))
+                        Stat("Spent this month", money(state.summary?.spent ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingDown, c.moneyExpense, Modifier.weight(1f))
+                        Stat("Income", money(state.summary?.income ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingUp, c.moneyIncome, Modifier.weight(1f))
                     }
                 }
             }
@@ -117,7 +124,7 @@ private fun HomeScreen(state: HomeUiState, vm: HomeViewModel, onOpenSettings: ()
                                     PersonDot(p.person.color)
                                     Text(p.person.name, style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1)
                                 }
-                                Text(money(p.total, whole = true), style = BtTheme.type.amountSmall, color = c.textPrimary)
+                                FittedAmount(money(p.total), BtTheme.type.amountSmall)
                             }
                         }
                     }
@@ -163,12 +170,29 @@ private fun Stat(label: String, value: String, icon: androidx.compose.ui.graphic
             Icon(icon, null, tint = tint, modifier = Modifier.size(14.dp))
             Text(label, style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
         }
-        Text(value, style = BtTheme.type.amountLarge, color = BtTheme.colors.textPrimary)
+        FittedAmount(value, BtTheme.type.amountLarge)
     }
 }
 
+/** An amount in a narrow space: shrinks to stay on one line, because money must never be cut off. */
 @Composable
-private fun CategoryRow(item: CategorySpending, money: (Money, Boolean) -> String) {
+private fun FittedAmount(value: String, style: androidx.compose.ui.text.TextStyle) {
+    var scale by remember(value) { mutableFloatStateOf(1f) }
+    var fitted by remember(value) { mutableStateOf(false) }
+    Text(
+        text = value,
+        style = style.copy(fontSize = style.fontSize * scale),
+        color = BtTheme.colors.textPrimary,
+        maxLines = 1,
+        softWrap = false,
+        onTextLayout = { if (it.hasVisualOverflow && scale > 0.6f) scale -= 0.05f else fitted = true },
+        // Hidden until it fits, so the oversized first pass never shows.
+        modifier = Modifier.drawWithContent { if (fitted) drawContent() },
+    )
+}
+
+@Composable
+private fun CategoryRow(item: CategorySpending, money: (Money) -> String) {
     val c = BtTheme.colors
     BtCard {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -178,7 +202,7 @@ private fun CategoryRow(item: CategorySpending, money: (Money, Boolean) -> Strin
                     Text(item.category.name, style = BtTheme.type.bodyStrong, color = c.textPrimary)
                     Text(item.byPerson.joinToString(" · ") { it.key.name }, style = BtTheme.type.caption, color = c.textMuted, maxLines = 1)
                 }
-                Text(money(item.total, true), style = BtTheme.type.amountMedium, color = c.textPrimary)
+                Text(money(item.total), style = BtTheme.type.amountMedium, color = c.textPrimary)
             }
             SplitBar(item.byPerson.map { it.key.color to it.amount.minor })
         }
@@ -186,7 +210,7 @@ private fun CategoryRow(item: CategorySpending, money: (Money, Boolean) -> Strin
 }
 
 @Composable
-private fun PersonRow(item: PersonSpending, expanded: Boolean, money: (Money, Boolean) -> String, onClick: () -> Unit) {
+private fun PersonRow(item: PersonSpending, expanded: Boolean, money: (Money) -> String, onClick: () -> Unit) {
     val c = BtTheme.colors
     BtCard(bordered = expanded, modifier = Modifier.clickable(onClick = onClick)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -196,7 +220,7 @@ private fun PersonRow(item: PersonSpending, expanded: Boolean, money: (Money, Bo
                     Text(item.person.name, style = BtTheme.type.bodyStrong, color = c.textPrimary)
                     Text(if (item.byCategory.isEmpty()) "No spending this month" else "${item.byCategory.size} categories", style = BtTheme.type.caption, color = c.textMuted)
                 }
-                Text(money(item.total, true), style = BtTheme.type.amountMedium, color = c.textPrimary)
+                Text(money(item.total), style = BtTheme.type.amountMedium, color = c.textPrimary)
                 Icon(if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = c.textMuted)
             }
             SplitBar(item.byCategory.map { it.key.color to it.amount.minor })
@@ -206,7 +230,7 @@ private fun PersonRow(item: PersonSpending, expanded: Boolean, money: (Money, Bo
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         CategoryTile(share.key.icon, share.key.color, size = 28.dp, iconSize = 16.dp, corner = 8.dp)
                         Text(share.key.name, style = BtTheme.type.label, color = c.textPrimary, modifier = Modifier.weight(1f))
-                        Text(money(share.amount, true), style = BtTheme.type.amountSmall, color = c.textPrimary)
+                        Text(money(share.amount), style = BtTheme.type.amountSmall, color = c.textPrimary)
                         val pct = if (item.total.minor > 0) share.amount.minor * 100 / item.total.minor else 0
                         Text("$pct%", style = BtTheme.type.caption, color = c.textMuted, modifier = Modifier.width(36.dp))
                     }

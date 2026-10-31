@@ -30,6 +30,7 @@ importer:moneymanager    to do: reads .mmbackup (zip -> SQLite MyFinance.db) on 
 
 ## Domain rules
 - Money is always `Long` minor units. Never use floating point.
+- Amounts always show two decimals (₼4.40, ₼3,435.00), even where the design mock-ups show whole numbers. In a tight space the text shrinks; it's never cut off or rounded.
 - Every expense has a category (or a sub-category, whose parent is the reporting category) and a **person** ("For whom"). Each category has a default person.
 - People and categories are fully user-editable: add, remove, reorder, colour, and photo avatars for people. Removing something that's in use **archives** it instead of deleting it.
 - Transfers move money between accounts and never count as spending or income. `ADJUSTMENT` and `INTERNAL` carry a signed amount and are left out of charts.
