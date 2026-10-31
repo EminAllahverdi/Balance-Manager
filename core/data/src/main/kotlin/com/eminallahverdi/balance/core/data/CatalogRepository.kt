@@ -64,11 +64,12 @@ class CatalogRepository @Inject constructor(
         val personIds = template.people.associate { p -> p.key to personDao.upsert(p.toEntity()) }
         template.accounts.forEach { accountDao.upsert(it.toEntity()) }
         template.categories.forEachIndexed { index, t ->
-            val parentId = categoryDao.upsert(t.toEntity(sortOrder = index, defaultPersonId = personIds[t.defaultPerson]))
+            val parent = t.toEntity(sortOrder = index, defaultPersonId = personIds[t.defaultPerson])
+            val parentId = categoryDao.upsert(parent)
             t.children.forEachIndexed { childIndex, child ->
                 categoryDao.upsert(
                     child.toEntity(sortOrder = childIndex, defaultPersonId = personIds[child.defaultPerson])
-                        .copy(parentId = parentId, icon = child.icon ?: t.icon, color = child.color ?: t.color),
+                        .copy(parentId = parentId, icon = child.icon ?: parent.icon, color = child.color ?: parent.color),
                 )
             }
         }

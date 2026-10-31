@@ -36,19 +36,17 @@ importer:moneymanager    to do: reads .mmbackup (zip -> SQLite MyFinance.db) on 
 
 ## Commands
 ```
-./gradlew testDebugUnitTest          # unit tests, all modules
+./gradlew testDebugUnitTest :core:model:test   # unit tests, all modules (core:model is pure JVM, so it has `test`, not `testDebugUnitTest`)
 ./gradlew :app:assembleDebug         # debug APK (applicationId com.eminallahverdi.balance.debug)
 ./gradlew :app:installDebug          # to a connected phone
 ```
 CI (`.github/workflows/android.yml`) runs both on every push and uploads the debug APK.
 
 ## Status (branch feat/mvp-foundation)
-The foundation and core modules are written. `feature:home` and `feature:transaction` are written but not yet wired into `app`. **None of this has compiled locally yet.** Every build so far ran in CI only, so the first job is a green `./gradlew testDebugUnitTest :app:assembleDebug`.
+The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. History, Insights, Accounts and Settings are placeholders in `BalanceApp.kt`. **The app has not been launched on a device or emulator yet**, so run it before building further.
 
 Next, in order:
-1. Get the build green.
-2. Wire the app: navigation (Home, History, Insights, Accounts) with a bottom bar and a centre lime + button. Add `QuickAddActivity` (Theme.Balance.Overlay) hosting `QuickAddRoute`. Seed `StarterTemplate.household()` on first run, until onboarding exists.
-3. `feature:catalog`: people (photo via the Photo Picker, copied into app storage; colour; reorder; archive) and categories/sub-categories (icon, colour, default person).
-4. `feature:history` (search and filters), `feature:accounts` (include-in-total and widget switches, transfer, adjust balance), `feature:settings`.
-5. `widget` (Glance) and app shortcuts, then the Money Manager importer, which uses a mapping file kept on the device, never in this repo.
-6. Evening reminder, recurring payments and Drive backup (WorkManager).
+1. `feature:catalog`: people (photo via the Photo Picker, copied into app storage; colour; reorder; archive) and categories/sub-categories (icon, colour, default person).
+2. `feature:history` (search and filters), `feature:accounts` (include-in-total and widget switches, transfer, adjust balance), `feature:settings`.
+3. `widget` (Glance) and app shortcuts, then the Money Manager importer, which uses a mapping file kept on the device, never in this repo.
+4. Evening reminder, recurring payments and Drive backup (WorkManager).

@@ -34,10 +34,13 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:database"))
     implementation(project(":core:datastore"))
+    implementation(project(":feature:home"))
+    implementation(project(":feature:transaction"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)

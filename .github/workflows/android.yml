@@ -23,7 +23,7 @@ jobs:
       - name: Build and unit-test
         run: |
           set -o pipefail
-          ./gradlew testDebugUnitTest :app:assembleDebug --continue 2>&1 | tee build.log
+          ./gradlew testDebugUnitTest :core:model:test :app:assembleDebug --continue 2>&1 | tee build.log
       - name: Report build errors as annotations
         if: failure()
         run: |
