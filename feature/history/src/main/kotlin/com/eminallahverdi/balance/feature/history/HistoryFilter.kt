@@ -38,6 +38,21 @@ data class HistoryFilter(
     private fun plainAmount(amount: Money): String = MoneyFormat.format(amount.abs()).removePrefix(MoneyFormat.SYMBOL).replace(",", "")
 }
 
+/** What a list opens with: this month, or what was tapped on Home. [month] is a YearMonth as text. */
+internal fun initialFilter(month: String?, categoryId: Long?, personId: Long?) = HistoryFilter(
+    month = month?.let(YearMonth::parse) ?: YearMonth.now(),
+    categoryId = categoryId,
+    personId = personId,
+)
+
+/** What an empty list says. It only invites a first expense when there's truly nothing yet. */
+internal fun HistoryFilter.emptyMessage(now: YearMonth): String = when {
+    query.isNotBlank() || personId != null || categoryId != null || accountId != null -> "Nothing matches these filters."
+    month == null -> "Nothing here yet. Tap + to add your first expense."
+    month == now -> "Nothing this month yet. Tap + to add an expense."
+    else -> "Nothing in ${month.label()}."
+}
+
 /** One figure for a set of rows: what was spent, or what came in when nothing was spent. */
 internal fun List<TransactionDetails>.headlineTotal(): Money {
     val spent = filter { it.transaction.kind == TransactionKind.EXPENSE }

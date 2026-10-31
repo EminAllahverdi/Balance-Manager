@@ -10,9 +10,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,13 +25,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,6 +53,7 @@ import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtChip
+import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
@@ -66,15 +69,19 @@ import java.util.Locale
 
 private val MONTH = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
 
-private fun YearMonth?.label(): String = this?.format(MONTH) ?: "All time"
+internal fun YearMonth?.label(): String = this?.format(MONTH) ?: "All time"
 
-/** Every transaction, narrowed by search and filters. [onOpen] opens one to edit or delete. */
+/**
+ * Every transaction, narrowed by search and filters. [onOpen] opens one to edit or delete.
+ * [onBack] is set when this was opened from another screen rather than as the History tab.
+ */
 @Composable
-fun HistoryRoute(onOpen: (Long) -> Unit, viewModel: HistoryViewModel = hiltViewModel()) {
+fun HistoryRoute(onOpen: (Long) -> Unit, onBack: (() -> Unit)? = null, viewModel: HistoryViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Held here, not read back from the filter: results arrive off the main thread, and typing must not wait for them.
     var query by rememberSaveable { mutableStateOf("") }
     var removing by remember { mutableStateOf<Long?>(null) }
+    var sheet by rememberSaveable { mutableStateOf<FilterSheet?>(null) }
     val onTap = { row: TransactionDetails ->
         when {
             row.isEditable -> onOpen(row.transaction.id)
@@ -90,28 +97,48 @@ fun HistoryRoute(onOpen: (Long) -> Unit, viewModel: HistoryViewModel = hiltViewM
             dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } },
         )
     }
+    sheet?.let { HistoryFilterSheet(it, state, viewModel, onClose = { sheet = null }) }
+    // Without the bottom bar, the list runs under the system navigation.
+    val bottomInset = if (onBack != null) WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() else 0.dp
     Column(Modifier.fillMaxSize().background(BtTheme.colors.bgCanvas)) {
-        Text("History", style = BtTheme.type.titleLarge, color = BtTheme.colors.textPrimary, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp))
+        Header(state, onBack)
         SearchField(query) {
             query = it
             viewModel.setQuery(it)
         }
-        Filters(state, viewModel)
+        Filters(state, onOpen = { sheet = it })
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp + bottomInset),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (state.days.isEmpty()) {
                 item {
-                    val message = if (state.hasFilters) "Nothing matches these filters." else "Nothing here yet. Tap + to add your first expense."
-                    Text(message, style = BtTheme.type.body, color = BtTheme.colors.textMuted, modifier = Modifier.padding(vertical = 24.dp))
+                    Text(state.filter.emptyMessage(YearMonth.now()), style = BtTheme.type.body, color = BtTheme.colors.textMuted, modifier = Modifier.padding(vertical = 24.dp))
                 }
             } else {
                 item(key = "summary") { Summary(state) }
                 items(state.days, key = { it.date.toEpochDay() }) { DayGroup(it, state.hideAmounts, onTap) }
             }
         }
+    }
+}
+
+@Composable
+private fun Header(state: HistoryUiState, onBack: (() -> Unit)?) {
+    val filter = state.filter
+    val title = if (onBack == null) {
+        "History"
+    } else {
+        state.categories.firstOrNull { it.id == filter.categoryId }?.name ?: state.people.firstOrNull { it.id == filter.personId }?.name ?: "History"
+    }
+    Row(
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (onBack != null) BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
+        Text(title, style = BtTheme.type.titleLarge, color = BtTheme.colors.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -152,7 +179,7 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
 }
 
 @Composable
-private fun Filters(state: HistoryUiState, vm: HistoryViewModel) {
+private fun Filters(state: HistoryUiState, onOpen: (FilterSheet) -> Unit) {
     val filter = state.filter
     val person = state.people.firstOrNull { it.id == filter.personId }
     Row(
@@ -162,44 +189,37 @@ private fun Filters(state: HistoryUiState, vm: HistoryViewModel) {
         FilterChip(
             label = filter.month.label(),
             active = false,
+            onClick = { onOpen(FilterSheet.MONTH) },
             leading = { Icon(Icons.Rounded.CalendarMonth, null, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(16.dp)) },
-            options = state.months.map { it.label() to { vm.setMonth(it) } } + ("All time" to { vm.setMonth(null) }),
         )
         FilterChip(
             label = person?.name ?: "Person",
             active = person != null,
+            onClick = { onOpen(FilterSheet.PERSON) },
             leading = person?.let { p -> { PersonDot(p.color) } },
-            options = listOf("Everyone" to { vm.setPerson(null) }) + state.people.map { it.name to { vm.setPerson(it.id) } },
         )
         FilterChip(
             label = state.categories.firstOrNull { it.id == filter.categoryId }?.name ?: "Category",
             active = filter.categoryId != null,
-            options = listOf("All categories" to { vm.setCategory(null) }) + state.categories.map { it.name to { vm.setCategory(it.id) } },
+            onClick = { onOpen(FilterSheet.CATEGORY) },
         )
         FilterChip(
             label = state.accounts.firstOrNull { it.id == filter.accountId }?.name ?: "Account",
             active = filter.accountId != null,
-            options = listOf("All accounts" to { vm.setAccount(null) }) + state.accounts.map { it.name to { vm.setAccount(it.id) } },
+            onClick = { onOpen(FilterSheet.ACCOUNT) },
         )
     }
 }
 
 @Composable
-private fun FilterChip(label: String, active: Boolean, options: List<Pair<String, () -> Unit>>, leading: (@Composable () -> Unit)? = null) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        BtChip(
-            text = label,
-            selected = active,
-            onClick = { open = true },
-            leading = leading ?: { Icon(Icons.Rounded.ExpandMore, null, tint = if (active) BtTheme.colors.accentOn else BtTheme.colors.textSecondary, modifier = Modifier.size(16.dp)) },
-        )
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            options.forEach { (text, onSelect) ->
-                DropdownMenuItem(text = { Text(text) }, onClick = { onSelect(); open = false })
-            }
-        }
-    }
+private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit, leading: (@Composable () -> Unit)? = null) {
+    BtChip(
+        text = label,
+        selected = active,
+        onClick = onClick,
+        leading = leading,
+        trailing = { Icon(Icons.Rounded.ExpandMore, null, tint = if (active) BtTheme.colors.accentOn else BtTheme.colors.textSecondary, modifier = Modifier.size(16.dp)) },
+    )
 }
 
 @Composable

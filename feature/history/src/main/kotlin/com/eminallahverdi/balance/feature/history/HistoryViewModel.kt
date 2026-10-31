@@ -1,5 +1,6 @@
 package com.eminallahverdi.balance.feature.history
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.data.CatalogRepository
@@ -40,19 +41,17 @@ data class HistoryUiState(
     val categories: List<Category> = emptyList(),
     val accounts: List<Account> = emptyList(),
     val hideAmounts: Boolean = false,
-) {
-    val months: List<YearMonth> get() = (0L until 12L).map { YearMonth.now().minusMonths(it) }
-    val hasFilters: Boolean get() = filter.query.isNotBlank() || filter.personId != null || filter.categoryId != null || filter.accountId != null
-}
+)
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     catalog: CatalogRepository,
     private val transactions: TransactionRepository,
     prefs: UserPreferencesRepository,
+    savedState: SavedStateHandle,
 ) : ViewModel() {
 
-    private val filter = MutableStateFlow(HistoryFilter())
+    private val filter = MutableStateFlow(initialFilter(savedState[ARG_MONTH], savedState[ARG_CATEGORY], savedState[ARG_PERSON]))
 
     private val rows = filter.map { it.range }.distinctUntilChanged().flatMapLatest { transactions.observeDetails(it) }
 
@@ -70,8 +69,9 @@ class HistoryViewModel @Inject constructor(
             total = matching.headlineTotal(),
             totalIsSpending = matching.hasSpending(),
             shares = matching.categoryShares(),
-            people = people.filterNot { it.isArchived },
-            categories = categories.filter { it.parentId == null && !it.isArchived },
+            // Home still lists what's archived if it has spending, so the filter can name one.
+            people = people.filter { !it.isArchived || it.id == f.personId },
+            categories = categories.filter { it.parentId == null && (!it.isArchived || it.id == f.categoryId) },
             accounts = accounts.filterNot { it.isArchived },
             hideAmounts = p.hideAmountsInApp,
         )
@@ -83,4 +83,10 @@ class HistoryViewModel @Inject constructor(
     fun setCategory(id: Long?) = filter.update { it.copy(categoryId = id) }
     fun setAccount(id: Long?) = filter.update { it.copy(accountId = id) }
     fun delete(id: Long) { viewModelScope.launch { transactions.delete(id) } }
+
+    companion object {
+        const val ARG_MONTH = "month"
+        const val ARG_CATEGORY = "categoryId"
+        const val ARG_PERSON = "personId"
+    }
 }

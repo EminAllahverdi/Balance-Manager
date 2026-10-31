@@ -20,9 +20,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -92,6 +98,7 @@ fun BtChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val c = BtTheme.colors
     Row(
@@ -107,6 +114,7 @@ fun BtChip(
     ) {
         leading?.invoke()
         Text(text, style = BtTheme.type.label, color = if (selected) c.accentOn else c.textPrimary)
+        trailing?.invoke()
     }
 }
 
@@ -175,6 +183,23 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
         }
         Text(text, style = BtTheme.type.bodyStrong.copy(fontSize = 16.sp), color = if (enabled) c.accentOn else c.textMuted)
     }
+}
+
+/** An amount in a narrow space: shrinks to stay on one line, because money must never be cut off. */
+@Composable
+fun FittedAmount(value: String, style: TextStyle, modifier: Modifier = Modifier, color: Color = BtTheme.colors.textPrimary) {
+    var scale by remember(value) { mutableFloatStateOf(1f) }
+    var fitted by remember(value) { mutableStateOf(false) }
+    Text(
+        text = value,
+        style = style.copy(fontSize = style.fontSize * scale),
+        color = color,
+        maxLines = 1,
+        softWrap = false,
+        onTextLayout = { if (it.hasVisualOverflow && scale > 0.6f) scale -= 0.05f else fitted = true },
+        // Hidden until it fits, so the oversized first pass never shows.
+        modifier = modifier.drawWithContent { if (fitted) drawContent() },
+    )
 }
 
 @Composable

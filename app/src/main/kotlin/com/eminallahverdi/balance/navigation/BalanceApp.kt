@@ -3,14 +3,11 @@ package com.eminallahverdi.balance.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -25,6 +22,7 @@ import com.eminallahverdi.balance.feature.accounts.AccountsRoute
 import com.eminallahverdi.balance.feature.catalog.CatalogRoute
 import com.eminallahverdi.balance.feature.history.HistoryRoute
 import com.eminallahverdi.balance.feature.home.HomeRoute
+import com.eminallahverdi.balance.feature.insights.InsightsRoute
 import com.eminallahverdi.balance.feature.settings.SettingsRoute
 import kotlinx.serialization.Serializable
 
@@ -34,6 +32,9 @@ import kotlinx.serialization.Serializable
 @Serializable data object AccountsDestination
 @Serializable data object SettingsDestination
 @Serializable data object CatalogDestination
+
+/** History narrowed to what was tapped on Home. The names match the ARG_ keys in HistoryViewModel. */
+@Serializable data class TransactionsDestination(val categoryId: Long?, val personId: Long?, val month: String)
 
 /** The main shell: the tab content above the bottom bar. [onAdd] opens quick add, [onTransfer] the same sheet on Transfer, [onOpenTransaction] it to edit. */
 @Composable
@@ -53,9 +54,17 @@ fun BalanceApp(onAdd: () -> Unit, onTransfer: () -> Unit, onOpenTransaction: (Lo
             popEnterTransition = { slideIntoContainer(SlideDirection.End) },
             popExitTransition = { slideOutOfContainer(SlideDirection.End) },
         ) {
-            composable<HomeDestination> { HomeRoute(onOpenSettings = { nav.navigate(SettingsDestination) { launchSingleTop = true } }) }
+            composable<HomeDestination> {
+                HomeRoute(
+                    onOpenSettings = { nav.navigate(SettingsDestination) { launchSingleTop = true } },
+                    onOpenTransactions = { categoryId, personId, month ->
+                        nav.navigate(TransactionsDestination(categoryId, personId, month.toString())) { launchSingleTop = true }
+                    },
+                )
+            }
             composable<HistoryDestination> { HistoryRoute(onOpen = onOpenTransaction) }
-            composable<InsightsDestination> { NotBuiltYet("Insights") }
+            composable<TransactionsDestination> { HistoryRoute(onOpen = onOpenTransaction, onBack = { nav.popBackStack() }) }
+            composable<InsightsDestination> { InsightsRoute() }
             composable<AccountsDestination> { AccountsRoute(onTransfer = onTransfer, onOpenTransaction = onOpenTransaction) }
             composable<SettingsDestination> {
                 SettingsRoute(
@@ -87,12 +96,4 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.forwardDirection()
     val from = TopLevelTab.entries.indexOfFirst { initialState.destination.hasRoute(it.route::class) }
     val to = TopLevelTab.entries.indexOfFirst { targetState.destination.hasRoute(it.route::class) }
     return if (to in 0 until from) SlideDirection.End else SlideDirection.Start
-}
-
-/** Stands in for a screen until its feature module lands. */
-@Composable
-private fun NotBuiltYet(title: String) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(title, style = BtTheme.type.titleMedium, color = BtTheme.colors.textMuted)
-    }
 }

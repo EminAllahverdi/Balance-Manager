@@ -34,16 +34,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -51,6 +48,7 @@ import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
+import com.eminallahverdi.balance.core.designsystem.component.FittedAmount
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonAvatar
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
@@ -74,8 +72,13 @@ private val HEADER_TOP = 16.dp
 private val HEADER_ROW = 44.dp
 private val HEADER_GAP = 14.dp
 
+/** [onOpenTransactions] opens a month's transactions, narrowed to a category, a person, or both. */
 @Composable
-fun HomeRoute(onOpenSettings: () -> Unit, viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeRoute(
+    onOpenSettings: () -> Unit,
+    onOpenTransactions: (categoryId: Long?, personId: Long?, month: YearMonth) -> Unit,
+    viewModel: HomeViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val thisMonth = remember { YearMonth.now() }
     val pager = rememberPagerState(initialPage = MONTH_PAGES - 1) { MONTH_PAGES }
@@ -85,7 +88,8 @@ fun HomeRoute(onOpenSettings: () -> Unit, viewModel: HomeViewModel = hiltViewMod
     Box(Modifier.fillMaxSize().background(BtTheme.colors.bgCanvas)) {
         // The pager runs behind the header, so a swipe on the month row is the same gesture as a swipe on the page.
         HorizontalPager(pager, Modifier.fillMaxSize(), key = { it }) { page ->
-            MonthPage(monthOf(page), state, viewModel)
+            val month = monthOf(page)
+            MonthPage(month, state, viewModel) { categoryId, personId -> onOpenTransactions(categoryId, personId, month) }
         }
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = HEADER_TOP).height(HEADER_ROW), verticalAlignment = Alignment.CenterVertically) {
             MonthSwitcher(
@@ -104,9 +108,10 @@ fun HomeRoute(onOpenSettings: () -> Unit, viewModel: HomeViewModel = hiltViewMod
 }
 
 @Composable
-private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel) {
+private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, onOpen: (categoryId: Long?, personId: Long?) -> Unit) {
     val c = BtTheme.colors
     val summary by remember(month) { vm.summary(month) }.collectAsStateWithLifecycle(null)
+    val isCurrent = month == YearMonth.now()
     // The eye covers what you have and what comes in. Spending stays visible.
     fun money(m: Money) = MoneyFormat.format(m)
     fun income(m: Money) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m)
@@ -121,24 +126,27 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel) {
         item {
             BtCard(bordered = true, shape = BtShapes.lg) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Overline("Total balance")
-                    Text(balance(state.total), style = BtTheme.type.amountDisplay, color = c.textPrimary)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(state.balances, key = { it.account.id }) { b ->
-                            Row(
-                                Modifier.clip(BtShapes.full).background(c.bgSurfaceHigh).padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                PersonDot(b.account.color, 6.dp)
-                                Text(b.account.name, style = BtTheme.type.caption, color = c.textSecondary)
-                                Text(balance(b.balance), style = BtTheme.type.amountSmall, color = c.textPrimary)
+                    // Balances are what you have today, so they'd be wrong beside a past month's figures.
+                    if (isCurrent) {
+                        Overline("Total balance")
+                        Text(balance(state.total), style = BtTheme.type.amountDisplay, color = c.textPrimary)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(state.balances, key = { it.account.id }) { b ->
+                                Row(
+                                    Modifier.clip(BtShapes.full).background(c.bgSurfaceHigh).padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    PersonDot(b.account.color, 6.dp)
+                                    Text(b.account.name, style = BtTheme.type.caption, color = c.textSecondary)
+                                    Text(balance(b.balance), style = BtTheme.type.amountSmall, color = c.textPrimary)
+                                }
                             }
                         }
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
                     }
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Stat("Spent this month", money(summary?.spent ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingDown, c.moneyExpense, Modifier.weight(1f))
+                        Stat(if (isCurrent) "Spent this month" else "Spent", money(summary?.spent ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingDown, c.moneyExpense, Modifier.weight(1f))
                         Stat("Income", income(summary?.income ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingUp, c.moneyIncome, Modifier.weight(1f))
                     }
                 }
@@ -173,13 +181,21 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel) {
             // Still loading: an empty message here would flash on every swipe.
         } else if (loaded.spent.isZero) {
             item {
-                val message = if (month == YearMonth.now()) "Nothing spent this month yet. Tap + to add your first expense." else "Nothing spent this month."
+                val message = if (isCurrent) "Nothing spent this month yet. Tap + to add your first expense." else "Nothing spent this month."
                 Text(message, style = BtTheme.type.body, color = c.textMuted, modifier = Modifier.padding(vertical = 24.dp))
             }
         } else if (state.view == HomeView.CATEGORY) {
-            items(loaded.byCategory, key = { "c" + it.category.id }) { CategoryRow(it, ::money) }
+            items(loaded.byCategory, key = { "c" + it.category.id }) { row -> CategoryRow(row, ::money) { onOpen(row.category.id, null) } }
         } else {
-            items(loaded.byPerson, key = { "p" + it.person.id }) { PersonRow(it, state.expandedPersonId == it.person.id, ::money) { vm.togglePerson(it.person.id) } }
+            items(loaded.byPerson, key = { "p" + it.person.id }) { row ->
+                PersonRow(
+                    item = row,
+                    expanded = state.expandedPersonId == row.person.id,
+                    money = ::money,
+                    onToggle = { vm.togglePerson(row.person.id) },
+                    onOpen = { categoryId -> onOpen(categoryId, row.person.id) },
+                )
+            }
         }
     }
 }
@@ -208,28 +224,11 @@ private fun Stat(label: String, value: String, icon: androidx.compose.ui.graphic
     }
 }
 
-/** An amount in a narrow space: shrinks to stay on one line, because money must never be cut off. */
 @Composable
-private fun FittedAmount(value: String, style: androidx.compose.ui.text.TextStyle) {
-    var scale by remember(value) { mutableFloatStateOf(1f) }
-    var fitted by remember(value) { mutableStateOf(false) }
-    Text(
-        text = value,
-        style = style.copy(fontSize = style.fontSize * scale),
-        color = BtTheme.colors.textPrimary,
-        maxLines = 1,
-        softWrap = false,
-        onTextLayout = { if (it.hasVisualOverflow && scale > 0.6f) scale -= 0.05f else fitted = true },
-        // Hidden until it fits, so the oversized first pass never shows.
-        modifier = Modifier.drawWithContent { if (fitted) drawContent() },
-    )
-}
-
-@Composable
-private fun CategoryRow(item: CategorySpending, money: (Money) -> String) {
+private fun CategoryRow(item: CategorySpending, money: (Money) -> String, onClick: () -> Unit) {
     val c = BtTheme.colors
-    BtCard {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    BtCard(Modifier.clip(BtShapes.md).clickable(role = Role.Button, onClick = onClick)) {
+        Column(Modifier.padding(start = 14.dp, end = 8.dp, top = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CategoryTile(item.category.icon, item.category.color)
                 Column(Modifier.weight(1f)) {
@@ -237,22 +236,24 @@ private fun CategoryRow(item: CategorySpending, money: (Money) -> String) {
                     Text(item.byPerson.joinToString(" · ") { it.key.name }, style = BtTheme.type.caption, color = c.textMuted, maxLines = 1)
                 }
                 Text(money(item.total), style = BtTheme.type.amountMedium, color = c.textPrimary)
+                Icon(Icons.Rounded.ChevronRight, null, tint = c.textMuted, modifier = Modifier.size(20.dp))
             }
-            SplitBar(item.byPerson.map { it.key.color to it.amount.minor })
+            SplitBar(item.byPerson.map { it.key.color to it.amount.minor }, Modifier.padding(end = 6.dp))
         }
     }
 }
 
 @Composable
-private fun PersonRow(item: PersonSpending, expanded: Boolean, money: (Money) -> String, onClick: () -> Unit) {
+private fun PersonRow(item: PersonSpending, expanded: Boolean, money: (Money) -> String, onToggle: () -> Unit, onOpen: (categoryId: Long?) -> Unit) {
     val c = BtTheme.colors
-    BtCard(bordered = expanded, modifier = Modifier.clickable(onClick = onClick)) {
+    BtCard(bordered = expanded, modifier = Modifier.clip(BtShapes.md).clickable(onClick = onToggle)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PersonAvatar(item.person)
                 Column(Modifier.weight(1f)) {
                     Text(item.person.name, style = BtTheme.type.bodyStrong, color = c.textPrimary)
-                    Text(if (item.byCategory.isEmpty()) "No spending this month" else "${item.byCategory.size} categories", style = BtTheme.type.caption, color = c.textMuted)
+                    val count = item.byCategory.size
+                    Text(if (count == 0) "No spending this month" else if (count == 1) "1 category" else "$count categories", style = BtTheme.type.caption, color = c.textMuted)
                 }
                 Text(money(item.total), style = BtTheme.type.amountMedium, color = c.textPrimary)
                 Icon(if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = c.textMuted)
@@ -261,13 +262,26 @@ private fun PersonRow(item: PersonSpending, expanded: Boolean, money: (Money) ->
             if (expanded) {
                 Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
                 item.byCategory.forEach { share ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth().clip(BtShapes.sm).clickable(role = Role.Button) { onOpen(share.key.id) }.padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
                         CategoryTile(share.key.icon, share.key.color, size = 28.dp, iconSize = 16.dp, corner = 8.dp)
                         Text(share.key.name, style = BtTheme.type.label, color = c.textPrimary, modifier = Modifier.weight(1f))
                         Text(money(share.amount), style = BtTheme.type.amountSmall, color = c.textPrimary)
                         val pct = if (item.total.minor > 0) share.amount.minor * 100 / item.total.minor else 0
                         Text("$pct%", style = BtTheme.type.caption, color = c.textMuted, modifier = Modifier.width(36.dp))
+                        Icon(Icons.Rounded.ChevronRight, null, tint = c.textMuted, modifier = Modifier.size(18.dp))
                     }
+                }
+                if (item.byCategory.isNotEmpty()) {
+                    Text(
+                        "See all for ${item.person.name}",
+                        style = BtTheme.type.label,
+                        color = c.accentText,
+                        modifier = Modifier.fillMaxWidth().clip(BtShapes.sm).clickable(role = Role.Button) { onOpen(null) }.padding(vertical = 12.dp),
+                    )
                 }
             }
         }

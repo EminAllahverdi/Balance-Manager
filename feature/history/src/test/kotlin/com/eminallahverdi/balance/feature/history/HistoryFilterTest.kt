@@ -12,6 +12,7 @@ import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
+import java.time.YearMonth
 import org.junit.Test
 
 class HistoryFilterTest {
@@ -38,6 +39,27 @@ class HistoryFilterTest {
         person = me,
         merchant = bolt,
     )
+
+    @Test fun `opens on this month with nothing narrowed by default`() {
+        val filter = initialFilter(month = null, categoryId = null, personId = null)
+        assertThat(filter).isEqualTo(HistoryFilter())
+    }
+
+    @Test fun `opens on what was tapped on Home`() {
+        val filter = initialFilter(month = "2026-10", categoryId = transport.id, personId = me.id)
+        assertThat(filter.month).isEqualTo(YearMonth.of(2026, 10))
+        assertThat(filter.categoryId).isEqualTo(transport.id)
+        assertThat(filter.personId).isEqualTo(me.id)
+        assertThat(filter.matches(row())).isTrue()
+    }
+
+    @Test fun `an empty list says what's actually true`() {
+        val now = YearMonth.of(2026, 11)
+        assertThat(HistoryFilter(month = null).emptyMessage(now)).contains("first expense")
+        assertThat(HistoryFilter(month = now).emptyMessage(now)).isEqualTo("Nothing this month yet. Tap + to add an expense.")
+        assertThat(HistoryFilter(month = YearMonth.of(2025, 10)).emptyMessage(now)).isEqualTo("Nothing in October 2025.")
+        assertThat(HistoryFilter(month = YearMonth.of(2025, 10), personId = 1).emptyMessage(now)).isEqualTo("Nothing matches these filters.")
+    }
 
     @Test fun `search finds merchant, category, note and amount`() {
         val r = row(amount = 123450, note = "airport")

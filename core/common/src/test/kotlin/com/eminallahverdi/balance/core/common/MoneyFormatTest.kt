@@ -15,6 +15,17 @@ class MoneyFormatTest {
             .isEqualTo("₼0.05")
     }
 
+    @Test fun shortLabels() {
+        assertThat(MoneyFormat.short(Money(780))).isEqualTo("7.80")
+        assertThat(MoneyFormat.short(Money(34050))).isEqualTo("340.50")
+        assertThat(MoneyFormat.short(Money(99999))).isEqualTo("999.99")
+        assertThat(MoneyFormat.short(Money(100000))).isEqualTo("1.0k")
+        assertThat(MoneyFormat.short(Money(343512))).isEqualTo("3.4k")
+        assertThat(MoneyFormat.short(Money(1470000))).isEqualTo("14.7k")
+        assertThat(MoneyFormat.short(Money(9996000))).isEqualTo("100k")
+        assertThat(MoneyFormat.short(Money(12050000))).isEqualTo("121k")
+    }
+
     @Test fun relativeDates() {
         val today = LocalDate.of(2026, 10, 31)
         assertThat(DateLabels.relative(today, today)).isEqualTo("Today")

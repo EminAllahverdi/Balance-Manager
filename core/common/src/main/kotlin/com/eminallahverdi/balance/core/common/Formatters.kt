@@ -20,6 +20,14 @@ object MoneyFormat {
         return "$sign$SYMBOL$grouped.${minor.toString().padStart(2, '0')}"
     }
 
+    /** A label on a chart, where the exact figure is a tap away: 7.80 · 340.50 · 3.4k · 120k. */
+    fun short(money: Money): String {
+        val abs = money.minor.absoluteValue
+        if (abs < 100_000) return format(Money(abs)).removePrefix(SYMBOL)
+        val tenths = (abs + 5_000) / 10_000
+        return if (tenths < 1_000) "${tenths / 10}.${tenths % 10}k" else "${(abs + 50_000) / 100_000}k"
+    }
+
     const val HIDDEN = "$SYMBOL ••••"
 }
 

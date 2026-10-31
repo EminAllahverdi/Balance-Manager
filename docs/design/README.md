@@ -28,7 +28,7 @@ A personal money app for one household. You log a payment in a few seconds, and 
 Body text uses **Manrope** and amounts use **Space Grotesk**, both from Google Fonts and bundled in the APK.
 - Money: `amount-display` (balance), `amount-large` (card totals), `amount-medium` (row amounts), `amount-small` (chips).
 - Text: `title-large` (screen title), `title-medium` (section), `body-strong` (row title), `body`, `label` (chips, buttons), `caption` (meta), `overline` (card labels, uppercase).
-- Amounts always show the ₼ sign before the number. Expenses have no minus sign in lists, but get one in history and transaction detail.
+- Amounts always show the ₼ sign and two decimals (₼4.40, ₼3,435.00). In a tight space the text shrinks. Only the small label above a chart bar may shorten, to 3.4k. Expenses have no minus sign in lists, but get one in history and transaction detail.
 
 ## Shape and spacing
 
@@ -41,13 +41,15 @@ Use **Material Symbols Rounded**, weight 400 and outlined, at 22 px in rows and 
 
 ## Components (Compose names)
 
-- `BalanceCard`: the total balance, account chips, and spent/income for the month.
+- `BalanceCard`: the total balance, account chips, and spent/income for the month. Past months show only spent and income, because balances are always today's.
 - `PersonStrip`: one card per person with their monthly total.
-- `CategoryRow`: icon tile, name, people line, amount, and a person split bar (6 px tall, 2 px gaps).
+- `CategoryRow`: icon tile, name, people line, amount, chevron, and a person split bar (6 px tall, 2 px gaps). Tapping opens that month's transactions, where each one can be edited.
 - `TransactionRow`: icon tile, merchant or sub-category, the line "category · sub · account", amount, `PersonTag`.
-- `Chip`: default (`bg-surface-raised` with a hairline) or selected (`accent-fill`).
+- `Chip`: default (`bg-surface-raised` with a hairline) or selected (`accent-fill`). A filter chip ends in a small arrow and opens a `FilterSheet`.
 - `SegmentedToggle`: Category / Person, or Expense / Income / Transfer.
 - `QuickAddSheet`: amount, category, sub-category, merchant, for whom, date, note, and a custom keypad with Save.
+- `FilterSheet`: a bottom sheet for one filter, used instead of a menu. Long choices become grids that fit one screen: a year stepper over a 12-month grid, or a 4-column category grid. Short choices are rows with a check on the selected one. The first option always clears the filter.
+- `EditorSheet`: a bottom sheet with a live preview, the title and Remove in the header, then the fields, then Save. Remove sits at the top so it's visible without scrolling, and it always asks first.
 - `BottomBar`: Home, History, Insights, Accounts, with a centre lime add button 64 px with 22 px corners.
 - Widgets: `BalanceWidget` 2×1, `QuickActionsWidget` 4×1, `TodayWidget` 4×2. All use `radius-lg` and a translucent `bg-surface`.
 

@@ -40,6 +40,7 @@ dependencies {
     implementation(project(":feature:history"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:accounts"))
+    implementation(project(":feature:insights"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
