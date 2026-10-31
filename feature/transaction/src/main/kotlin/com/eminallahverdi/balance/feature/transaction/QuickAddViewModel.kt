@@ -14,6 +14,7 @@ import com.eminallahverdi.balance.core.model.Person
 import com.eminallahverdi.balance.core.model.Transaction
 import com.eminallahverdi.balance.core.model.TransactionKind
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +45,8 @@ data class QuickAddUiState(
     val personId: Long? = null,
     val date: LocalDate = LocalDate.now(),
     val note: String = "",
+    /** The saved transaction being changed, or null when adding a new one. */
+    val editing: Transaction? = null,
     val saved: Boolean = false,
 ) {
     val amount: Money? get() = Money.parse(amountText)?.takeIf { it.minor > 0 }
@@ -70,8 +73,12 @@ class QuickAddViewModel @Inject constructor(
     val state: StateFlow<QuickAddUiState> = _state.asStateFlow()
 
     init {
-        val startKind = savedState.get<String>(ARG_KIND)?.let { runCatching { TransactionKind.valueOf(it) }.getOrNull() } ?: TransactionKind.EXPENSE
+        val requestedKind = savedState.get<String>(ARG_KIND)?.let { runCatching { TransactionKind.valueOf(it) }.getOrNull() } ?: TransactionKind.EXPENSE
+        val editingId = savedState.get<Long>(ARG_TRANSACTION)
         viewModelScope.launch {
+            val editing = editingId?.let { transactions.get(it) }
+            if (editing != null) loadForEditing(editing)
+            val startKind = editing?.kind ?: requestedKind
             val defaultAccount = prefs.current().defaultExpenseAccountId
             combine(catalog.accounts, catalog.categories, catalog.people) { a, c, p -> Triple(a, c, p) }
                 .collect { (accounts, categories, people) ->
@@ -91,6 +98,25 @@ class QuickAddViewModel @Inject constructor(
                         )
                     }
                 }
+        }
+    }
+
+    private suspend fun loadForEditing(t: Transaction) {
+        val category = catalog.categories.first().firstOrNull { it.id == t.categoryId }
+        val merchant = catalog.merchants.first().firstOrNull { it.id == t.merchantId }
+        _state.update {
+            it.copy(
+                editing = t,
+                amountText = t.amount.toInputText(),
+                accountId = t.accountId,
+                toAccountId = t.toAccountId,
+                categoryId = category?.parentId ?: category?.id,
+                subCategoryId = category?.id?.takeIf { category.parentId != null },
+                merchant = merchant?.name.orEmpty(),
+                personId = t.personId,
+                date = t.date,
+                note = t.note,
+            )
         }
     }
 
@@ -159,7 +185,7 @@ class QuickAddViewModel @Inject constructor(
             val transfer = s.kind == TransactionKind.TRANSFER
             transactions.save(
                 Transaction(
-                    id = 0,
+                    id = s.editing?.id ?: 0,
                     kind = s.kind,
                     amount = amount,
                     date = s.date,
@@ -168,6 +194,8 @@ class QuickAddViewModel @Inject constructor(
                     categoryId = if (transfer) null else (s.subCategoryId ?: s.categoryId),
                     personId = if (transfer) null else s.personId,
                     note = s.note.trim(),
+                    tripName = s.editing?.tripName,
+                    createdAt = s.editing?.createdAt ?: Instant.EPOCH,
                 ),
                 merchantName = if (transfer) null else s.merchant,
             )
@@ -175,7 +203,24 @@ class QuickAddViewModel @Inject constructor(
         }
     }
 
+    fun delete() {
+        val id = _state.value.editing?.id ?: return
+        viewModelScope.launch {
+            transactions.delete(id)
+            _state.update { it.copy(saved = true) }
+        }
+    }
+
     companion object {
         const val ARG_KIND = "kind"
+
+        /** Set to edit a saved transaction instead of adding one. */
+        const val ARG_TRANSACTION = "transactionId"
     }
+}
+
+/** What the keypad would have typed: 4.40 is "4.40", 12.00 is "12". */
+internal fun Money.toInputText(): String {
+    val fraction = minor % 100
+    return if (fraction == 0L) "${minor / 100}" else "${minor / 100}.${fraction.toString().padStart(2, '0')}"
 }

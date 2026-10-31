@@ -33,6 +33,13 @@ object DateLabels {
         else -> date.format(dayMonth)
     }
 
+    /** "Today · Sat 31 Oct", "Yesterday · Fri 30 Oct", otherwise "Thu 29 Oct". */
+    fun dayHeader(date: LocalDate, today: LocalDate = LocalDate.now()): String {
+        val label = relative(date, today)
+        val full = date.format(dayMonth)
+        return if (label == full) full else "$label · $full"
+    }
+
     fun weekdayShort(date: LocalDate): String = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
 
     fun monthName(date: LocalDate): String = date.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)

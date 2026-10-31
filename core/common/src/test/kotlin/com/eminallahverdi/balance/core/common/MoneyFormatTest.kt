@@ -20,5 +20,7 @@ class MoneyFormatTest {
         assertThat(DateLabels.relative(today, today)).isEqualTo("Today")
         assertThat(DateLabels.relative(today.minusDays(5), today)).isEqualTo("Mon 26 Oct")
         assertThat(DateLabels.daysAgo(today.minusDays(5), today)).isEqualTo("5 days ago")
+        assertThat(DateLabels.dayHeader(today, today)).isEqualTo("Today · Sat 31 Oct")
+        assertThat(DateLabels.dayHeader(today.minusDays(5), today)).isEqualTo("Mon 26 Oct")
     }
 }

@@ -77,14 +77,14 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
 
     suspend fun current(): UserPreferences = preferences.first()
 
-    suspend fun setOnboardingDone(ownerName: String) = store.edit { it[K.onboarding] = true; it[K.owner] = ownerName }
-    suspend fun setTheme(theme: ThemePreference) = store.edit { it[K.theme] = theme.name }
-    suspend fun setDefaultExpenseAccount(id: Long) = store.edit { it[K.defaultAccount] = id }
-    suspend fun setWidgetBalanceMode(mode: WidgetBalanceMode) = store.edit { it[K.widgetMode] = mode.name }
-    suspend fun setAppLock(enabled: Boolean) = store.edit { it[K.appLock] = enabled }
-    suspend fun setHideAmounts(enabled: Boolean) = store.edit { it[K.hideAmounts] = enabled }
-    suspend fun setEveningReminder(enabled: Boolean) = store.edit { it[K.evening] = enabled }
-    suspend fun setBankNotifications(enabled: Boolean) = store.edit { it[K.bank] = enabled }
+    suspend fun setOnboardingDone(ownerName: String) { store.edit { it[K.onboarding] = true; it[K.owner] = ownerName } }
+    suspend fun setTheme(theme: ThemePreference) { store.edit { it[K.theme] = theme.name } }
+    suspend fun setDefaultExpenseAccount(id: Long) { store.edit { it[K.defaultAccount] = id } }
+    suspend fun setWidgetBalanceMode(mode: WidgetBalanceMode) { store.edit { it[K.widgetMode] = mode.name } }
+    suspend fun setAppLock(enabled: Boolean) { store.edit { it[K.appLock] = enabled } }
+    suspend fun setHideAmounts(enabled: Boolean) { store.edit { it[K.hideAmounts] = enabled } }
+    suspend fun setEveningReminder(enabled: Boolean) { store.edit { it[K.evening] = enabled } }
+    suspend fun setBankNotifications(enabled: Boolean) { store.edit { it[K.bank] = enabled } }
 }
 
 @Module

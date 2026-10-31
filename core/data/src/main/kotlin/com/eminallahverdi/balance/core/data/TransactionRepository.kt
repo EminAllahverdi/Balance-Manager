@@ -50,6 +50,7 @@ class TransactionRepository @Inject constructor(
     /** Saves and teaches the merchant what was chosen, so next time is one tap. */
     suspend fun save(transaction: Transaction, merchantName: String?): Long {
         val now = Instant.now()
+        val isNew = transaction.id == 0L
         val merchantId = merchantName?.trim()?.takeIf { it.isNotEmpty() }?.let { name ->
             val existing = merchantDao.findByName(name)
             if (existing == null) {
@@ -58,17 +59,18 @@ class TransactionRepository @Inject constructor(
                 )
             } else {
                 merchantDao.update(
-                    existing.copy(lastCategoryId = transaction.categoryId, lastAccountId = transaction.accountId, lastPersonId = transaction.personId, useCount = existing.useCount + 1),
+                    existing.copy(lastCategoryId = transaction.categoryId, lastAccountId = transaction.accountId, lastPersonId = transaction.personId, useCount = existing.useCount + if (isNew) 1 else 0),
                 )
                 existing.id
             }
         }
         val toSave = transaction.copy(
             merchantId = merchantId,
-            createdAt = if (transaction.id == 0L) now else transaction.createdAt,
+            createdAt = if (isNew) now else transaction.createdAt,
             updatedAt = now,
         )
-        return dao.upsert(toSave.toEntity())
+        // An edit keeps the import id, or the next import would add this transaction again.
+        return dao.upsert(toSave.toEntity(externalId = dao.get(transaction.id)?.externalId))
     }
 
     suspend fun delete(id: Long) = dao.delete(id)

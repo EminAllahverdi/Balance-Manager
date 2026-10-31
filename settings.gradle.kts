@@ -32,9 +32,9 @@ include(":core:datastore")
 include(":core:data")
 include(":feature:home")
 include(":feature:transaction")
-// include(":feature:history") // added as the module lands
+include(":feature:history")
 // include(":feature:accounts") // added as the module lands
 include(":feature:catalog")
-// include(":feature:settings") // added as the module lands
+include(":feature:settings")
 // include(":widget") // added as the module lands
 // include(":importer:moneymanager") // added as the module lands

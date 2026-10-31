@@ -37,6 +37,8 @@ dependencies {
     implementation(project(":feature:home"))
     implementation(project(":feature:transaction"))
     implementation(project(":feature:catalog"))
+    implementation(project(":feature:history"))
+    implementation(project(":feature:settings"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

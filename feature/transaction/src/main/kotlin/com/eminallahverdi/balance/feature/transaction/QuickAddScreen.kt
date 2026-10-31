@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,9 +14,11 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -39,20 +42,25 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Storefront
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,37 +88,88 @@ import com.eminallahverdi.balance.core.model.TransactionKind
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import kotlinx.coroutines.launch
 
 /** The quick-add sheet. [onClose] is called after saving or when the user dismisses it. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickAddRoute(onClose: () -> Unit, viewModel: QuickAddViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(state.saved) { if (state.saved) onClose() }
-    BackHandler { if (state.step == QuickAddStep.DETAILS) viewModel.showAmount() else onClose() }
-    QuickAddSheet(state, viewModel, onClose)
+    // Nothing shows until the data is in, so the sheet rises at its final height instead of growing once it's up.
+    if (state.loading) return
+
+    val c = BtTheme.colors
+    val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    var confirmDelete by remember { mutableStateOf(false) }
+    var showCalendar by remember { mutableStateOf(false) }
+    LaunchedEffect(state.saved) {
+        if (state.saved) {
+            sheet.hide()
+            onClose()
+        }
+    }
+    ModalBottomSheet(
+        onDismissRequest = onClose,
+        sheetState = sheet,
+        shape = BtShapes.sheet,
+        containerColor = c.bgSurface,
+        scrimColor = c.scrim,
+        dragHandle = {
+            Box(Modifier.padding(top = 10.dp).width(36.dp).height(4.dp).clip(BtShapes.full).background(c.borderStrong))
+        },
+        contentWindowInsets = { WindowInsets(0) },
+        // Back steps out of the details first, which the sheet can't do on its own.
+        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
+    ) {
+        BackHandler {
+            if (state.step == QuickAddStep.DETAILS) viewModel.showAmount() else scope.launch { sheet.hide() }.invokeOnCompletion { onClose() }
+        }
+        Column(Modifier.fillMaxWidth().animateContentSize().navigationBarsPadding().imePadding()) {
+            if (state.editing != null) EditHeader(onDelete = { confirmDelete = true })
+            when (state.step) {
+                QuickAddStep.AMOUNT -> AmountStep(state, viewModel)
+                QuickAddStep.DETAILS -> DetailsStep(state, viewModel, onOpenCalendar = { showCalendar = true })
+            }
+        }
+    }
+
+    // Outside the sheet: a dialog created inside it takes on the sheet's window and sticks to the bottom edge.
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete this transaction?") },
+            text = { Text("It's removed from your history and balances. This can't be undone.") },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; viewModel.delete() }) { Text("Delete") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+        )
+    }
+    if (showCalendar) {
+        val pickerState = rememberDatePickerState(
+            initialSelectedDateMillis = state.date.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
+        )
+        DatePickerDialog(
+            onDismissRequest = { showCalendar = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pickerState.selectedDateMillis?.let { viewModel.setDate(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) }
+                    showCalendar = false
+                }) { Text("Use date") }
+            },
+            dismissButton = { TextButton(onClick = { showCalendar = false }) { Text("Cancel") } },
+        ) { DatePicker(state = pickerState) }
+    }
 }
 
 @Composable
-private fun QuickAddSheet(state: QuickAddUiState, vm: QuickAddViewModel, onClose: () -> Unit) {
+private fun EditHeader(onDelete: () -> Unit) {
     val c = BtTheme.colors
-    Box(Modifier.fillMaxSize().background(c.scrim).clickable(interactionSource = null, indication = null, onClick = onClose)) {
-        Column(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(top = 36.dp)
-                .clip(BtShapes.sheet)
-                .background(c.bgSurface)
-                .clickable(interactionSource = null, indication = null) { }
-                .navigationBarsPadding()
-                .imePadding(),
-        ) {
-            Box(Modifier.padding(top = 10.dp).align(Alignment.CenterHorizontally).width(36.dp).height(4.dp).clip(BtShapes.full).background(c.borderStrong))
-            when (state.step) {
-                QuickAddStep.AMOUNT -> AmountStep(state, vm)
-                QuickAddStep.DETAILS -> DetailsStep(state, vm)
-            }
-        }
+    Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 6.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text("Edit transaction", style = BtTheme.type.titleMedium, color = c.textPrimary, modifier = Modifier.weight(1f))
+        Box(
+            Modifier.heightIn(min = 44.dp).clip(BtShapes.full).clickable(role = Role.Button, onClick = onDelete).padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center,
+        ) { Text("Delete", style = BtTheme.type.label, color = c.moneyExpense) }
     }
 }
 
@@ -294,11 +353,10 @@ private fun Keypad(state: QuickAddUiState, vm: QuickAddViewModel) {
 
 // ---------------------------------------------------------------- step 2
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DetailsStep(state: QuickAddUiState, vm: QuickAddViewModel) {
+private fun DetailsStep(state: QuickAddUiState, vm: QuickAddViewModel, onOpenCalendar: () -> Unit) {
     val c = BtTheme.colors
-    var showCalendar by remember { mutableStateOf(false) }
     Column(Modifier.verticalScroll(rememberScrollState())) {
         Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.size(44.dp).clip(BtShapes.full).background(c.bgSurfaceRaised).clickable(onClick = vm::showAmount), contentAlignment = Alignment.Center) {
@@ -385,7 +443,7 @@ private fun DetailsStep(state: QuickAddUiState, vm: QuickAddViewModel) {
                     }
                 }
                 Box(
-                    Modifier.width(44.dp).height(60.dp).clip(RoundedCornerShape(14.dp)).border(1.dp, c.borderStrong, RoundedCornerShape(14.dp)).clickable { showCalendar = true },
+                    Modifier.width(44.dp).height(60.dp).clip(RoundedCornerShape(14.dp)).border(1.dp, c.borderStrong, RoundedCornerShape(14.dp)).clickable(onClick = onOpenCalendar),
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Rounded.CalendarMonth, "Pick an older date", tint = c.textSecondary) }
             }
@@ -401,22 +459,6 @@ private fun DetailsStep(state: QuickAddUiState, vm: QuickAddViewModel) {
             icon = Icons.Rounded.Check,
             modifier = Modifier.padding(16.dp),
         )
-    }
-
-    if (showCalendar) {
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = state.date.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
-        )
-        DatePickerDialog(
-            onDismissRequest = { showCalendar = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let { vm.setDate(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) }
-                    showCalendar = false
-                }) { Text("Use date") }
-            },
-            dismissButton = { TextButton(onClick = { showCalendar = false }) { Text("Cancel") } },
-        ) { DatePicker(state = pickerState) }
     }
 }
 

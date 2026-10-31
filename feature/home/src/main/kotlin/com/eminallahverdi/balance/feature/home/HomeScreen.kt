@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
@@ -34,11 +37,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,33 +65,59 @@ import com.eminallahverdi.balance.core.model.PersonSpending
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlinx.coroutines.launch
+
+/** How far back Home can swipe. The last page is the current month. */
+private const val MONTH_PAGES = 600
+
+private val HEADER_TOP = 16.dp
+private val HEADER_ROW = 44.dp
+private val HEADER_GAP = 14.dp
 
 @Composable
 fun HomeRoute(onOpenSettings: () -> Unit, viewModel: HomeViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    HomeScreen(state, viewModel, onOpenSettings)
+    val thisMonth = remember { YearMonth.now() }
+    val pager = rememberPagerState(initialPage = MONTH_PAGES - 1) { MONTH_PAGES }
+    val scope = rememberCoroutineScope()
+    fun monthOf(page: Int) = thisMonth.minusMonths((MONTH_PAGES - 1 - page).toLong())
+
+    Box(Modifier.fillMaxSize().background(BtTheme.colors.bgCanvas)) {
+        // The pager runs behind the header, so a swipe on the month row is the same gesture as a swipe on the page.
+        HorizontalPager(pager, Modifier.fillMaxSize(), key = { it }) { page ->
+            MonthPage(monthOf(page), state, viewModel)
+        }
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = HEADER_TOP).height(HEADER_ROW), verticalAlignment = Alignment.CenterVertically) {
+            MonthSwitcher(
+                month = monthOf(pager.currentPage),
+                onPrev = { scope.launch { pager.animateScrollToPage(pager.currentPage - 1) } },
+                onNext = { scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } },
+                modifier = Modifier,
+            )
+            // Only the month swipes: this catches touches on the empty part of the row before the pager sees them.
+            Spacer(Modifier.weight(1f).fillMaxHeight().pointerInput(Unit) {})
+            BtIconButton(if (state.hideAmounts) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, "Show or hide amounts", viewModel::toggleHideAmounts)
+            Spacer(Modifier.width(8.dp))
+            BtIconButton(Icons.Rounded.Settings, "Settings", onOpenSettings)
+        }
+    }
 }
 
 @Composable
-private fun HomeScreen(state: HomeUiState, vm: HomeViewModel, onOpenSettings: () -> Unit) {
+private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel) {
     val c = BtTheme.colors
-    fun money(m: Money) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m)
+    val summary by remember(month) { vm.summary(month) }.collectAsStateWithLifecycle(null)
+    // The eye covers what you have and what comes in. Spending stays visible.
+    fun money(m: Money) = MoneyFormat.format(m)
+    fun income(m: Money) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m)
     // A balance can go below zero; totals of spending can't.
     fun balance(m: Money) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m, signed = true)
 
     LazyColumn(
-        Modifier.fillMaxSize().background(c.bgCanvas),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
+        Modifier.fillMaxSize().padding(top = HEADER_TOP + HEADER_ROW + HEADER_GAP),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                MonthSwitcher(state.month, vm::previousMonth, vm::nextMonth, Modifier.weight(1f))
-                BtIconButton(if (state.hideAmounts) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, "Show or hide amounts", vm::toggleReveal)
-                Spacer(Modifier.width(8.dp))
-                BtIconButton(Icons.Rounded.Settings, "Settings", onOpenSettings)
-            }
-        }
         item {
             BtCard(bordered = true, shape = BtShapes.lg) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -107,13 +138,13 @@ private fun HomeScreen(state: HomeUiState, vm: HomeViewModel, onOpenSettings: ()
                     }
                     Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Stat("Spent this month", money(state.summary?.spent ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingDown, c.moneyExpense, Modifier.weight(1f))
-                        Stat("Income", money(state.summary?.income ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingUp, c.moneyIncome, Modifier.weight(1f))
+                        Stat("Spent this month", money(summary?.spent ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingDown, c.moneyExpense, Modifier.weight(1f))
+                        Stat("Income", income(summary?.income ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingUp, c.moneyIncome, Modifier.weight(1f))
                     }
                 }
             }
         }
-        val people = state.summary?.byPerson.orEmpty().filter { it.total.minor > 0 }
+        val people = summary?.byPerson.orEmpty().filter { it.total.minor > 0 }
         if (people.isNotEmpty()) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -137,15 +168,18 @@ private fun HomeScreen(state: HomeUiState, vm: HomeViewModel, onOpenSettings: ()
                 SegmentedToggle(listOf("Category", "Person"), state.view.ordinal, { vm.setView(HomeView.entries[it]) })
             }
         }
-        val summary = state.summary
-        if (summary == null || summary.spent.isZero) {
+        val loaded = summary
+        if (loaded == null) {
+            // Still loading: an empty message here would flash on every swipe.
+        } else if (loaded.spent.isZero) {
             item {
-                Text("Nothing spent this month yet. Tap + to add your first expense.", style = BtTheme.type.body, color = c.textMuted, modifier = Modifier.padding(vertical = 24.dp))
+                val message = if (month == YearMonth.now()) "Nothing spent this month yet. Tap + to add your first expense." else "Nothing spent this month."
+                Text(message, style = BtTheme.type.body, color = c.textMuted, modifier = Modifier.padding(vertical = 24.dp))
             }
         } else if (state.view == HomeView.CATEGORY) {
-            items(summary.byCategory, key = { "c" + it.category.id }) { CategoryRow(it, ::money) }
+            items(loaded.byCategory, key = { "c" + it.category.id }) { CategoryRow(it, ::money) }
         } else {
-            items(summary.byPerson, key = { "p" + it.person.id }) { PersonRow(it, state.expandedPersonId == it.person.id, ::money) { vm.togglePerson(it.person.id) } }
+            items(loaded.byPerson, key = { "p" + it.person.id }) { PersonRow(it, state.expandedPersonId == it.person.id, ::money) { vm.togglePerson(it.person.id) } }
         }
     }
 }
