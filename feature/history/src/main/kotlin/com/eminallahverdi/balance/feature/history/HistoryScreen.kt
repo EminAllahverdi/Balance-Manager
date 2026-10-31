@@ -26,10 +26,12 @@ import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -72,6 +74,22 @@ fun HistoryRoute(onOpen: (Long) -> Unit, viewModel: HistoryViewModel = hiltViewM
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Held here, not read back from the filter: results arrive off the main thread, and typing must not wait for them.
     var query by rememberSaveable { mutableStateOf("") }
+    var removing by remember { mutableStateOf<Long?>(null) }
+    val onTap = { row: TransactionDetails ->
+        when {
+            row.isEditable -> onOpen(row.transaction.id)
+            row.transaction.kind == TransactionKind.ADJUSTMENT -> removing = row.transaction.id
+        }
+    }
+    removing?.let { id ->
+        AlertDialog(
+            onDismissRequest = { removing = null },
+            title = { Text("Remove this adjustment?") },
+            text = { Text("The account's balance changes back by this amount. This can't be undone.") },
+            confirmButton = { TextButton(onClick = { removing = null; viewModel.delete(id) }) { Text("Remove") } },
+            dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } },
+        )
+    }
     Column(Modifier.fillMaxSize().background(BtTheme.colors.bgCanvas)) {
         Text("History", style = BtTheme.type.titleLarge, color = BtTheme.colors.textPrimary, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp))
         SearchField(query) {
@@ -91,7 +109,7 @@ fun HistoryRoute(onOpen: (Long) -> Unit, viewModel: HistoryViewModel = hiltViewM
                 }
             } else {
                 item(key = "summary") { Summary(state) }
-                items(state.days, key = { it.date.toEpochDay() }) { DayGroup(it, state.hideAmounts, onOpen) }
+                items(state.days, key = { it.date.toEpochDay() }) { DayGroup(it, state.hideAmounts, onTap) }
             }
         }
     }
@@ -209,7 +227,7 @@ private fun Summary(state: HistoryUiState) {
 private fun amount(money: Money, hidden: Boolean) = if (hidden) MoneyFormat.HIDDEN else MoneyFormat.format(money)
 
 @Composable
-private fun DayGroup(day: HistoryDay, hideAmounts: Boolean, onOpen: (Long) -> Unit) {
+private fun DayGroup(day: HistoryDay, hideAmounts: Boolean, onTap: (TransactionDetails) -> Unit) {
     val c = BtTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -220,7 +238,7 @@ private fun DayGroup(day: HistoryDay, hideAmounts: Boolean, onOpen: (Long) -> Un
             Column {
                 day.rows.forEachIndexed { i, row ->
                     if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
-                    TransactionRow(row, hideAmounts, onOpen)
+                    TransactionRow(row, hideAmounts, onTap)
                 }
             }
         }
@@ -228,11 +246,12 @@ private fun DayGroup(day: HistoryDay, hideAmounts: Boolean, onOpen: (Long) -> Un
 }
 
 @Composable
-private fun TransactionRow(row: TransactionDetails, hideAmounts: Boolean, onOpen: (Long) -> Unit) {
+private fun TransactionRow(row: TransactionDetails, hideAmounts: Boolean, onTap: (TransactionDetails) -> Unit) {
     val c = BtTheme.colors
     val style = row.parentCategory ?: row.category
+    val tappable = row.isEditable || row.transaction.kind == TransactionKind.ADJUSTMENT
     Row(
-        Modifier.fillMaxWidth().clickable(enabled = row.isEditable) { onOpen(row.transaction.id) }.padding(horizontal = 14.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().clickable(enabled = tappable) { onTap(row) }.padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

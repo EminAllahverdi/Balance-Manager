@@ -126,7 +126,7 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun setKind(kind: TransactionKind) = _state.update {
-        it.copy(kind = kind, categories = topLevel(it.allCategories, kind), categoryId = null, subCategoryId = null, step = QuickAddStep.AMOUNT)
+        it.withDistinctAccounts().copy(kind = kind, categories = topLevel(it.allCategories, kind), categoryId = null, subCategoryId = null, step = QuickAddStep.AMOUNT)
     }
 
     fun key(k: Char) = _state.update { s ->
@@ -168,7 +168,7 @@ class QuickAddViewModel @Inject constructor(
         s.copy(subCategoryId = next, personId = override?.takeIf { p -> s.people.any { it.id == p } } ?: s.personId)
     }
     fun selectPerson(id: Long) = _state.update { it.copy(personId = id) }
-    fun selectAccount(id: Long) = _state.update { it.copy(accountId = id) }
+    fun selectAccount(id: Long) = _state.update { it.withAccount(id) }
     fun selectToAccount(id: Long) = _state.update { it.copy(toAccountId = id) }
     fun setMerchant(text: String) = _state.update { it.copy(merchant = text) }
     fun setNote(text: String) = _state.update { it.copy(note = text) }
@@ -218,6 +218,14 @@ class QuickAddViewModel @Inject constructor(
         const val ARG_TRANSACTION = "transactionId"
     }
 }
+
+/** Picking the account on the other side of a transfer swaps them, so Save never dims for no visible reason. */
+internal fun QuickAddUiState.withAccount(id: Long): QuickAddUiState =
+    copy(accountId = id, toAccountId = if (id == toAccountId) accountId else toAccountId)
+
+/** A category's suggestion can land From on To's account while the transfer fields are out of sight. */
+internal fun QuickAddUiState.withDistinctAccounts(): QuickAddUiState =
+    if (toAccountId != accountId) this else copy(toAccountId = accounts.firstOrNull { it.id != accountId }?.id)
 
 /** What the keypad would have typed: 4.40 is "4.40", 12.00 is "12". */
 internal fun Money.toInputText(): String {

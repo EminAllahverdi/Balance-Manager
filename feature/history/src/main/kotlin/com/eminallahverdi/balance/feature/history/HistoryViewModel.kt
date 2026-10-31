@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class HistoryDay(val date: LocalDate, val total: Money, val totalIsSpending: Boolean, val rows: List<TransactionDetails>)
 
@@ -47,7 +48,7 @@ data class HistoryUiState(
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     catalog: CatalogRepository,
-    transactions: TransactionRepository,
+    private val transactions: TransactionRepository,
     prefs: UserPreferencesRepository,
 ) : ViewModel() {
 
@@ -81,4 +82,5 @@ class HistoryViewModel @Inject constructor(
     fun setPerson(id: Long?) = filter.update { it.copy(personId = id) }
     fun setCategory(id: Long?) = filter.update { it.copy(categoryId = id) }
     fun setAccount(id: Long?) = filter.update { it.copy(accountId = id) }
+    fun delete(id: Long) { viewModelScope.launch { transactions.delete(id) } }
 }

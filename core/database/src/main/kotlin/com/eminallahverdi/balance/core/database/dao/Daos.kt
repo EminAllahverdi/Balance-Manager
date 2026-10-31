@@ -52,6 +52,8 @@ interface AccountDao {
 
     @Upsert suspend fun upsert(account: AccountEntity): Long
     @Update suspend fun updateAll(accounts: List<AccountEntity>)
+    @Query("DELETE FROM account WHERE id = :id") suspend fun delete(id: Long)
+    @Query("SELECT COUNT(*) FROM txn WHERE account_id = :id OR to_account_id = :id") suspend fun usageCount(id: Long): Int
 }
 
 @Dao
@@ -81,6 +83,9 @@ interface TransactionDao {
 
     @Query("SELECT * FROM txn ORDER BY date DESC, created_at DESC LIMIT :limit")
     fun observeLatest(limit: Int): Flow<List<TransactionEntity>>
+
+    @Query("SELECT * FROM txn WHERE kind = 'TRANSFER' ORDER BY date DESC, created_at DESC LIMIT :limit")
+    fun observeTransfers(limit: Int): Flow<List<TransactionEntity>>
 
     @Query("SELECT * FROM txn WHERE id = :id") suspend fun get(id: Long): TransactionEntity?
 

@@ -46,6 +46,13 @@ data class Transaction(
     val countsInReports: Boolean get() = kind == TransactionKind.EXPENSE || kind == TransactionKind.INCOME
 }
 
+/** The correction that brings an account from [current] to [target], or null when they already match. */
+fun balanceAdjustment(accountId: Long, current: Money, target: Money, date: LocalDate): Transaction? {
+    val difference = target - current
+    if (difference.isZero) return null
+    return Transaction(id = 0, kind = TransactionKind.ADJUSTMENT, amount = difference, date = date, accountId = accountId)
+}
+
 /** A transaction joined with everything the UI needs to draw a row. */
 data class TransactionDetails(
     val transaction: Transaction,

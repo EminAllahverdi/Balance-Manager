@@ -21,6 +21,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
+import com.eminallahverdi.balance.feature.accounts.AccountsRoute
 import com.eminallahverdi.balance.feature.catalog.CatalogRoute
 import com.eminallahverdi.balance.feature.history.HistoryRoute
 import com.eminallahverdi.balance.feature.home.HomeRoute
@@ -34,9 +35,9 @@ import kotlinx.serialization.Serializable
 @Serializable data object SettingsDestination
 @Serializable data object CatalogDestination
 
-/** The main shell: the tab content above the bottom bar. [onAdd] opens quick add, [onOpenTransaction] the same sheet to edit. */
+/** The main shell: the tab content above the bottom bar. [onAdd] opens quick add, [onTransfer] the same sheet on Transfer, [onOpenTransaction] it to edit. */
 @Composable
-fun BalanceApp(onAdd: () -> Unit, onOpenTransaction: (Long) -> Unit) {
+fun BalanceApp(onAdd: () -> Unit, onTransfer: () -> Unit, onOpenTransaction: (Long) -> Unit) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val destination = backStack?.destination
@@ -55,7 +56,7 @@ fun BalanceApp(onAdd: () -> Unit, onOpenTransaction: (Long) -> Unit) {
             composable<HomeDestination> { HomeRoute(onOpenSettings = { nav.navigate(SettingsDestination) { launchSingleTop = true } }) }
             composable<HistoryDestination> { HistoryRoute(onOpen = onOpenTransaction) }
             composable<InsightsDestination> { NotBuiltYet("Insights") }
-            composable<AccountsDestination> { NotBuiltYet("Accounts") }
+            composable<AccountsDestination> { AccountsRoute(onTransfer = onTransfer, onOpenTransaction = onOpenTransaction) }
             composable<SettingsDestination> {
                 SettingsRoute(
                     onBack = { nav.popBackStack() },

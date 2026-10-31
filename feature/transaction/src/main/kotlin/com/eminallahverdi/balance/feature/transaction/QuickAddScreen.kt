@@ -208,8 +208,8 @@ private fun AmountStep(state: QuickAddUiState, vm: QuickAddViewModel) {
                     }
                 }
             }
-            DetailsSummary(state, vm)
         }
+        DetailsSummary(state, vm)
         Spacer(Modifier.height(12.dp))
         Keypad(state, vm)
     }
@@ -237,7 +237,10 @@ private fun AmountBox(state: QuickAddUiState, vm: QuickAddViewModel) {
                 maxLines = 1,
             )
         }
-        AccountPicker(label = if (state.kind == TransactionKind.INCOME) "To" else "From", accounts = state.accounts, selected = state.account, onSelect = vm::selectAccount)
+        // A transfer picks both of its accounts below.
+        if (state.kind != TransactionKind.TRANSFER) {
+            AccountPicker(label = if (state.kind == TransactionKind.INCOME) "To" else "From", accounts = state.accounts, selected = state.account, onSelect = vm::selectAccount)
+        }
     }
 }
 
@@ -276,19 +279,25 @@ private fun TransferAccounts(state: QuickAddUiState, vm: QuickAddViewModel) {
 @Composable
 private fun DetailsSummary(state: QuickAddUiState, vm: QuickAddViewModel) {
     val c = BtTheme.colors
-    val parts = listOfNotNull(
-        state.subCategory?.name,
-        state.merchant.takeIf { it.isNotBlank() },
-        state.person?.name,
-        DateLabels.relative(state.date),
-    )
+    val transfer = state.kind == TransactionKind.TRANSFER
+    val ready = transfer || state.categoryId != null
+    val parts = if (transfer) {
+        listOfNotNull(DateLabels.relative(state.date), state.note.takeIf { it.isNotBlank() })
+    } else {
+        listOfNotNull(
+            state.subCategory?.name,
+            state.merchant.takeIf { it.isNotBlank() },
+            state.person?.name,
+            DateLabels.relative(state.date),
+        )
+    }
     Row(
         Modifier
             .padding(start = 16.dp, end = 16.dp, top = 16.dp)
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .border(1.dp, c.borderDefault, RoundedCornerShape(16.dp))
-            .clickable(enabled = state.categoryId != null, onClick = vm::showDetails)
+            .clickable(enabled = ready, onClick = vm::showDetails)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -297,11 +306,11 @@ private fun DetailsSummary(state: QuickAddUiState, vm: QuickAddViewModel) {
         Column(Modifier.weight(1f)) {
             Overline("Details")
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                state.person?.let { PersonDot(it.color, 7.dp) }
+                if (!transfer) state.person?.let { PersonDot(it.color, 7.dp) }
                 Text(
-                    if (state.categoryId == null) "Pick a category first" else parts.joinToString("  ·  "),
+                    if (ready) parts.joinToString("  ·  ") else "Pick a category first",
                     style = BtTheme.type.label,
-                    color = if (state.categoryId == null) c.textMuted else c.textPrimary,
+                    color = if (ready) c.textPrimary else c.textMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -357,6 +366,7 @@ private fun Keypad(state: QuickAddUiState, vm: QuickAddViewModel) {
 @Composable
 private fun DetailsStep(state: QuickAddUiState, vm: QuickAddViewModel, onOpenCalendar: () -> Unit) {
     val c = BtTheme.colors
+    val transfer = state.kind == TransactionKind.TRANSFER
     Column(Modifier.verticalScroll(rememberScrollState())) {
         Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.size(44.dp).clip(BtShapes.full).background(c.bgSurfaceRaised).clickable(onClick = vm::showAmount), contentAlignment = Alignment.Center) {
@@ -364,13 +374,14 @@ private fun DetailsStep(state: QuickAddUiState, vm: QuickAddViewModel, onOpenCal
             }
             state.category?.let { CategoryTile(it.icon, it.color, size = 36.dp, iconSize = 20.dp, corner = 10.dp) }
             Column(Modifier.weight(1f)) {
-                Text(state.category?.name.orEmpty(), style = BtTheme.type.bodyStrong, color = c.textPrimary)
-                Text(state.account?.name.orEmpty(), style = BtTheme.type.caption, color = c.textSecondary)
+                Text(if (transfer) "Transfer" else state.category?.name.orEmpty(), style = BtTheme.type.bodyStrong, color = c.textPrimary)
+                val to = state.accounts.firstOrNull { it.id == state.toAccountId }?.name
+                Text(if (transfer) "${state.account?.name.orEmpty()} → ${to.orEmpty()}" else state.account?.name.orEmpty(), style = BtTheme.type.caption, color = c.textSecondary)
             }
             Text(state.amount?.let { MoneyFormat.format(it) } ?: "", style = BtTheme.type.amountLarge, color = c.textPrimary)
         }
 
-        if (state.subCategories.isNotEmpty()) {
+        if (!transfer && state.subCategories.isNotEmpty()) {
             Section("Sub-category") {
                 FlowRow(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.bgSurfaceRaised).padding(4.dp),
@@ -394,35 +405,38 @@ private fun DetailsStep(state: QuickAddUiState, vm: QuickAddViewModel, onOpenCal
             Divider()
         }
 
-        Section("Merchant · optional") {
-            InputField(state.merchant, vm::setMerchant, "Shop or service", Icons.Rounded.Storefront)
-            if (state.recentMerchants.isNotEmpty()) {
-                Row(Modifier.padding(top = 8.dp, start = 4.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("Recent:", style = BtTheme.type.caption, color = c.textMuted)
-                    state.recentMerchants.take(4).forEach { m ->
-                        Text(m, style = BtTheme.type.caption, color = c.accentText, modifier = Modifier.clickable { vm.setMerchant(m) })
+        // A transfer isn't spending, so it has no merchant and isn't for anyone.
+        if (!transfer) {
+            Section("Merchant · optional") {
+                InputField(state.merchant, vm::setMerchant, "Shop or service", Icons.Rounded.Storefront)
+                if (state.recentMerchants.isNotEmpty()) {
+                    Row(Modifier.padding(top = 8.dp, start = 4.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Text("Recent:", style = BtTheme.type.caption, color = c.textMuted)
+                        state.recentMerchants.take(4).forEach { m ->
+                            Text(m, style = BtTheme.type.caption, color = c.accentText, modifier = Modifier.clickable { vm.setMerchant(m) })
+                        }
                     }
                 }
             }
-        }
-        Divider()
+            Divider()
 
-        Section("For whom") {
-            Row(Modifier.fillMaxWidth()) {
-                state.people.forEach { p ->
-                    val on = p.id == state.personId
-                    Column(
-                        Modifier.weight(1f).clickable(role = Role.RadioButton) { vm.selectPerson(p.id) },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        PersonAvatar(p, size = 44.dp, selected = on, modifier = if (on) Modifier else Modifier.padding(4.dp))
-                        Text(p.name, style = BtTheme.type.caption, color = if (on) c.textPrimary else c.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Section("For whom") {
+                Row(Modifier.fillMaxWidth()) {
+                    state.people.forEach { p ->
+                        val on = p.id == state.personId
+                        Column(
+                            Modifier.weight(1f).clickable(role = Role.RadioButton) { vm.selectPerson(p.id) },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            PersonAvatar(p, size = 44.dp, selected = on, modifier = if (on) Modifier else Modifier.padding(4.dp))
+                            Text(p.name, style = BtTheme.type.caption, color = if (on) c.textPrimary else c.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
                 }
             }
+            Divider()
         }
-        Divider()
 
         Section("Date", trailing = "${DateLabels.relative(state.date)}, ${DateLabels.daysAgo(state.date)}".takeIf { state.date != LocalDate.now() }) {
             val today = LocalDate.now()

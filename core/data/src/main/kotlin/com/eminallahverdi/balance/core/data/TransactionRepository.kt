@@ -12,7 +12,9 @@ import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
 import com.eminallahverdi.balance.core.model.Transaction
 import com.eminallahverdi.balance.core.model.TransactionDetails
+import com.eminallahverdi.balance.core.model.balanceAdjustment
 import java.time.Instant
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -39,6 +41,9 @@ class TransactionRepository @Inject constructor(
 
     fun observeLatest(limit: Int = 200): Flow<List<TransactionDetails>> =
         joinDetails(dao.observeLatest(limit).map { r -> r.map { it.toModel() } })
+
+    fun observeTransfers(limit: Int): Flow<List<TransactionDetails>> =
+        joinDetails(dao.observeTransfers(limit).map { r -> r.map { it.toModel() } })
 
     val balances: Flow<List<AccountBalance>> = combine(catalog.accounts, dao.observeAccountSums()) { accounts, sums ->
         val byAccount = sums.groupBy { it.accountId }.mapValues { (_, v) -> v.sumOf { it.total } }
@@ -74,6 +79,11 @@ class TransactionRepository @Inject constructor(
     }
 
     suspend fun delete(id: Long) = dao.delete(id)
+
+    /** Makes the account read [target] by recording the difference as an adjustment. */
+    suspend fun adjustBalance(accountId: Long, current: Money, target: Money) {
+        balanceAdjustment(accountId, current, target, LocalDate.now())?.let { save(it, merchantName = null) }
+    }
 
     /** Pre-fill from the last time this category (or one of its sub-categories) was used. */
     suspend fun suggestFor(category: Category, subCategories: List<Category>): Suggestion {

@@ -67,6 +67,13 @@ class CatalogRepository @Inject constructor(
             categoryDao.delete(category.id); RemoveResult.DELETED
         }
 
+    suspend fun removeAccount(account: Account): RemoveResult =
+        if (accountDao.usageCount(account.id) > 0) {
+            accountDao.upsert(account.copy(isArchived = true).toEntity()); RemoveResult.ARCHIVED
+        } else {
+            accountDao.delete(account.id); RemoveResult.DELETED
+        }
+
     suspend fun isEmpty(): Boolean = accountDao.getAll().isEmpty()
 
     /** Fills an empty database from a template (first run, or someone you shared the app with). */

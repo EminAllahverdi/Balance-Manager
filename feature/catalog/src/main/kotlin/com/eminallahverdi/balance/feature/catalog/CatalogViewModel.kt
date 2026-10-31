@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.data.AvatarStore
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.RemoveResult
+import com.eminallahverdi.balance.core.designsystem.theme.CategoryPalette
+import com.eminallahverdi.balance.core.designsystem.theme.PersonPalette
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
 import com.eminallahverdi.balance.core.model.Person
@@ -86,7 +88,7 @@ class CatalogViewModel @Inject constructor(
             name = "",
             type = type,
             icon = "more_horiz",
-            color = Palette.first(),
+            color = CategoryPalette.first(),
             defaultPersonId = s.people.firstOrNull()?.id,
             sortOrder = s.groups.size,
         )
@@ -101,7 +103,7 @@ class CatalogViewModel @Inject constructor(
 
     fun newPerson() {
         val s = state.value
-        val draft = Person(id = 0, name = "", color = Palette[s.people.size % Palette.size], sortOrder = s.people.size)
+        val draft = Person(id = 0, name = "", color = PersonPalette[s.people.size % PersonPalette.size], sortOrder = s.people.size)
         editor.update { CatalogEditor.PersonDraft(draft, isNew = true, savedAvatar = null) }
     }
 
@@ -168,11 +170,3 @@ class CatalogViewModel @Inject constructor(
         }
     }
 }
-
-/** Colours offered for categories and people: the design's category hues and person colours. */
-internal val Palette: List<Long> = listOf(
-    0xFF5B9DFF, 0xFFFF7AB6, 0xFFFFB547, 0xFFA78BFA, 0xFF8A94A3,
-    0xFF5DCAA5, 0xFFFF7A66, 0xFF8AB4F8, 0xFFB39DFF, 0xFFF5B544,
-    0xFFFFD166, 0xFFFF9F6E, 0xFF7FD1F7, 0xFF9AD0A8, 0xFFF49AC2,
-    0xFFC79BF2, 0xFF6FC7D9, 0xFFF7A072, 0xFFB8C0CC,
-)

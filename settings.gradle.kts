@@ -33,7 +33,7 @@ include(":core:data")
 include(":feature:home")
 include(":feature:transaction")
 include(":feature:history")
-// include(":feature:accounts") // added as the module lands
+include(":feature:accounts")
 include(":feature:catalog")
 include(":feature:settings")
 // include(":widget") // added as the module lands
