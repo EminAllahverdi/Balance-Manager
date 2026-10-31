@@ -122,21 +122,25 @@ class QuickAddViewModel @Inject constructor(
     fun selectCategory(category: Category) {
         _state.update { it.copy(categoryId = category.id, subCategoryId = null) }
         viewModelScope.launch {
-            val subs = _state.value.allCategories.filter { it.parentId == category.id }
+            val subs = _state.value.allCategories.filter { it.parentId == category.id && !it.isArchived }
             val s = transactions.suggestFor(category, subs)
             _state.update { st ->
                 st.copy(
                     subCategoryId = s.subCategoryId,
                     merchant = s.merchantName.orEmpty(),
                     recentMerchants = s.recentMerchants,
-                    personId = s.personId ?: st.people.firstOrNull()?.id,
+                    personId = s.personId?.takeIf { id -> st.people.any { it.id == id } } ?: st.people.firstOrNull()?.id,
                     accountId = s.accountId?.takeIf { id -> st.accounts.any { it.id == id } } ?: st.accountId,
                 )
             }
         }
     }
 
-    fun selectSubCategory(id: Long?) = _state.update { it.copy(subCategoryId = if (it.subCategoryId == id) null else id) }
+    fun selectSubCategory(id: Long?) = _state.update { s ->
+        val next = if (s.subCategoryId == id) null else id
+        val override = s.allCategories.firstOrNull { it.id == next }?.defaultPersonId
+        s.copy(subCategoryId = next, personId = override?.takeIf { p -> s.people.any { it.id == p } } ?: s.personId)
+    }
     fun selectPerson(id: Long) = _state.update { it.copy(personId = id) }
     fun selectAccount(id: Long) = _state.update { it.copy(accountId = id) }
     fun selectToAccount(id: Long) = _state.update { it.copy(toAccountId = id) }

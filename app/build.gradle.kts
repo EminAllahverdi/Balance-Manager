@@ -36,6 +36,7 @@ dependencies {
     implementation(project(":core:datastore"))
     implementation(project(":feature:home"))
     implementation(project(":feature:transaction"))
+    implementation(project(":feature:catalog"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

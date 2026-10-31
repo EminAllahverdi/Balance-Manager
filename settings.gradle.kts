@@ -34,7 +34,7 @@ include(":feature:home")
 include(":feature:transaction")
 // include(":feature:history") // added as the module lands
 // include(":feature:accounts") // added as the module lands
-// include(":feature:catalog") // added as the module lands
+include(":feature:catalog")
 // include(":feature:settings") // added as the module lands
 // include(":widget") // added as the module lands
 // include(":importer:moneymanager") // added as the module lands

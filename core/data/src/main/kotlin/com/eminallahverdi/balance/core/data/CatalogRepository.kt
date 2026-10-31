@@ -30,7 +30,17 @@ class CatalogRepository @Inject constructor(
     val merchants: Flow<List<Merchant>> = merchantDao.observeAll().map { list -> list.map { it.toModel() } }
 
     suspend fun savePerson(person: Person): Long = personDao.upsert(person.toEntity())
-    suspend fun saveCategory(category: Category): Long = categoryDao.upsert(category.toEntity())
+
+    /** Saves a category. Its sub-categories follow a new icon or colour unless they set their own. */
+    suspend fun saveCategory(category: Category) = db.withTransaction {
+        val all = categoryDao.getAll().map { it.toModel() }
+        val old = all.firstOrNull { it.id == category.id }
+        categoryDao.upsert(category.toEntity())
+        if (old != null) {
+            categoryDao.updateAll(all.filter { it.parentId == old.id }.map { it.followParentStyle(old, category).toEntity() })
+        }
+    }
+
     suspend fun saveAccount(account: Account): Long = accountDao.upsert(account.toEntity())
 
     suspend fun reorderPeople(ordered: List<Person>) =

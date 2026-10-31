@@ -22,7 +22,8 @@ core:datastore           UserPreferences (theme, default expense account, widget
 core:data                CatalogRepository, TransactionRepository (merchant memory + suggestions), StarterTemplate
 feature:home             Month summary, by category / by person, split bars
 feature:transaction      Quick add: step 1 amount + category + keypad, step 2 details (sub-category, merchant, for whom, 7-day date strip + calendar, note)
-feature:history | accounts | catalog | settings   to do
+feature:catalog          Categories, sub-categories and people: add, edit, drag to reorder, archive and restore, photo avatars (AvatarStore in core:data)
+feature:history | accounts | settings   to do
 widget                   to do: Glance 2x1 balance (privacy modes), 4x1 actions, 4x2 today + categories
 importer:moneymanager    to do: reads .mmbackup (zip -> SQLite MyFinance.db) on the device
 ```
@@ -43,10 +44,9 @@ importer:moneymanager    to do: reads .mmbackup (zip -> SQLite MyFinance.db) on 
 CI (`.github/workflows/android.yml`) runs both on every push and uploads the debug APK.
 
 ## Status (branch feat/mvp-foundation)
-The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. History, Insights, Accounts and Settings are placeholders in `BalanceApp.kt`. **The app has not been launched on a device or emulator yet**, so run it before building further.
+The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. History, Insights and Accounts are placeholders in `BalanceApp.kt`, and Settings is a stand-in with only the "Categories & people" row.
 
 Next, in order:
-1. `feature:catalog`: people (photo via the Photo Picker, copied into app storage; colour; reorder; archive) and categories/sub-categories (icon, colour, default person).
-2. `feature:history` (search and filters), `feature:accounts` (include-in-total and widget switches, transfer, adjust balance), `feature:settings`.
-3. `widget` (Glance) and app shortcuts, then the Money Manager importer, which uses a mapping file kept on the device, never in this repo.
-4. Evening reminder, recurring payments and Drive backup (WorkManager).
+1. `feature:history` (search and filters), `feature:accounts` (include-in-total and widget switches, transfer, adjust balance), `feature:settings`.
+2. `widget` (Glance) and app shortcuts, then the Money Manager importer, which uses a mapping file kept on the device, never in this repo.
+3. Evening reminder, recurring payments and Drive backup (WorkManager).

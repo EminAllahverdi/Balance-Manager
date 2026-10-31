@@ -34,6 +34,12 @@ data class Category(
     val isArchived: Boolean = false,
 ) {
     val isSubCategory: Boolean get() = parentId != null
+
+    /** For a sub-category when its parent changes: keeps anything it set itself, follows the rest. */
+    fun followParentStyle(oldParent: Category, newParent: Category): Category = copy(
+        icon = if (icon == oldParent.icon) newParent.icon else icon,
+        color = if (color == oldParent.color) newParent.color else color,
+    )
 }
 
 enum class AccountType { DEBIT_CARD, CREDIT_CARD, CASH, SAVINGS }
