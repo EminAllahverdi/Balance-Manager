@@ -1,0 +1,19 @@
+<resources>
+    <!-- Dark window so cold start never flashes white. Compose draws everything else. -->
+    <style name="Theme.Balance" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/ink</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- Quick add opens over whatever is behind it (home screen, other apps). -->
+    <style name="Theme.Balance.Overlay" parent="Theme.Balance">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+
+    <color name="ink">#0B0D10</color>
+    <color name="lime">#C8F169</color>
+</resources>
