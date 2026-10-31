@@ -30,8 +30,8 @@ include(":core:designsystem")
 include(":core:database")
 include(":core:datastore")
 include(":core:data")
-// include(":feature:home") // added as the module lands
-// include(":feature:transaction") // added as the module lands
+include(":feature:home")
+include(":feature:transaction")
 // include(":feature:history") // added as the module lands
 // include(":feature:accounts") // added as the module lands
 // include(":feature:catalog") // added as the module lands
