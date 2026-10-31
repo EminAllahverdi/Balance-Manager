@@ -20,11 +20,25 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-      - name: Unit tests
-        run: ./gradlew testDebugUnitTest test --continue --stacktrace
-      - name: Assemble debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Build and unit-test
+        run: |
+          set -o pipefail
+          ./gradlew testDebugUnitTest :app:assembleDebug --continue 2>&1 | tee build.log
+      - name: Report build errors as annotations
+        if: failure()
+        run: |
+          # Compiler errors ("e: file://...") and Gradle's "What went wrong" blocks, one annotation each.
+          grep -E '^e: ' build.log | head -40 | while IFS= read -r line; do
+            echo "::error title=Kotlin::${line}"
+          done
+          awk '/What went wrong:/{flag=1; buf=""; next} /^\* Try:/{if(flag){print buf}; flag=0} flag{buf=buf $0 "%0A"}' build.log | head -10 | while IFS= read -r block; do
+            echo "::error title=Gradle::${block:0:3000}"
+          done
+          grep -E 'FAILED|tests completed' build.log | head -20 | while IFS= read -r line; do
+            echo "::warning title=Tests::${line}"
+          done
       - name: Upload debug APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: balance-debug-apk
