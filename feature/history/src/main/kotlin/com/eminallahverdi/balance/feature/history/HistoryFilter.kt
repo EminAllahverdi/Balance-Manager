@@ -31,7 +31,7 @@ data class HistoryFilter(
     private fun matchesQuery(d: TransactionDetails): Boolean {
         val q = query.trim().lowercase(Locale.ROOT)
         if (q.isEmpty()) return true
-        val text = listOfNotNull(d.merchant?.name, d.category?.name, d.parentCategory?.name, d.transaction.note)
+        val text = listOfNotNull(d.merchant?.name, d.category?.name, d.parentCategory?.name, d.debt?.counterparty, d.transaction.note)
         return text.any { it.lowercase(Locale.ROOT).contains(q) } || plainAmount(d.transaction.amount).contains(q.replace(',', '.'))
     }
 
@@ -74,28 +74,38 @@ internal fun List<TransactionDetails>.categoryShares(): List<Pair<Long, Long>> =
         .map { (color, rows) -> color to rows.sumOf { it.transaction.amount.minor } }
         .sortedByDescending { it.second }
 
-/** The list shows a sign: −₼7.70 spent, +₼50.00 received. A transfer is neither. */
+/** The list shows a sign: −₼7.70 spent, +₼50.00 received, and either way for a debt. A transfer is neither. */
 internal fun TransactionDetails.signedAmount(): String = when (transaction.kind) {
     TransactionKind.EXPENSE -> MoneyFormat.format(-transaction.amount, signed = true)
     TransactionKind.INCOME -> "+" + MoneyFormat.format(transaction.amount)
     TransactionKind.TRANSFER -> MoneyFormat.format(transaction.amount)
+    TransactionKind.DEBT -> if (transaction.amount.isNegative) MoneyFormat.format(transaction.amount, signed = true) else "+" + MoneyFormat.format(transaction.amount)
     TransactionKind.ADJUSTMENT, TransactionKind.INTERNAL -> MoneyFormat.format(transaction.amount, signed = true)
 }
 
 internal val TransactionDetails.title: String
-    get() = merchant?.name ?: category?.name ?: when (transaction.kind) {
+    get() = debtLabel.takeIf { transaction.kind == TransactionKind.DEBT } ?: merchant?.name ?: category?.name ?: when (transaction.kind) {
         TransactionKind.TRANSFER -> "Transfer"
         TransactionKind.ADJUSTMENT -> "Balance adjustment"
         else -> "Transaction"
     }
 
-/** "Transport · Taxi · Card", or "Card → Cash" for a transfer. */
+/** "Borrowed from Sam", on an entry that belongs to a debt. */
+private val TransactionDetails.debtLabel: String? get() = debt?.label(transaction)
+
+/** "Transport · Taxi · Card", "Card → Cash" for a transfer, and who a paid-back expense went to. */
 internal val TransactionDetails.meta: String
     get() = if (toAccount != null) {
         "${account.name} → ${toAccount?.name}"
+    } else if (transaction.kind == TransactionKind.DEBT) {
+        listOf(account.name, transaction.note).filter { it.isNotBlank() }.joinToString(" · ")
     } else {
-        listOfNotNull(parentCategory?.name, category?.name, account.name).joinToString(" · ")
+        listOfNotNull(parentCategory?.name, category?.name, debtLabel, account.name).joinToString(" · ")
     }
+
+/** Rows quick add can't open that can still be taken back. The money a debt began with goes with the debt, on its own page. */
+internal val TransactionDetails.isRemovable: Boolean
+    get() = transaction.kind == TransactionKind.ADJUSTMENT || (transaction.kind == TransactionKind.DEBT && debt?.isRepayment(transaction) == true)
 
 /** Quick add edits only what it can add; adjustments and imported internal moves aren't its kinds. */
 internal val TransactionDetails.isEditable: Boolean

@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -161,6 +163,25 @@ fun BtIconButton(icon: ImageVector, contentDescription: String, onClick: () -> U
         modifier.size(44.dp).clip(CircleShape).background(BtTheme.colors.bgSurfaceRaised).clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { Icon(icon, contentDescription, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(22.dp)) }
+}
+
+/** The lime add button that floats over a long list, in reach of the thumb. Align it to the bottom end of the screen. */
+@Composable
+fun FloatingAddButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = BtTheme.colors
+    Row(
+        modifier
+            .height(56.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(c.accentFill)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = 18.dp, end = 22.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.Add, null, tint = c.accentOn, modifier = Modifier.size(22.dp))
+        Box(Modifier.width(6.dp))
+        Text(text, style = BtTheme.type.bodyStrong, color = c.accentOn)
+    }
 }
 
 /** Full-width lime button: the one primary action on a screen. */

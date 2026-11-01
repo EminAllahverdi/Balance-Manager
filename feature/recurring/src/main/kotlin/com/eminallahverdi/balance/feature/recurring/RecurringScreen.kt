@@ -150,6 +150,6 @@ private fun PaymentRow(payment: RecurringPayment, state: RecurringUiState, modif
             Text(payment.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(meta, style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Text(MoneyFormat.format(payment.amount), style = BtTheme.type.amountMedium, color = c.textPrimary)
+        Text(MoneyFormat.format(payment.amountDue), style = BtTheme.type.amountMedium, color = c.textPrimary)
     }
 }

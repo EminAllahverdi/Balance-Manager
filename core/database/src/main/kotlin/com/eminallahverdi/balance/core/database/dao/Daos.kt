@@ -8,6 +8,7 @@ import androidx.room.Update
 import androidx.room.Upsert
 import com.eminallahverdi.balance.core.database.entity.AccountEntity
 import com.eminallahverdi.balance.core.database.entity.CategoryEntity
+import com.eminallahverdi.balance.core.database.entity.DebtEntity
 import com.eminallahverdi.balance.core.database.entity.MerchantEntity
 import com.eminallahverdi.balance.core.database.entity.PersonEntity
 import com.eminallahverdi.balance.core.database.entity.RecurringPaymentEntity
@@ -44,6 +45,7 @@ interface CategoryDao {
         """
         SELECT (SELECT COUNT(*) FROM txn WHERE category_id = :id OR category_id IN (SELECT id FROM category WHERE parent_id = :id))
             + (SELECT COUNT(*) FROM recurring_payment WHERE category_id = :id OR category_id IN (SELECT id FROM category WHERE parent_id = :id))
+            + (SELECT COUNT(*) FROM debt WHERE category_id = :id OR category_id IN (SELECT id FROM category WHERE parent_id = :id))
         """,
     )
     suspend fun usageCount(id: Long): Int
@@ -107,7 +109,7 @@ interface TransactionDao {
 
     /**
      * Balance contribution per account. Outgoing side of transfers and expenses are negative;
-     * ADJUSTMENT and INTERNAL rows already carry their sign.
+     * ADJUSTMENT, INTERNAL and DEBT rows already carry their sign.
      */
     @Query(
         """
@@ -128,6 +130,20 @@ interface TransactionDao {
     @Query("DELETE FROM txn WHERE id = :id") suspend fun delete(id: Long)
     @Query("SELECT COUNT(*) FROM txn") suspend fun count(): Int
     @Query("SELECT external_id FROM txn WHERE external_id IS NOT NULL") suspend fun externalIds(): List<String>
+
+    @Query("SELECT * FROM txn WHERE debt_id IS NOT NULL")
+    fun observeDebtEntries(): Flow<List<TransactionEntity>>
+
+    @Query("DELETE FROM txn WHERE debt_id = :debtId") suspend fun deleteForDebt(debtId: Long)
+}
+
+@Dao
+interface DebtDao {
+    @Query("SELECT * FROM debt ORDER BY date, id")
+    fun observeAll(): Flow<List<DebtEntity>>
+
+    @Upsert suspend fun upsert(debt: DebtEntity): Long
+    @Query("DELETE FROM debt WHERE id = :id") suspend fun delete(id: Long)
 }
 
 @Dao

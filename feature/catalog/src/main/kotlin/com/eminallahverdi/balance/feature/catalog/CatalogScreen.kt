@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -45,6 +44,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
+import com.eminallahverdi.balance.core.designsystem.component.FloatingAddButton
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonAvatar
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
@@ -76,7 +76,7 @@ fun CatalogRoute(onBack: () -> Unit, viewModel: CatalogViewModel = hiltViewModel
             )
             if (state.tab == CatalogTab.PEOPLE) PeopleList(state, viewModel) else CategoryList(state, viewModel)
         }
-        AddButton(
+        FloatingAddButton(
             text = if (state.tab == CatalogTab.PEOPLE) "New person" else "New category",
             onClick = { if (state.tab == CatalogTab.PEOPLE) viewModel.newPerson() else viewModel.newCategory() },
             modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(16.dp),
@@ -247,22 +247,4 @@ private fun PersonLabel(person: Person) {
 @Composable
 private fun Divider() {
     Box(Modifier.fillMaxWidth().height(1.dp).background(BtTheme.colors.borderDefault))
-}
-
-@Composable
-private fun AddButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val c = BtTheme.colors
-    Row(
-        modifier
-            .height(56.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(c.accentFill)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(start = 18.dp, end = 22.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(Icons.Rounded.Add, null, tint = c.accentOn, modifier = Modifier.size(22.dp))
-        Box(Modifier.width(6.dp))
-        Text(text, style = BtTheme.type.bodyStrong, color = c.accentOn)
-    }
 }

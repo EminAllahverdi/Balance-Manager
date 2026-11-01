@@ -12,12 +12,14 @@ enum class TransactionKind {
     ADJUSTMENT,
     /** Legacy bookkeeping moves from an import (e.g. old "taksit income"). Signed amount. Left out of charts. */
     INTERNAL,
+    /** Money borrowed, lent or repaid. Changes a balance but is neither spending nor income. Signed amount. Left out of charts. */
+    DEBT,
 }
 
 data class Transaction(
     val id: Long,
     val kind: TransactionKind,
-    /** Positive for EXPENSE, INCOME and TRANSFER; signed for ADJUSTMENT and INTERNAL. */
+    /** Positive for EXPENSE, INCOME and TRANSFER; signed for ADJUSTMENT, INTERNAL and DEBT. */
     val amount: Money,
     val date: LocalDate,
     val accountId: Long,
@@ -27,6 +29,8 @@ data class Transaction(
     val merchantId: Long? = null,
     val note: String = "",
     val tripName: String? = null,
+    /** The debt this settles or opens, so its remaining amount always follows the entries. */
+    val debtId: Long? = null,
     val createdAt: Instant = Instant.EPOCH,
     val updatedAt: Instant = Instant.EPOCH,
 ) {
@@ -39,7 +43,7 @@ data class Transaction(
             toAccountId -> amount
             else -> Money.ZERO
         }
-        TransactionKind.ADJUSTMENT, TransactionKind.INTERNAL -> if (accountId == account) amount else Money.ZERO
+        TransactionKind.ADJUSTMENT, TransactionKind.INTERNAL, TransactionKind.DEBT -> if (accountId == account) amount else Money.ZERO
     }
 
     /** Whether this counts towards spending/income charts. */
@@ -62,4 +66,5 @@ data class TransactionDetails(
     val parentCategory: Category?,
     val person: Person?,
     val merchant: Merchant?,
+    val debt: Debt? = null,
 )

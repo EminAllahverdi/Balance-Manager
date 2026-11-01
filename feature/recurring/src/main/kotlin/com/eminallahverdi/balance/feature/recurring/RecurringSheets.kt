@@ -9,24 +9,17 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,7 +32,9 @@ import androidx.compose.ui.unit.dp
 import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.designsystem.component.BtChip
+import com.eminallahverdi.balance.core.designsystem.component.BtDatePickerDialog
 import com.eminallahverdi.balance.core.designsystem.component.BtTextField
+import com.eminallahverdi.balance.core.designsystem.component.CategoryChipRow
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.EditorField
 import com.eminallahverdi.balance.core.designsystem.component.EditorTitle
@@ -48,9 +43,6 @@ import com.eminallahverdi.balance.core.designsystem.component.PrimaryButton
 import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.RecurringFrequency
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -80,7 +72,7 @@ internal fun RecurringEditorSheet(draft: RecurringDraft, state: RecurringUiState
                 onChange = vm::setAmount,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             )
-            EditorField("Category") { CategoryRow(state, draft, vm) }
+            EditorField("Category") { CategoryChipRow(state.topCategories, draft.categoryId, vm::selectCategory) }
             if (subCategories.isNotEmpty()) {
                 EditorField("Sub-category") {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -119,7 +111,7 @@ internal fun RecurringEditorSheet(draft: RecurringDraft, state: RecurringUiState
     }
 
     // Outside the sheet: a dialog created inside it takes on the sheet's window and sticks to the bottom edge.
-    if (pickDate) NextDateDialog(draft.nextDate, state.today, onPick = vm::setDate, onClose = { pickDate = false })
+    if (pickDate) BtDatePickerDialog(draft.nextDate, onPick = vm::setDate, onClose = { pickDate = false }, earliest = state.today)
     if (confirmRemove) {
         AlertDialog(
             onDismissRequest = { confirmRemove = false },
@@ -129,44 +121,4 @@ internal fun RecurringEditorSheet(draft: RecurringDraft, state: RecurringUiState
             dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Cancel") } },
         )
     }
-}
-
-/** Chips in one line, because a sheet on a sheet is too much here and there can be twenty categories. */
-@Composable
-private fun CategoryRow(state: RecurringUiState, draft: RecurringDraft, vm: RecurringViewModel) {
-    val categories = state.topCategories
-    val list = rememberLazyListState(initialFirstVisibleItemIndex = categories.indexOfFirst { it.id == draft.categoryId }.coerceAtLeast(0))
-    LazyRow(state = list, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(categories, key = { it.id }) { category ->
-            BtChip(
-                text = category.name,
-                selected = category.id == draft.categoryId,
-                onClick = { vm.selectCategory(category) },
-                leading = { CategoryTile(category.icon, category.color, size = 24.dp, iconSize = 16.dp, corner = 8.dp) },
-            )
-        }
-    }
-}
-
-/** Today onward: a reminder is for what's coming, and a past date would only show as overdue. */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun NextDateDialog(selected: LocalDate, today: LocalDate, onPick: (LocalDate) -> Unit, onClose: () -> Unit) {
-    val pickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selected.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
-        selectableDates = object : SelectableDates {
-            private val firstDay = today.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
-            override fun isSelectableDate(utcTimeMillis: Long) = utcTimeMillis >= firstDay
-        },
-    )
-    DatePickerDialog(
-        onDismissRequest = onClose,
-        confirmButton = {
-            TextButton(onClick = {
-                pickerState.selectedDateMillis?.let { onPick(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) }
-                onClose()
-            }) { Text("OK") }
-        },
-        dismissButton = { TextButton(onClick = onClose) { Text("Cancel") } },
-    ) { DatePicker(state = pickerState) }
 }

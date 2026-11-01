@@ -4,6 +4,8 @@ import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.AccountType
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
+import com.eminallahverdi.balance.core.model.Debt
+import com.eminallahverdi.balance.core.model.DebtDirection
 import com.eminallahverdi.balance.core.model.Merchant
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
@@ -120,5 +122,40 @@ class HistoryFilterTest {
         assertThat(row().title).isEqualTo("Bolt")
         assertThat(row().meta).isEqualTo("Transport · Taxi · Card")
         assertThat(row(kind = TransactionKind.TRANSFER, toAccount = cash).meta).isEqualTo("Card → Cash")
+    }
+
+    private val owed = Debt(1, "Sam", DebtDirection.I_OWE, Money(50_00), date = LocalDate.of(2026, 10, 1))
+    private val lunch = owed.copy(id = 2, categoryId = taxi.id)
+
+    private fun debtRow(debt: Debt, amount: Long, kind: TransactionKind = TransactionKind.DEBT, note: String = "") = row(amount, kind, category = null, parent = null, note = note)
+        .let { it.copy(transaction = it.transaction.copy(debtId = debt.id), debt = debt, merchant = null) }
+
+    @Test fun `debt entries say which way the money went, and neither is income or spending`() {
+        val borrowed = debtRow(owed, 50_00)
+        val paid = debtRow(owed, -15_00, note = "Rent")
+        assertThat(borrowed.title).isEqualTo("Borrowed from Sam")
+        assertThat(borrowed.signedAmount()).isEqualTo("+₼50.00")
+        assertThat(paid.title).isEqualTo("Paid back to Sam")
+        assertThat(paid.signedAmount()).isEqualTo("−₼15.00")
+        assertThat(paid.meta).isEqualTo("Card · Rent")
+        assertThat(borrowed.isSensitive).isTrue()
+        assertThat(listOf(borrowed, paid).headlineTotal()).isEqualTo(Money.ZERO)
+    }
+
+    @Test fun `a debt paid back as an expense keeps its category and says who it went to`() {
+        val paid = row(10_00, category = taxi, parent = transport).let { it.copy(transaction = it.transaction.copy(debtId = lunch.id), debt = lunch, merchant = null) }
+        assertThat(paid.title).isEqualTo("Taxi")
+        assertThat(paid.meta).isEqualTo("Transport · Taxi · Paid back to Sam · Card")
+        assertThat(paid.isEditable).isTrue()
+    }
+
+    @Test fun `only payments can be taken back from the list, not what a debt began with`() {
+        assertThat(debtRow(owed, -15_00).isRemovable).isTrue()
+        assertThat(debtRow(owed, 50_00).isRemovable).isFalse()
+        assertThat(debtRow(owed, 50_00).isEditable).isFalse()
+    }
+
+    @Test fun `search finds who a debt is with`() {
+        assertThat(HistoryFilter(query = "sam").matches(debtRow(owed, 50_00))).isTrue()
     }
 }

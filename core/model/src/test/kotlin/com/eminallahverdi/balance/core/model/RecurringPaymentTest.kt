@@ -84,4 +84,36 @@ class RecurringPaymentTest {
     @Test fun `only expenses count`() {
         assertThat(payment().isLoggedBy(expense(date, merchant = "Spotify", kind = TransactionKind.INCOME))).isFalse()
     }
+
+    private fun loan(made: Int, left: Int, last: Money? = null) = payment(minor = 1_000_00).copy(loan = LoanTerms(made, left, last))
+
+    @Test fun `logging a loan payment counts it, skipping doesn't`() {
+        val logged = loan(made = 2, left = 3).logged()
+        assertThat(logged.loan).isEqualTo(LoanTerms(paymentsMade = 3, paymentsLeft = 2))
+        assertThat(logged.nextDate).isEqualTo(LocalDate.of(2026, 12, 10))
+        assertThat(loan(made = 2, left = 3).advanced().loan).isEqualTo(LoanTerms(paymentsMade = 2, paymentsLeft = 3))
+    }
+
+    @Test fun `a finished loan stops reminding and costs nothing`() {
+        val finished = loan(made = 3, left = 1).logged()
+        assertThat(finished.isFinished).isTrue()
+        assertThat(finished.isDue(date.plusYears(1))).isFalse()
+        assertThat(finished.monthlyCost).isEqualTo(Money.ZERO)
+        assertThat(finished.stillToPay).isEqualTo(Money.ZERO)
+    }
+
+    @Test fun `still to pay counts every payment left`() {
+        assertThat(loan(made = 2, left = 3).stillToPay).isEqualTo(Money(3_000_00))
+    }
+
+    @Test fun `a different last payment changes the total and only the last one due`() {
+        val school = loan(made = 0, left = 5, last = Money(500_00))
+        assertThat(school.stillToPay).isEqualTo(Money(4_500_00))
+        assertThat(school.amountDue).isEqualTo(Money(1_000_00))
+        assertThat(loan(made = 4, left = 1, last = Money(500_00)).amountDue).isEqualTo(Money(500_00))
+    }
+
+    @Test fun `progress is how much of the run is paid`() {
+        assertThat(LoanTerms(paymentsMade = 1, paymentsLeft = 3).progress).isEqualTo(0.25f)
+    }
 }

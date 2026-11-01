@@ -68,8 +68,9 @@ data class MerchantEntity(
         ForeignKey(entity = CategoryEntity::class, parentColumns = ["id"], childColumns = ["category_id"], onDelete = ForeignKey.SET_NULL),
         ForeignKey(entity = PersonEntity::class, parentColumns = ["id"], childColumns = ["person_id"], onDelete = ForeignKey.SET_NULL),
         ForeignKey(entity = MerchantEntity::class, parentColumns = ["id"], childColumns = ["merchant_id"], onDelete = ForeignKey.SET_NULL),
+        ForeignKey(entity = DebtEntity::class, parentColumns = ["id"], childColumns = ["debt_id"], onDelete = ForeignKey.SET_NULL),
     ],
-    indices = [Index(value = ["external_id"], unique = true), Index("date"), Index("account_id"), Index("to_account_id"), Index("category_id"), Index("person_id"), Index("merchant_id")],
+    indices = [Index(value = ["external_id"], unique = true), Index("date"), Index("account_id"), Index("to_account_id"), Index("category_id"), Index("person_id"), Index("merchant_id"), Index("debt_id")],
 )
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -89,6 +90,24 @@ data class TransactionEntity(
     @ColumnInfo(name = "external_id") val externalId: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long,
+    @ColumnInfo(name = "debt_id") val debtId: Long? = null,
+)
+
+@Entity(
+    tableName = "debt",
+    foreignKeys = [ForeignKey(entity = CategoryEntity::class, parentColumns = ["id"], childColumns = ["category_id"], onDelete = ForeignKey.SET_NULL)],
+    indices = [Index("category_id")],
+)
+data class DebtEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val counterparty: String,
+    /** "I_OWE" or "OWED_TO_ME". */
+    val direction: String,
+    @ColumnInfo(name = "amount_minor") val amountMinor: Long,
+    @ColumnInfo(name = "category_id") val categoryId: Long? = null,
+    val note: String = "",
+    /** LocalDate.toEpochDay(). */
+    val date: Long,
 )
 
 @Entity(
@@ -112,4 +131,8 @@ data class RecurringPaymentEntity(
     /** LocalDate.toEpochDay(). */
     @ColumnInfo(name = "next_date") val nextDate: Long,
     @ColumnInfo(name = "anchor_day") val anchorDay: Int,
+    /** Set on a bank loan, like the two below. */
+    @ColumnInfo(name = "payments_made") val paymentsMade: Int? = null,
+    @ColumnInfo(name = "payments_left") val paymentsLeft: Int? = null,
+    @ColumnInfo(name = "last_amount_minor") val lastAmountMinor: Long? = null,
 )

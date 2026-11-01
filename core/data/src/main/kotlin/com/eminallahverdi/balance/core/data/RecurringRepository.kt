@@ -22,8 +22,13 @@ class RecurringRepository @Inject constructor(
     suspend fun save(payment: RecurringPayment): Long = dao.upsert(payment.toEntity())
     suspend fun remove(id: Long) = dao.delete(id)
 
-    /** Moves on to the next date, once this one is logged or skipped. */
-    suspend fun advance(payment: RecurringPayment) {
+    /** Moves on once this date's entry is saved, which counts towards a loan. */
+    suspend fun logged(payment: RecurringPayment) {
+        dao.upsert(payment.logged().toEntity())
+    }
+
+    /** Moves past a date it didn't happen, which doesn't count towards a loan. */
+    suspend fun skip(payment: RecurringPayment) {
         dao.upsert(payment.advanced().toEntity())
     }
 
@@ -31,7 +36,7 @@ class RecurringRepository @Inject constructor(
     suspend fun settleLogged(today: LocalDate = LocalDate.now()) {
         dao.dueBy(today.toEpochDay()).map { it.toModel() }.forEach { payment ->
             var next = payment
-            while (next.isDue(today) && isLogged(next, today)) next = next.advanced()
+            while (next.isDue(today) && isLogged(next, today)) next = next.logged()
             if (next != payment) dao.upsert(next.toEntity())
         }
     }
@@ -39,5 +44,6 @@ class RecurringRepository @Inject constructor(
     private suspend fun isLogged(payment: RecurringPayment, today: LocalDate): Boolean =
         transactions.observeDetails(DateRange(payment.firstLoggedDay, today)).first().any(payment::isLoggedBy)
 
-    suspend fun due(today: LocalDate = LocalDate.now()): List<RecurringPayment> = dao.dueBy(today.toEpochDay()).map { it.toModel() }
+    suspend fun due(today: LocalDate = LocalDate.now()): List<RecurringPayment> =
+        dao.dueBy(today.toEpochDay()).map { it.toModel() }.filter { it.isDue(today) }
 }

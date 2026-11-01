@@ -49,7 +49,7 @@ class SettingsViewModel @Inject constructor(
             accounts = accounts.filterNot { it.isArchived },
             categoryCount = categories.count { it.parentId == null && !it.isArchived },
             peopleCount = people.count { !it.isArchived },
-            recurring = payments,
+            recurring = payments.filterNot { it.isFinished },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 

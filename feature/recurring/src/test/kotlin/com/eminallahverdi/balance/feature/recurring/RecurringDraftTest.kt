@@ -2,6 +2,7 @@ package com.eminallahverdi.balance.feature.recurring
 
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
+import com.eminallahverdi.balance.core.model.LoanTerms
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.RecurringFrequency
 import com.eminallahverdi.balance.core.model.RecurringPayment
@@ -62,5 +63,10 @@ class RecurringDraftTest {
         assertThat(draft.subCategoryId).isEqualTo(2)
         assertThat(draft.amountText).isEqualTo("1184.00")
         assertThat(draft.toPayment()).isEqualTo(payment)
+    }
+
+    @Test fun `editing a loan here keeps its terms`() {
+        val loan = ready.toPayment()!!.copy(loan = LoanTerms(paymentsMade = 2, paymentsLeft = 5, lastPayment = Money(4_00)))
+        assertThat(loan.toDraft(listOf(subscriptions, apps)).toPayment()).isEqualTo(loan)
     }
 }

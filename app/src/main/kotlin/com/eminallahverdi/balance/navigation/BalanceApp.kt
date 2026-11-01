@@ -24,6 +24,7 @@ import com.eminallahverdi.balance.feature.catalog.CatalogRoute
 import com.eminallahverdi.balance.feature.history.HistoryRoute
 import com.eminallahverdi.balance.feature.home.HomeRoute
 import com.eminallahverdi.balance.feature.insights.InsightsRoute
+import com.eminallahverdi.balance.feature.loans.LoansRoute
 import com.eminallahverdi.balance.feature.recurring.RecurringRoute
 import com.eminallahverdi.balance.feature.settings.SettingsRoute
 import kotlinx.serialization.Serializable
@@ -35,6 +36,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object SettingsDestination
 @Serializable data object CatalogDestination
 @Serializable data object RecurringDestination
+@Serializable data object LoansDestination
 
 /** History narrowed to what was tapped on Home. The names match the ARG_ keys in HistoryViewModel. */
 @Serializable data class TransactionsDestination(val categoryId: Long?, val personId: Long?, val month: String)
@@ -85,7 +87,14 @@ fun BalanceApp(
             composable<HistoryDestination> { HistoryRoute(onOpen = onOpenTransaction) }
             composable<TransactionsDestination> { HistoryRoute(onOpen = onOpenTransaction, onBack = { nav.popBackStack() }) }
             composable<InsightsDestination> { InsightsRoute() }
-            composable<AccountsDestination> { AccountsRoute(onTransfer = onTransfer, onOpenTransaction = onOpenTransaction) }
+            composable<AccountsDestination> {
+                AccountsRoute(
+                    onTransfer = onTransfer,
+                    onOpenTransaction = onOpenTransaction,
+                    onOpenLoans = { nav.navigate(LoansDestination) { launchSingleTop = true } },
+                )
+            }
+            composable<LoansDestination> { LoansRoute(onBack = { nav.popBackStack() }) }
             composable<SettingsDestination> {
                 SettingsRoute(
                     onBack = { nav.popBackStack() },

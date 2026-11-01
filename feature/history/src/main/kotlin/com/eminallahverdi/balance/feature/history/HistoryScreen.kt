@@ -80,20 +80,21 @@ fun HistoryRoute(onOpen: (Long) -> Unit, onBack: (() -> Unit)? = null, viewModel
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Held here, not read back from the filter: results arrive off the main thread, and typing must not wait for them.
     var query by rememberSaveable { mutableStateOf("") }
-    var removing by remember { mutableStateOf<Long?>(null) }
+    var removing by remember { mutableStateOf<TransactionDetails?>(null) }
     var sheet by rememberSaveable { mutableStateOf<FilterSheet?>(null) }
     val onTap = { row: TransactionDetails ->
         when {
             row.isEditable -> onOpen(row.transaction.id)
-            row.transaction.kind == TransactionKind.ADJUSTMENT -> removing = row.transaction.id
+            row.isRemovable -> removing = row
         }
     }
-    removing?.let { id ->
+    removing?.let { row ->
+        val isDebt = row.transaction.kind == TransactionKind.DEBT
         AlertDialog(
             onDismissRequest = { removing = null },
-            title = { Text("Remove this adjustment?") },
-            text = { Text("The account's balance changes back by this amount. This can't be undone.") },
-            confirmButton = { TextButton(onClick = { removing = null; viewModel.delete(id) }) { Text("Remove") } },
+            title = { Text(if (isDebt) "Remove this payment?" else "Remove this adjustment?") },
+            text = { Text(if (isDebt) "The debt and the account's balance change back by this amount. This can't be undone." else "The account's balance changes back by this amount. This can't be undone.") },
+            confirmButton = { TextButton(onClick = { removing = null; viewModel.delete(row.transaction.id) }) { Text("Remove") } },
             dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } },
         )
     }
@@ -269,13 +270,14 @@ private fun DayGroup(day: HistoryDay, hideAmounts: Boolean, onTap: (TransactionD
 private fun TransactionRow(row: TransactionDetails, hideAmounts: Boolean, onTap: (TransactionDetails) -> Unit) {
     val c = BtTheme.colors
     val style = row.parentCategory ?: row.category
-    val tappable = row.isEditable || row.transaction.kind == TransactionKind.ADJUSTMENT
+    val tappable = row.isEditable || row.isRemovable
+    val fallbackIcon = if (row.transaction.kind == TransactionKind.DEBT) "handshake" else "swap_horiz"
     Row(
         Modifier.fillMaxWidth().clickable(enabled = tappable) { onTap(row) }.padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        CategoryTile(row.category?.icon ?: style?.icon ?: "swap_horiz", row.category?.color ?: style?.color ?: 0xFF8A94A3)
+        CategoryTile(row.category?.icon ?: style?.icon ?: fallbackIcon, row.category?.color ?: style?.color ?: 0xFF8A94A3)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(row.title, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(row.meta, style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)

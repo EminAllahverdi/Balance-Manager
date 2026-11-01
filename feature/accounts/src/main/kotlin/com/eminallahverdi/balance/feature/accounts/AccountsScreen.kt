@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.StarOutline
 import androidx.compose.material.icons.rounded.SwapHoriz
@@ -57,6 +58,18 @@ import com.eminallahverdi.balance.core.model.TransactionDetails
 
 private const val TRANSFER_TILE = 0xFFAEB6C1
 
+@Composable
+private fun LoansRow(onClick: () -> Unit) {
+    val c = BtTheme.colors
+    BtCard(Modifier.clip(BtShapes.md).clickable(onClick = onClick)) {
+        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            CategoryTile("handshake", TRANSFER_TILE)
+            Text("Loans & debts", style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
+            Icon(Icons.Rounded.ChevronRight, null, tint = c.textSecondary)
+        }
+    }
+}
+
 internal val AccountType.label: String
     get() = when (this) {
         AccountType.DEBIT_CARD -> "Debit card"
@@ -67,7 +80,7 @@ internal val AccountType.label: String
 
 /** Every account and what's in it. [onTransfer] opens quick add on Transfer, [onOpenTransaction] one transfer to edit. */
 @Composable
-fun AccountsRoute(onTransfer: () -> Unit, onOpenTransaction: (Long) -> Unit, viewModel: AccountsViewModel = hiltViewModel()) {
+fun AccountsRoute(onTransfer: () -> Unit, onOpenTransaction: (Long) -> Unit, onOpenLoans: () -> Unit, viewModel: AccountsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val c = BtTheme.colors
     fun money(m: Money) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m, signed = true)
@@ -99,6 +112,7 @@ fun AccountsRoute(onTransfer: () -> Unit, onOpenTransaction: (Long) -> Unit, vie
         items(state.balances, key = { it.account.id }) { balance ->
             AccountCard(balance, isDefault = balance.account.id == state.defaultAccountId, amount = money(balance.balance), vm = viewModel)
         }
+        item(key = "loans") { LoansRow(onOpenLoans) }
         if (state.archived.isNotEmpty()) {
             item(key = "archived") { Overline("Archived", Modifier.padding(top = 8.dp, start = 4.dp)) }
             items(state.archived, key = { "a${it.id}" }) { account -> ArchivedRow(account, viewModel) }

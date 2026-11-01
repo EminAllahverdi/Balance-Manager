@@ -94,7 +94,7 @@ private fun showReminder(context: Context, due: List<RecurringPayment>) {
     val notification = NotificationCompat.Builder(context, CHANNEL)
         .setSmallIcon(R.drawable.ic_notification_payment)
         .setContentTitle(if (due.size == 1) "${first.name} is due" else "${due.size} payments due")
-        .setContentText(if (due.size == 1) "${MoneyFormat.format(first.amount)} · Tap to log it" else due.joinToString(", ") { it.name })
+        .setContentText(if (due.size == 1) "${MoneyFormat.format(first.amountDue)} · Tap to log it" else due.joinToString(", ") { it.name })
         .setContentIntent(PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
         .setAutoCancel(true)
         .build()

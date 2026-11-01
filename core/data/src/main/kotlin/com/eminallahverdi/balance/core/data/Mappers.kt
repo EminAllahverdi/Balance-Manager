@@ -2,6 +2,7 @@ package com.eminallahverdi.balance.core.data
 
 import com.eminallahverdi.balance.core.database.entity.AccountEntity
 import com.eminallahverdi.balance.core.database.entity.CategoryEntity
+import com.eminallahverdi.balance.core.database.entity.DebtEntity
 import com.eminallahverdi.balance.core.database.entity.MerchantEntity
 import com.eminallahverdi.balance.core.database.entity.PersonEntity
 import com.eminallahverdi.balance.core.database.entity.RecurringPaymentEntity
@@ -10,6 +11,9 @@ import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.AccountType
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
+import com.eminallahverdi.balance.core.model.Debt
+import com.eminallahverdi.balance.core.model.DebtDirection
+import com.eminallahverdi.balance.core.model.LoanTerms
 import com.eminallahverdi.balance.core.model.Merchant
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
@@ -41,6 +45,7 @@ internal fun RecurringPaymentEntity.toModel() = RecurringPayment(
     frequency = RecurringFrequency.valueOf(frequency),
     nextDate = LocalDate.ofEpochDay(nextDate),
     anchorDay = anchorDay,
+    loan = paymentsLeft?.let { LoanTerms(paymentsMade ?: 0, it, lastAmountMinor?.let(::Money)) },
 )
 
 internal fun RecurringPayment.toEntity() = RecurringPaymentEntity(
@@ -53,6 +58,9 @@ internal fun RecurringPayment.toEntity() = RecurringPaymentEntity(
     frequency = frequency.name,
     nextDate = nextDate.toEpochDay(),
     anchorDay = anchorDay,
+    paymentsMade = loan?.paymentsMade,
+    paymentsLeft = loan?.paymentsLeft,
+    lastAmountMinor = loan?.lastPayment?.minor,
 )
 
 internal fun TransactionEntity.toModel() = Transaction(
@@ -67,6 +75,7 @@ internal fun TransactionEntity.toModel() = Transaction(
     merchantId = merchantId,
     note = note,
     tripName = tripName,
+    debtId = debtId,
     createdAt = Instant.ofEpochMilli(createdAt),
     updatedAt = Instant.ofEpochMilli(updatedAt),
 )
@@ -84,6 +93,10 @@ internal fun Transaction.toEntity(externalId: String? = null) = TransactionEntit
     note = note,
     tripName = tripName,
     externalId = externalId,
+    debtId = debtId,
     createdAt = createdAt.toEpochMilli(),
     updatedAt = updatedAt.toEpochMilli(),
 )
+
+internal fun DebtEntity.toModel() = Debt(id, counterparty, DebtDirection.valueOf(direction), Money(amountMinor), categoryId, note, LocalDate.ofEpochDay(date))
+internal fun Debt.toEntity() = DebtEntity(id, counterparty, direction.name, amount.minor, categoryId, note, date.toEpochDay())

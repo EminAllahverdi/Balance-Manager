@@ -1,5 +1,6 @@
 package com.eminallahverdi.balance.core.data
 
+import com.eminallahverdi.balance.core.database.dao.DebtDao
 import com.eminallahverdi.balance.core.database.dao.MerchantDao
 import com.eminallahverdi.balance.core.database.dao.TransactionDao
 import com.eminallahverdi.balance.core.database.entity.MerchantEntity
@@ -7,6 +8,7 @@ import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.AccountBalance
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.DateRange
+import com.eminallahverdi.balance.core.model.Debt
 import com.eminallahverdi.balance.core.model.Merchant
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
@@ -34,6 +36,7 @@ data class Suggestion(
 class TransactionRepository @Inject constructor(
     private val dao: TransactionDao,
     private val merchantDao: MerchantDao,
+    private val debtDao: DebtDao,
     private val catalog: CatalogRepository,
 ) {
     fun observeDetails(range: DateRange): Flow<List<TransactionDetails>> =
@@ -101,11 +104,12 @@ class TransactionRepository @Inject constructor(
     }
 
     private fun joinDetails(source: Flow<List<Transaction>>): Flow<List<TransactionDetails>> =
-        combine(source, catalog.accounts, catalog.categories, catalog.people, catalog.merchants) { txns, accounts, categories, people, merchants ->
+        combine(source, catalog.accounts, catalog.categories, catalog.people, combine(catalog.merchants, debtDao.observeAll()) { m, d -> m to d }) { txns, accounts, categories, people, (merchants, debts) ->
             val a = accounts.associateBy(Account::id)
             val c = categories.associateBy(Category::id)
             val p = people.associateBy(Person::id)
             val m = merchants.associateBy(Merchant::id)
+            val d = debts.map { it.toModel() }.associateBy(Debt::id)
             txns.mapNotNull { t ->
                 val account = a[t.accountId] ?: return@mapNotNull null
                 val category = t.categoryId?.let(c::get)
@@ -117,6 +121,7 @@ class TransactionRepository @Inject constructor(
                     parentCategory = category?.parentId?.let(c::get),
                     person = t.personId?.let(p::get),
                     merchant = t.merchantId?.let(m::get),
+                    debt = t.debtId?.let(d::get),
                 )
             }
         }

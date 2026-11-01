@@ -50,8 +50,8 @@ fun EditorTitle(title: String, onRemove: (() -> Unit)? = null, preview: @Composa
 }
 
 @Composable
-fun EditorField(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+fun EditorField(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Overline(title)
         content()
     }

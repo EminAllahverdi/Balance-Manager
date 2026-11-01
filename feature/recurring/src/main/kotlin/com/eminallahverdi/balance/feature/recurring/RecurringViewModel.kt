@@ -9,6 +9,7 @@ import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
+import com.eminallahverdi.balance.core.model.LoanTerms
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
 import com.eminallahverdi.balance.core.model.RecurringFrequency
@@ -37,6 +38,7 @@ data class RecurringDraft(
     val frequency: RecurringFrequency = RecurringFrequency.MONTHLY,
     val nextDate: LocalDate,
     val anchorDay: Int = nextDate.dayOfMonth,
+    val loan: LoanTerms? = null,
 ) {
     val isNew: Boolean get() = id == 0L
     val amount: Money? get() = Money.parse(amountText)?.takeIf { it.minor > 0 }
@@ -54,6 +56,7 @@ data class RecurringDraft(
             frequency = frequency,
             nextDate = nextDate,
             anchorDay = anchorDay,
+            loan = loan,
         )
     }
 }
@@ -77,6 +80,7 @@ internal fun RecurringPayment.toDraft(categories: List<Category>): RecurringDraf
         frequency = frequency,
         nextDate = nextDate,
         anchorDay = anchorDay,
+        loan = loan,
     )
 }
 
@@ -114,7 +118,7 @@ class RecurringViewModel @Inject constructor(
     val state: StateFlow<RecurringUiState> = combine(recurring.payments, catalog.categories, catalog.people, catalog.accounts, editor) { payments, categories, people, accounts, draft ->
         RecurringUiState(
             loading = false,
-            payments = payments,
+            payments = payments.filterNot { it.isFinished },
             categories = categories,
             people = people,
             accounts = accounts,
@@ -173,5 +177,5 @@ class RecurringViewModel @Inject constructor(
     }
 
     /** Moves past a date it didn't happen. */
-    fun skip(payment: RecurringPayment) { viewModelScope.launch { recurring.advance(payment) } }
+    fun skip(payment: RecurringPayment) { viewModelScope.launch { recurring.skip(payment) } }
 }

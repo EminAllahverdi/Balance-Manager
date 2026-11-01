@@ -136,7 +136,7 @@ class QuickAddViewModel @Inject constructor(
         _state.update {
             it.copy(
                 payment = payment,
-                amountText = payment.amount.toInputText(),
+                amountText = payment.amountDue.toInputText(),
                 accountId = payment.accountId,
                 categoryId = category?.parentId ?: category?.id,
                 subCategoryId = category?.id?.takeIf { category.parentId != null },
@@ -222,11 +222,12 @@ class QuickAddViewModel @Inject constructor(
                     personId = if (transfer) null else s.personId,
                     note = s.note.trim(),
                     tripName = s.editing?.tripName,
+                    debtId = s.editing?.debtId,
                     createdAt = s.editing?.createdAt ?: Instant.EPOCH,
                 ),
                 merchantName = if (transfer) null else s.merchant,
             )
-            s.payment?.let { recurring.advance(it) }
+            s.payment?.let { recurring.logged(it) }
             _state.update { it.copy(saved = true) }
         }
     }
