@@ -2,6 +2,7 @@ package com.eminallahverdi.balance.core.common
 
 import com.eminallahverdi.balance.core.model.Money
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
@@ -33,6 +34,7 @@ object MoneyFormat {
 
 object DateLabels {
     private val dayMonth = DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)
+    private val hourMinute = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
 
     /** "Today", "Yesterday", otherwise "Mon 26 Oct". */
     fun relative(date: LocalDate, today: LocalDate = LocalDate.now()): String = when (date) {
@@ -51,6 +53,9 @@ object DateLabels {
     fun weekdayShort(date: LocalDate): String = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
 
     fun monthName(date: LocalDate): String = date.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
+
+    /** "21:00" for minutes after midnight. */
+    fun timeOfDay(minuteOfDay: Int): String = LocalTime.MIDNIGHT.plusMinutes(minuteOfDay.toLong()).format(hourMinute)
 
     fun daysAgo(date: LocalDate, today: LocalDate = LocalDate.now()): String {
         val d = today.toEpochDay() - date.toEpochDay()

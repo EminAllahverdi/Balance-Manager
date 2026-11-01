@@ -1,5 +1,9 @@
 package com.eminallahverdi.balance.feature.settings
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,11 +23,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
@@ -40,10 +46,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.datastore.ThemePreference
 import com.eminallahverdi.balance.core.datastore.WidgetBalanceMode
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
+import com.eminallahverdi.balance.core.designsystem.component.BtTimePickerSheet
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
 import com.eminallahverdi.balance.core.designsystem.component.OptionRow
@@ -54,6 +62,28 @@ import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 @Composable
 fun SettingsRoute(onBack: () -> Unit, onOpenCatalog: () -> Unit, onOpenRecurring: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var pickingTime by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize()) {
+        SettingsList(state, viewModel, onBack, onOpenCatalog, onOpenRecurring, onPickTime = { pickingTime = true })
+        BtTimePickerSheet(
+            visible = pickingTime,
+            title = "Reminder time",
+            minuteOfDay = state.preferences.eveningReminderMinute,
+            onPick = viewModel::setEveningReminderMinute,
+            onClose = { pickingTime = false },
+        )
+    }
+}
+
+@Composable
+private fun SettingsList(
+    state: SettingsUiState,
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit,
+    onOpenCatalog: () -> Unit,
+    onOpenRecurring: () -> Unit,
+    onPickTime: () -> Unit,
+) {
     val themes = ThemePreference.entries
     Column(Modifier.fillMaxSize().background(BtTheme.colors.bgCanvas).verticalScroll(rememberScrollState()).navigationBarsPadding()) {
         Row(
@@ -91,20 +121,11 @@ fun SettingsRoute(onBack: () -> Unit, onOpenCatalog: () -> Unit, onOpenRecurring
                     title = "Hide balance and income",
                     caption = "Tap the eye on Home to show them",
                     onClick = { viewModel.setHideAmounts(!state.preferences.hideAmountsInApp) },
-                ) {
-                    Switch(
-                        checked = state.preferences.hideAmountsInApp,
-                        onCheckedChange = viewModel::setHideAmounts,
-                        colors = SwitchDefaults.colors(
-                            checkedTrackColor = BtTheme.colors.accentFill,
-                            checkedThumbColor = BtTheme.colors.accentOn,
-                            uncheckedTrackColor = BtTheme.colors.bgSurfaceHigh,
-                            uncheckedThumbColor = BtTheme.colors.textMuted,
-                        ),
-                    )
-                }
+                ) { SettingSwitch(state.preferences.hideAmountsInApp, viewModel::setHideAmounts) }
             }
             Section("Reminders") {
+                EveningReminderRows(state, viewModel, onPickTime)
+                Divider()
                 SettingRow(
                     icon = Icons.Rounded.EventRepeat,
                     title = "Recurring payments",
@@ -169,6 +190,30 @@ private fun WidgetBalanceRow(state: SettingsUiState, vm: SettingsViewModel) {
     }
 }
 
+@Composable
+private fun EveningReminderRows(state: SettingsUiState, vm: SettingsViewModel, onPickTime: () -> Unit) {
+    val preferences = state.preferences
+    val askForNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    val setEnabled = { enabled: Boolean ->
+        // This is when the reminder starts to matter, so this is when to ask. Android only shows it once.
+        if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) askForNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+        vm.setEveningReminder(enabled)
+    }
+    SettingRow(
+        icon = Icons.Rounded.Bedtime,
+        title = "Evening reminder",
+        caption = "If nothing was added that day",
+        onClick = { setEnabled(!preferences.eveningReminderEnabled) },
+    ) { SettingSwitch(preferences.eveningReminderEnabled, setEnabled) }
+    if (preferences.eveningReminderEnabled) {
+        Divider()
+        SettingRow(icon = Icons.Rounded.Schedule, title = "Reminder time", onClick = onPickTime) {
+            Text(DateLabels.timeOfDay(preferences.eveningReminderMinute), style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+            Chevron()
+        }
+    }
+}
+
 private fun WidgetBalanceMode.label(revealSeconds: Int): String = when (this) {
     WidgetBalanceMode.ALWAYS_SHOW -> "Always show"
     WidgetBalanceMode.ALWAYS_HIDE -> "Always hide"
@@ -217,6 +262,20 @@ private fun SettingRow(
         }
         trailing()
     }
+}
+
+@Composable
+private fun SettingSwitch(checked: Boolean, onChange: (Boolean) -> Unit) {
+    Switch(
+        checked = checked,
+        onCheckedChange = onChange,
+        colors = SwitchDefaults.colors(
+            checkedTrackColor = BtTheme.colors.accentFill,
+            checkedThumbColor = BtTheme.colors.accentOn,
+            uncheckedTrackColor = BtTheme.colors.bgSurfaceHigh,
+            uncheckedThumbColor = BtTheme.colors.textMuted,
+        ),
+    )
 }
 
 @Composable

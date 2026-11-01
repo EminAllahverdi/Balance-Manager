@@ -34,4 +34,9 @@ class MoneyFormatTest {
         assertThat(DateLabels.dayHeader(today, today)).isEqualTo("Today · Sat 31 Oct")
         assertThat(DateLabels.dayHeader(today.minusDays(5), today)).isEqualTo("Mon 26 Oct")
     }
+
+    @Test fun `times of day are 24-hour, with two digits`() {
+        assertThat(DateLabels.timeOfDay(21 * 60)).isEqualTo("21:00")
+        assertThat(DateLabels.timeOfDay(7 * 60 + 5)).isEqualTo("07:05")
+    }
 }

@@ -84,6 +84,7 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
     suspend fun setAppLock(enabled: Boolean) { store.edit { it[K.appLock] = enabled } }
     suspend fun setHideAmounts(enabled: Boolean) { store.edit { it[K.hideAmounts] = enabled } }
     suspend fun setEveningReminder(enabled: Boolean) { store.edit { it[K.evening] = enabled } }
+    suspend fun setEveningReminderMinute(minute: Int) { store.edit { it[K.eveningMinute] = minute } }
     suspend fun setBankNotifications(enabled: Boolean) { store.edit { it[K.bank] = enabled } }
 }
 

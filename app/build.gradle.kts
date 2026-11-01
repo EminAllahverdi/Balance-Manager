@@ -55,4 +55,5 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.profileinstaller)
+    implementation(libs.androidx.work.runtime.ktx)
 }

@@ -57,4 +57,6 @@ class SettingsViewModel @Inject constructor(
     fun setTheme(theme: ThemePreference) { viewModelScope.launch { prefs.setTheme(theme) } }
     fun setHideAmounts(hide: Boolean) { viewModelScope.launch { prefs.setHideAmounts(hide) } }
     fun setWidgetBalanceMode(mode: WidgetBalanceMode) { viewModelScope.launch { prefs.setWidgetBalanceMode(mode) } }
+    fun setEveningReminder(enabled: Boolean) { viewModelScope.launch { prefs.setEveningReminder(enabled) } }
+    fun setEveningReminderMinute(minute: Int) { viewModelScope.launch { prefs.setEveningReminderMinute(minute) } }
 }

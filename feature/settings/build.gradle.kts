@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "com.eminallahverdi.balance.feature.settings"
 }
+
+dependencies {
+    implementation(libs.androidx.activity.compose)
+}

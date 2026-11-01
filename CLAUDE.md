@@ -17,11 +17,12 @@ Background work must stay cheap on battery:
 - At most one daily WorkManager job per feature, doing its work and ending in seconds. Reminders accept arriving late under Doze, which is what makes them cheap.
 - Uploads such as Drive backup wait for Wi-Fi and charging.
 - Glance keeps a job awake for about 45 s after every widget redraw, so redraw only when something a widget shows has changed.
+- A plain daily period slips later by however late each run was. Work tied to a time of day books its next run with `setNextScheduleTimeOverride`, as `EveningReminder` does.
 
 ## Modules
 ```
 build-logic/convention   Gradle convention plugins: bm.android.application | library | compose | feature, bm.hilt, bm.room, bm.jvm.library
-app                      MainActivity, QuickAddActivity (translucent, opens over the home screen), navigation, bottom bar, launcher shortcuts
+app                      MainActivity, QuickAddActivity (translucent, opens over the home screen), navigation, bottom bar, launcher shortcuts, EveningReminder
 core:model               Pure Kotlin. Money (minor units), Person, Category (parentId = sub-category), Account, Transaction(Kind), SpendingCalculator
 core:common              Dispatchers, MoneyFormat (₼), DateLabels
 core:designsystem        Theme, bundled fonts (Manrope, Space Grotesk), BtIcons (string key -> ImageVector), components
@@ -33,7 +34,7 @@ feature:transaction      Quick add: step 1 amount + category + keypad, step 2 de
 feature:catalog          Categories, sub-categories and people: add, edit, drag to reorder, archive and restore, photo avatars (AvatarStore in core:data)
 feature:history          Search, month/person/category/account filters in bottom sheets, day groups. Tapping a row opens quick add to edit or delete it. The History tab, and from Home the same screen pre-filtered with a back button (TransactionsDestination)
 feature:insights         Week/month/year: stacked bars by person (tap a bar to select it), daily average, saved, biggest category changes. Numbers come from InsightsCalculator in core:model
-feature:settings         Default expense account, theme, widget balance, hide amounts, way into the catalog and recurring payments. Rows are added as the features behind them land
+feature:settings         Default expense account, theme, widget balance, hide amounts, evening reminder switch and time, way into the catalog and recurring payments. Rows are added as the features behind them land
 feature:recurring        Reminders for payments that repeat. Due ones show here, on Home and in a daily notification until logged or skipped. Add opens quick add filled in. PaymentReminders clears a reminder once its entry is in the list
 feature:accounts         Balances, default account, in-total and widget switches, add/edit/archive, adjust balance, recent transfers, way into Loans & debts. Transfers themselves are added in quick add
 feature:loans            Bank loans (recurring payments with LoanTerms, so they remind the same way), credit cards used this month, and debts with people, grouped by person. Pay one, part of one, or all. DebtRepository in core:data
@@ -52,6 +53,7 @@ importer:moneymanager    to do: reads .mmbackup (zip -> SQLite MyFinance.db) on 
 - Bank loan payments are normal spending everywhere. A loan finishes when its payments run out, and logging a payment counts towards it; skipping one doesn't.
 - A debt is money between the owner and someone outside the household, so its name is plain text, not a `Person`. With a category it's something they paid for the owner, like a share of lunch: no money moves until it's paid back, and then it's an ordinary expense in that category. Without one it's a plain loan: `DEBT` entries change a balance when it's made and when it's repaid, and are never spending or income. What's left is worked out from a debt's entries, so editing or deleting one keeps it right.
 - Nothing adds a transaction by itself: the owner logs every entry so they see what they spent. Automation stops at a ready-made entry they save, as recurring reminders do. An entry counts as a reminder's when it has the same name, or the same category and amount, from 10 days before its date (2 for weekly), because billing dates move.
+- The evening reminder goes off at the time set in Settings, only if nothing is dated today, and opens quick add. Adding an entry clears it. A run so late it's the next morning stays quiet.
 - Every Room schema change needs a migration, because the owner's real backup will live in this database. The data on the phone today is dummy data.
 - The app must work for anyone the owner shares it with. First run shows onboarding: name, people, a category template, and optionally an import or a Drive restore.
 
@@ -64,18 +66,17 @@ importer:moneymanager    to do: reads .mmbackup (zip -> SQLite MyFinance.db) on 
 CI (`.github/workflows/android.yml`) runs both on every push and uploads the debug APK.
 
 ## Status (branch feat/mvp-foundation)
-The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. The home-screen widgets and the launcher shortcuts (add expense, add income, transfer) work. Settings has only rows that work: app lock, reminders, backup, import and export join it with their features.
+The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. The home-screen widgets and the launcher shortcuts (add expense, add income, transfer) work. Settings has only rows that work: app lock, backup, import and export join it with their features.
 
 Next, in order:
-1. Evening reminder (WorkManager).
-2. Bank notifications: read them, and offer ready-made entries on a To confirm page, with its widget and launcher shortcut. The design's "Auto-confirm known merchants" switch conflicts with the rule that nothing adds itself, so settle that with the owner first.
-3. App lock, then Export CSV.
-4. Signed release build and the final app name. Real data should live in a real install, and Drive sign-in needs this signing key.
-5. Drive backup and restore (WorkManager).
-6. First-run onboarding.
-7. The Money Manager importer, which uses a mapping file kept on the device, never in this repo. The owner imports their real backup once every feature is finished. That brings their real categories, sub-categories and people, replacing today's dummy data.
-8. The polish list below, then the Quick Settings tile.
-9. Wear OS, very last.
+1. Bank notifications: read them, and offer ready-made entries on a To confirm page, with its widget and launcher shortcut. The design's "Auto-confirm known merchants" switch conflicts with the rule that nothing adds itself, so settle that with the owner first.
+2. App lock, then Export CSV.
+3. Signed release build and the final app name. Real data should live in a real install, and Drive sign-in needs this signing key.
+4. Drive backup and restore (WorkManager).
+5. First-run onboarding, which also asks for the notification permission: the evening reminder is on by default, so nothing else asks on a fresh install.
+6. The Money Manager importer, which uses a mapping file kept on the device, never in this repo. The owner imports their real backup once every feature is finished. That brings their real categories, sub-categories and people, replacing today's dummy data.
+7. The polish list below, then the Quick Settings tile.
+8. Wear OS, very last.
 
 Polish:
 - Home's month header: the `<` chevron beside the month reads as a back button. The owner wants it redesigned (`MonthSwitcher` in `HomeScreen.kt`). Swiping already changes the month, so the arrows may not need to stay.
@@ -85,4 +86,5 @@ Polish:
 - Widget picker: the launcher shows only the app icon as each widget's preview. Give them `android:previewLayout` layouts that look like the real widgets.
 - Widget loading: replace the plain loading state with a glassy wave, like Apple and Meta use: a low-opacity layer sweeping across the widget, not an aggressive shimmer or a skeleton. Home-screen widgets can't run Compose animation, so it probably needs an indeterminate `ProgressBar` with a custom sweep drawable in the loading layout.
 - Quick add's account picker is the last `DropdownMenu`. Move it to a `ChoiceSheet`.
+- Payment reminders at 10:00 and the widgets' midnight refresh still use a plain daily period, so they slip later over time. Book each next run the way `EveningReminder` does.
 - Light theme: pale category colours such as Transport's yellow are faint on their tinted tiles, in the app and on the Today widget.
