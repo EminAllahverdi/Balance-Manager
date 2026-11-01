@@ -7,6 +7,8 @@ data class DateRange(val start: LocalDate, val endInclusive: LocalDate) {
     operator fun contains(date: LocalDate) = !date.isBefore(start) && !date.isAfter(endInclusive)
 
     companion object {
+        val ALL_TIME = DateRange(LocalDate.of(1970, 1, 1), LocalDate.of(2999, 12, 31))
+
         fun month(month: YearMonth) = DateRange(month.atDay(1), month.atEndOfMonth())
     }
 }

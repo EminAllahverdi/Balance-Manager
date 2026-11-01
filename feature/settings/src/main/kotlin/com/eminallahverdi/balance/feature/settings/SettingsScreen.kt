@@ -31,7 +31,9 @@ import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.EventRepeat
+import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Palette
@@ -52,10 +54,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.common.DateLabels
+import com.eminallahverdi.balance.core.common.askToUnlock
+import com.eminallahverdi.balance.core.common.canUnlockDevice
 import com.eminallahverdi.balance.core.datastore.ThemePreference
 import com.eminallahverdi.balance.core.datastore.WidgetBalanceMode
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
@@ -68,6 +73,7 @@ import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
+import java.time.LocalDate
 
 @Composable
 fun SettingsRoute(
@@ -131,6 +137,8 @@ private fun SettingsList(
                 ) { Chevron() }
             }
             Section("Privacy") {
+                AppLockRow(state, viewModel)
+                Divider()
                 WidgetBalanceRow(state, viewModel)
                 Divider()
                 SettingRow(
@@ -152,6 +160,7 @@ private fun SettingsList(
                     onClick = onOpenRecurring,
                 ) { Chevron() }
             }
+            Section("Data") { ExportRow(viewModel) }
         }
     }
 }
@@ -207,6 +216,47 @@ private fun WidgetBalanceRow(state: SettingsUiState, vm: SettingsViewModel) {
             }
         }
     }
+}
+
+/** Changing this asks for the fingerprint or PIN first, so no one can turn it off on an unlocked phone, or lock themselves out. */
+@Composable
+private fun AppLockRow(state: SettingsUiState, vm: SettingsViewModel) {
+    val activity = LocalContext.current as FragmentActivity
+    val on = state.preferences.appLockEnabled
+    var needsScreenLock by remember { mutableStateOf(false) }
+    val change = { enabled: Boolean ->
+        when {
+            activity.canUnlockDevice() -> activity.askToUnlock(if (enabled) "Turn on app lock" else "Turn off app lock", onUnlocked = { vm.setAppLock(enabled) })
+            enabled -> needsScreenLock = true
+            else -> vm.setAppLock(false)
+        }
+    }
+    SettingRow(
+        icon = Icons.Rounded.Fingerprint,
+        title = "App lock",
+        caption = "Fingerprint or your phone's PIN when opening the app",
+        onClick = { change(!on) },
+    ) { BtSwitch(on, change) }
+    if (needsScreenLock) {
+        AlertDialog(
+            onDismissRequest = { needsScreenLock = false },
+            title = { Text("Set a screen lock first") },
+            text = { Text("App lock uses your phone's fingerprint or PIN. Set one up in your phone's settings, then turn this on.") },
+            confirmButton = { TextButton(onClick = { needsScreenLock = false }) { Text("OK") } },
+        )
+    }
+}
+
+@Composable
+private fun ExportRow(vm: SettingsViewModel) {
+    val message by vm.exportMessage.collectAsStateWithLifecycle()
+    val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { file -> file?.let(vm::exportCsv) }
+    SettingRow(
+        icon = Icons.Rounded.Download,
+        title = "Export CSV",
+        caption = message ?: "Every entry, as a spreadsheet",
+        onClick = { pickFile.launch("balance-${LocalDate.now()}.csv") },
+    ) { Chevron() }
 }
 
 /** Reading notifications is Android's most sensitive permission, so it's asked for here with the reason, only when it's turned on. */

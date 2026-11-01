@@ -6,11 +6,8 @@ import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.sum
-import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Locale
-
-private val ALL_TIME = DateRange(LocalDate.of(1970, 1, 1), LocalDate.of(2999, 12, 31))
 
 /** What the list is narrowed to. [month] null means all time. */
 data class HistoryFilter(
@@ -20,7 +17,7 @@ data class HistoryFilter(
     val categoryId: Long? = null,
     val accountId: Long? = null,
 ) {
-    val range: DateRange get() = month?.let(DateRange::month) ?: ALL_TIME
+    val range: DateRange get() = month?.let(DateRange::month) ?: DateRange.ALL_TIME
 
     fun matches(d: TransactionDetails): Boolean =
         (personId == null || d.person?.id == personId) &&

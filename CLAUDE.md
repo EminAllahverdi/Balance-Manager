@@ -22,9 +22,9 @@ Background work must stay cheap on battery:
 ## Modules
 ```
 build-logic/convention   Gradle convention plugins: bm.android.application | library | compose | feature, bm.hilt, bm.room, bm.jvm.library
-app                      MainActivity, QuickAddActivity (translucent, opens over the home screen), navigation, bottom bar, launcher shortcuts, EveningReminder
-core:model               Pure Kotlin. Money (minor units), Person, Category (parentId = sub-category), Account, Transaction(Kind), SpendingCalculator
-core:common              Dispatchers, MoneyFormat (₼), DateLabels
+app                      MainActivity, QuickAddActivity (translucent, opens over the home screen), navigation, bottom bar, launcher shortcuts, EveningReminder, AppLock (locks after 30 s away; quick add stays outside it, since it shows no amounts and must stay fast)
+core:model               Pure Kotlin. Money (minor units), Person, Category (parentId = sub-category), Account, Transaction(Kind), SpendingCalculator, transactionsToCsv
+core:common              Dispatchers, MoneyFormat (₼), DateLabels, DeviceUnlock (fingerprint with the phone's PIN as backup, for the app lock and the widget)
 core:designsystem        Theme, bundled fonts (Manrope, Space Grotesk), BtIcons (string key -> ImageVector), components
 core:database            Room entities and DAOs (table `txn`; amounts in qəpik; dates as epochDay)
 core:datastore           UserPreferences (theme, default expense account, widget balance mode, app lock …)
@@ -34,7 +34,7 @@ feature:transaction      Quick add: step 1 amount + category + keypad, step 2 de
 feature:catalog          Categories, sub-categories and people: add, edit, drag to reorder, archive and restore, photo avatars (AvatarStore in core:data)
 feature:history          Search, month/person/category/account filters in bottom sheets, day groups. Tapping a row opens quick add to edit or delete it. The History tab, and from Home the same screen pre-filtered with a back button (TransactionsDestination)
 feature:insights         Week/month/year: stacked bars by person (tap a bar to select it), daily average, saved, biggest category changes. Numbers come from InsightsCalculator in core:model
-feature:settings         Default expense account, theme, widget balance, hide amounts, bank notifications and their apps, evening reminder switch and time, way into the catalog and recurring payments. Rows are added as the features behind them land
+feature:settings         Default expense account, theme, app lock, widget balance, hide amounts, bank notifications and their apps, evening reminder switch and time, Export CSV, way into the catalog and recurring payments. Rows are added as the features behind them land
 feature:confirm          BankNotificationListener (a NotificationListenerService) and the To confirm page: ready-made entries with Edit, Skip and Confirm, and the auto-confirm switch
 feature:recurring        Reminders for payments that repeat. Due ones show here, on Home and in a daily notification until logged or skipped. Add opens quick add filled in. PaymentReminders clears a reminder once its entry is in the list
 feature:accounts         Balances, default account, in-total and widget switches, add/edit/archive, adjust balance, recent transfers, way into Loans & debts. Transfers themselves are added in quick add
@@ -71,16 +71,15 @@ CI (`.github/workflows/android.yml`) runs both on every push and uploads the deb
 The AVD `Pixel_3a_API_30` (Android 11) boots with `emulator -avd Pixel_3a_API_30`. `installDebug` installs to everything connected, so while the phone is plugged in, install to the emulator alone with `adb -s emulator-5554 install -r app/build/outputs/apk/debug/app-debug.apk`. Test bank notifications with `adb -s emulator-5554 shell "cmd notification post -S bigtext -t 'Bank' tag 'Payment 12.40 AZN, SHOP'"`, which arrive from the app called Shell. Rounded widgets need Android 12, so they're square there.
 
 ## Status (branch feat/mvp-foundation)
-The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. The home-screen widgets and the launcher shortcuts (add expense, add income, transfer) work. Settings has only rows that work: app lock, backup, import and export join it with their features.
+The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. The home-screen widgets and the launcher shortcuts (add expense, add income, transfer) work. Settings has only rows that work: backup and import join it with their features.
 
 Next, in order:
-1. App lock, then Export CSV.
-2. Signed release build and the final app name. Real data should live in a real install, and Drive sign-in needs this signing key.
-3. Drive backup and restore (WorkManager).
-4. First-run onboarding, which also asks for the notification permission: the evening reminder is on by default, so nothing else asks on a fresh install.
-5. The Money Manager importer, which uses a mapping file kept on the device, never in this repo. The owner imports their real backup once every feature is finished. That brings their real categories, sub-categories and people, replacing today's dummy data.
-6. The polish list below, then the Quick Settings tile.
-7. Wear OS, very last.
+1. Signed release build and the final app name. Real data should live in a real install, and Drive sign-in needs this signing key.
+2. Drive backup and restore (WorkManager).
+3. First-run onboarding, which also asks for the notification permission: the evening reminder is on by default, so nothing else asks on a fresh install.
+4. The Money Manager importer, which uses a mapping file kept on the device, never in this repo. The owner imports their real backup once every feature is finished. That brings their real categories, sub-categories and people, replacing today's dummy data.
+5. The polish list below, then the Quick Settings tile.
+6. Wear OS, very last.
 
 Polish:
 - Home's month header: the `<` chevron beside the month reads as a back button. The owner wants it redesigned (`MonthSwitcher` in `HomeScreen.kt`). Swiping already changes the month, so the arrows may not need to stay.

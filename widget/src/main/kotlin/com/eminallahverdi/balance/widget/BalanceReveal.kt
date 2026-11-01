@@ -4,13 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.biometric.BiometricManager
-import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
-import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
-import androidx.biometric.BiometricPrompt
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.glance.appwidget.updateAll
+import com.eminallahverdi.balance.core.common.askToUnlock
+import com.eminallahverdi.balance.core.common.canUnlockDevice
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
@@ -54,30 +51,21 @@ class BalanceRevealReceiver : BroadcastReceiver() {
 class WidgetUnlockActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (BiometricManager.from(this).canAuthenticate(AUTHENTICATORS) != BiometricManager.BIOMETRIC_SUCCESS) {
+        if (!canUnlockDevice()) {
             // A phone with no lock has nothing to prompt with. The app itself shows the balance.
             startActivity(packageManager.getLaunchIntentForPackage(packageName))
             finish()
             return
         }
-        val prompt = BiometricPrompt(
-            this,
-            ContextCompat.getMainExecutor(this),
-            object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    sendBroadcast(Intent(this@WidgetUnlockActivity, BalanceRevealReceiver::class.java))
-                    finish()
-                }
-
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) = finish()
-            },
-        )
         if (savedInstanceState == null) {
-            prompt.authenticate(BiometricPrompt.PromptInfo.Builder().setTitle("Show balance").setAllowedAuthenticators(AUTHENTICATORS).build())
+            askToUnlock(
+                title = "Show balance",
+                onUnlocked = {
+                    sendBroadcast(Intent(this, BalanceRevealReceiver::class.java))
+                    finish()
+                },
+                onCancelled = ::finish,
+            )
         }
-    }
-
-    private companion object {
-        const val AUTHENTICATORS = BIOMETRIC_WEAK or DEVICE_CREDENTIAL
     }
 }

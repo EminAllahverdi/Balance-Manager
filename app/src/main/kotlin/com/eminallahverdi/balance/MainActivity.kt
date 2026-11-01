@@ -2,7 +2,7 @@ package com.eminallahverdi.balance
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
@@ -18,8 +18,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     @Inject lateinit var prefs: UserPreferencesRepository
+    @Inject lateinit var appLock: AppLock
 
     private var openRecurring by mutableStateOf(false)
     private var openConfirm by mutableStateOf(false)
@@ -32,27 +33,39 @@ class MainActivity : ComponentActivity() {
         openConfirm = savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_CONFIRM, false)
         setContent {
             PreferredTheme(prefs) {
-                BalanceApp(
-                    onAdd = { startActivity(Intent(this, QuickAddActivity::class.java)) },
-                    onTransfer = {
-                        startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_KIND, TransactionKind.TRANSFER.name))
-                    },
-                    onOpenTransaction = { id ->
-                        startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_TRANSACTION, id))
-                    },
-                    onAddPayment = { id ->
-                        startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_PAYMENT, id))
-                    },
-                    onEditPending = { id ->
-                        startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_PENDING, id))
-                    },
-                    openRecurring = openRecurring,
-                    onRecurringOpened = { openRecurring = false },
-                    openConfirm = openConfirm,
-                    onConfirmOpened = { openConfirm = false },
-                )
+                AppLockGate(prefs, appLock) {
+                    BalanceApp(
+                        onAdd = { startActivity(Intent(this, QuickAddActivity::class.java)) },
+                        onTransfer = {
+                            startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_KIND, TransactionKind.TRANSFER.name))
+                        },
+                        onOpenTransaction = { id ->
+                            startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_TRANSACTION, id))
+                        },
+                        onAddPayment = { id ->
+                            startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_PAYMENT, id))
+                        },
+                        onEditPending = { id ->
+                            startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_PENDING, id))
+                        },
+                        openRecurring = openRecurring,
+                        onRecurringOpened = { openRecurring = false },
+                        openConfirm = openConfirm,
+                        onConfirmOpened = { openConfirm = false },
+                    )
+                }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        appLock.onReturned()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        appLock.onLeft()
     }
 
     override fun onNewIntent(intent: Intent) {
