@@ -23,6 +23,9 @@ import kotlinx.coroutines.flow.map
 
 enum class ThemePreference { DARK, LIGHT, SYSTEM }
 
+/** Why the last backup didn't happen. [SIGN_IN] is the one only the user can fix. */
+enum class BackupProblem { SIGN_IN, FAILED }
+
 /** How the balance appears on the home-screen widget. */
 enum class WidgetBalanceMode { ALWAYS_SHOW, ALWAYS_HIDE, TAP_TO_SHOW, FINGERPRINT }
 
@@ -48,6 +51,12 @@ data class UserPreferences(
     /** Home's card shows the month's pie chart instead of the balance. */
     val homeChart: Boolean = false,
     val homeChartIncome: Boolean = false,
+    val driveBackupEnabled: Boolean = false,
+    /** Off, backups wait for Wi-Fi. */
+    val backupOnMobileData: Boolean = false,
+    /** Epoch millis of the last backup that reached Drive. */
+    val lastBackupAt: Long? = null,
+    val backupProblem: BackupProblem? = null,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
@@ -72,6 +81,10 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
         val seenApps = stringSetPreferencesKey("seen_apps")
         val homeChart = booleanPreferencesKey("home_chart")
         val homeChartIncome = booleanPreferencesKey("home_chart_income")
+        val driveBackup = booleanPreferencesKey("drive_backup")
+        val backupMobileData = booleanPreferencesKey("backup_mobile_data")
+        val lastBackup = longPreferencesKey("last_backup_at")
+        val backupProblem = stringPreferencesKey("backup_problem")
     }
 
     val preferences: Flow<UserPreferences> = store.data.map { p ->
@@ -92,6 +105,10 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
             seenApps = p[K.seenApps].orEmpty(),
             homeChart = p[K.homeChart] ?: false,
             homeChartIncome = p[K.homeChartIncome] ?: false,
+            driveBackupEnabled = p[K.driveBackup] ?: false,
+            backupOnMobileData = p[K.backupMobileData] ?: false,
+            lastBackupAt = p[K.lastBackup],
+            backupProblem = p[K.backupProblem]?.let { runCatching { BackupProblem.valueOf(it) }.getOrNull() },
         )
     }
 
@@ -113,6 +130,15 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
     suspend fun addSeenApps(packages: Set<String>) { store.edit { it[K.seenApps] = it[K.seenApps].orEmpty() + packages } }
     suspend fun setHomeChart(enabled: Boolean) { store.edit { it[K.homeChart] = enabled } }
     suspend fun setHomeChartIncome(income: Boolean) { store.edit { it[K.homeChartIncome] = income } }
+    suspend fun setDriveBackup(enabled: Boolean) { store.edit { it[K.driveBackup] = enabled } }
+    suspend fun setBackupOnMobileData(enabled: Boolean) { store.edit { it[K.backupMobileData] = enabled } }
+    suspend fun setBackupProblem(problem: BackupProblem) { store.edit { it[K.backupProblem] = problem.name } }
+    suspend fun setBackedUp(atMillis: Long) {
+        store.edit {
+            it[K.lastBackup] = atMillis
+            it.remove(K.backupProblem)
+        }
+    }
 }
 
 @Module

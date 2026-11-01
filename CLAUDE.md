@@ -10,12 +10,12 @@ Personal Android app for tracking every expense and income for one household. It
 - Picking one thing always opens a bottom sheet (`ChoiceSheet` and `OptionRow`), never a dropdown menu or spinner, even for a short list.
 
 ## Stack
-Kotlin and Jetpack Compose (Material 3 under our own design system), Hilt, Room, DataStore, Coroutines/Flow, type-safe Navigation Compose, Glance widgets, WorkManager. No backend. Backup goes to the Google Drive app-data folder (planned).
+Kotlin and Jetpack Compose (Material 3 under our own design system), Hilt, Room, DataStore, Coroutines/Flow, type-safe Navigation Compose, Glance widgets, WorkManager. No backend. Backup goes to the hidden app-data folder in the user's own Google Drive.
 
 Background work must stay cheap on battery:
 - No polling, exact alarms, foreground services or wake locks of our own. Prefer events (Room flows, the notification listener) to checking on a timer.
 - At most one daily WorkManager job per feature, doing its work and ending in seconds. Reminders accept arriving late under Doze, which is what makes them cheap.
-- Uploads such as Drive backup wait for Wi-Fi and charging.
+- Drive backup runs once a night at 03:00. It waits for Wi-Fi, or any connection if the user allows mobile data, and doesn't wait for charging: the owner wants it every night, and it takes seconds. With no network at night it runs as soon as there is one.
 - Glance keeps a job awake for about 45 s after every widget redraw, so redraw only when something a widget shows has changed.
 - A plain daily period slips later by however late each run was. Work tied to a time of day books its next run with `bookDailyWork`, as the evening reminder, payment reminders and the widgets' midnight refresh do.
 
@@ -29,12 +29,13 @@ core:designsystem        Theme, bundled fonts (Manrope, Space Grotesk), BtIcons 
 core:database            Room entities and DAOs (table `txn`; amounts in qəpik; dates as epochDay)
 core:datastore           UserPreferences (theme, default expense account, widget balance mode, app lock …)
 core:data                CatalogRepository, TransactionRepository (merchant memory + suggestions), BankAlertRepository (bank notifications into pending entries), StarterTemplate
+core:backup              Nightly backup to Drive and restore: BackupArchive (zip of a checked database copy, settings and photos), DriveAuthorization (Google Identity), DriveFiles (Drive REST), NightlyBackup (WorkManager). A restore is staged, then swapped in by applyPendingRestore at the next start, before Hilt opens anything
 feature:home             Swipeable month summary, by category / by person, split bars. Rows open that month's transactions. The month name sits on the page and opens a month sheet. The card's icon swaps the balance for a pie chart of expenses or income, and stays as left (UserPreferences)
 feature:transaction      Quick add: step 1 amount + category + keypad, step 2 details (sub-category, merchant, for whom, 7-day date strip + calendar, note)
 feature:catalog          Categories, sub-categories and people: add, edit, drag to reorder, archive and restore, photo avatars (AvatarStore in core:data)
 feature:history          Search, month/person/category/account filters in bottom sheets, day groups. Tapping a row opens quick add to edit or delete it. The History tab, and from Home the same screen pre-filtered with a back button (TransactionsDestination)
 feature:insights         Week/month/year: stacked bars by person (tap a bar to select it), daily average, saved, biggest category changes. Numbers come from InsightsCalculator in core:model
-feature:settings         Default expense account, theme, app lock, widget balance, hide amounts, bank notifications and their apps, evening reminder switch and time, Export CSV, way into the catalog and recurring payments. Rows are added as the features behind them land
+feature:settings         Default expense account, theme, app lock, widget balance, hide amounts, bank notifications and their apps, evening reminder switch and time, Drive backup (switch, mobile data, back up now, restore), Export CSV, Money Manager import, way into the catalog and recurring payments. Rows are added as the features behind them land
 feature:confirm          BankNotificationListener (a NotificationListenerService) and the To confirm page: ready-made entries with Edit, Skip and Confirm, and the auto-confirm switch
 feature:recurring        Reminders for payments that repeat. Due ones show here, on Home and in a daily notification until logged or skipped. Add opens quick add filled in. PaymentReminders clears a reminder once its entry is in the list
 feature:accounts         Balances, default account, in-total and widget switches, add/edit/archive, adjust balance, recent transfers, way into Loans & debts. Transfers themselves are added in quick add
@@ -58,6 +59,7 @@ importer:moneymanager    Reads a Money Manager backup on the device (a zip behin
 - `guessFor` in core:model fills in a pending entry, in order: a merchant the user confirmed, another spelling of a merchant they've used, a recurring payment or loan by name or by its amount within 10 days of its date, then category names and `CATEGORY_HINTS` in the notification's merchant and title. Anything but a confirmed merchant is marked Suggested, and auto-confirm never acts on it. When the real backup is imported, check the hints still point at the owner's categories. Anything personal goes in the on-device mapping file, not the hints, because this repo is public.
 - The evening reminder goes off at the time set in Settings, only if nothing is dated today, and opens quick add. Adding an entry clears it. A run so late it's the next morning stays quiet.
 - Every Room schema change needs a migration, because the owner's real data lives in this database. From the import on, treat the data on the phone as real: never wipe it to test something.
+- A backup keeps the last 7 in the app-data folder, which only this app can see. A night with no backup shows on Home from about 30 hours after the last one (`isBackupOverdue`), and it taps through to Settings. With backups off, nothing nags: that was the user's choice. The debug and release apps share backups as long as both are registered in the same Google Cloud project.
 - The import is told how to map things by a JSON file on the device (`ImportMapping` documents it), because it names the owner's family. It never goes in this repo, and `*-mapping.json` is gitignored. Test data for the importer uses invented names only. In the old app, tags did three jobs (people, sub-categories, merchants), and the categories named after people really meant "for whom", so both become the For whom field. Entries with no category were balance corrections and import as `ADJUSTMENT`. Taksit income was an offset for paying by card, and the bank loan paid out was not earnings, so both import as `INTERNAL`: the balance stays right and they aren't income.
 - The app must work for anyone the owner shares it with. First run shows onboarding: name, people, a category template, and optionally an import or a Drive restore.
 
@@ -69,17 +71,24 @@ importer:moneymanager    Reads a Money Manager backup on the device (a zip behin
 ```
 CI (`.github/workflows/android.yml`) runs both on every push and uploads the debug APK.
 
+The backup round trip is an instrumented test, which CI doesn't run. Always aim it at the emulator, or it installs to the phone too:
+```
+ANDROID_SERIAL=emulator-5554 ./gradlew :core:backup:connectedDebugAndroidTest
+```
+
+Drive needs one thing that can't live in this repo: a Google Cloud project owned by the app's owner, with the Drive API on, the consent screen published (the `drive.appdata` scope needs no review, but testing mode ends consent after 7 days), and an Android OAuth client for each package name and signing SHA-1. Until then, turning on backup says it isn't set up.
+
 The AVD `Pixel_3a_API_30` (Android 11) boots with `emulator -avd Pixel_3a_API_30`. `installDebug` installs to everything connected, so while the phone is plugged in, install to the emulator alone with `adb -s emulator-5554 install -r app/build/outputs/apk/debug/app-debug.apk`. Test bank notifications with `adb -s emulator-5554 shell "cmd notification post -S bigtext -t 'Bank' tag 'Payment 12.40 AZN, SHOP'"`, which arrive from the app called Shell. Rounded widgets need Android 12, so they're square there.
 
 ## Status (branch feat/mvp-foundation)
-The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. The home-screen widgets and the launcher shortcuts (add expense, add income, transfer) work. Settings has only rows that work: backup joins it with its feature. The owner's real Money Manager history is imported on their phone (debug app) and checked against the backup: every balance and month matched.
+The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. The home-screen widgets and the launcher shortcuts (add expense, add income, transfer) work. Settings has only rows that work. The owner's real Money Manager history is imported on their phone (debug app) and checked against the backup: every balance and month matched.
 
 Next, in order:
-1. The polish list below.
-2. Finalizing, starting with the signed release build and the final app name. Real data should live in a real install, and Drive sign-in needs this signing key. The debug and release apps have separate data, so the import is run again in the release app.
-3. Drive backup and restore (WorkManager).
-4. First-run onboarding, which also asks for the notification permission: the evening reminder is on by default, so nothing else asks on a fresh install.
-5. Wear OS, very last.
+1. The owner sets up the Google Cloud project (see Commands). Then prove Drive on the phone: sign-in, a real upload, a night's run, and listing what's there. Sign-in and every Drive call have only reached Google's sign-in page so far. The archive and restore are proven by the round-trip test, but restoring from Drive hasn't run for real.
+2. Finalizing, starting with the signed release build and the final app name. Real data should live in a real install. The debug and release apps have separate data, so the import or a Drive restore is run again in the release app, and the release key's SHA-1 needs its own OAuth client in the same Google Cloud project.
+3. First-run onboarding, which also asks for the notification permission and offers a Drive restore: the evening reminder is on by default, so nothing else asks on a fresh install.
+4. Wear OS, very last.
 
-Polish:
-- Once the owner has seen them on their phone, add to the design: the month title and sheet on Home's boards, the pie chart card, Insights' new bars, the account sheet in quick add, and the widget loading wave and previews. Previews need Android 12, so the Android 11 emulator can't show them.
+Leave quick add's input screen alone: the owner is planning to change it, and merchant chips stay as they are until then.
+
+Not seen on a real device yet: the widget picker previews, which need Android 12, and the Home backup notice, which only shows with Drive working.

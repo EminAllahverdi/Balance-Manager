@@ -6,16 +6,23 @@ import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.RecurringRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
+import com.eminallahverdi.balance.core.datastore.BackupProblem
+import com.eminallahverdi.balance.core.datastore.UserPreferences
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.AccountBalance
 import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.MonthSummary
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.SpendingCalculator
+import com.eminallahverdi.balance.core.model.isBackupOverdue
 import com.eminallahverdi.balance.core.model.sum
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +32,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+private val BACKUP_DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
 
 enum class HomeView { CATEGORY, PERSON }
 
@@ -41,7 +50,21 @@ data class HomeUiState(
     val toConfirm: Int = 0,
     val showChart: Boolean = false,
     val chartIncome: Boolean = false,
+    /** Set while the data isn't safely in Drive. */
+    val backupWarning: String? = null,
 )
+
+/** Says nothing with backups off: that's a choice, and Settings shows it. */
+private fun backupWarning(p: UserPreferences, now: Instant): String? {
+    val last = p.lastBackupAt?.let(Instant::ofEpochMilli)
+    return when {
+        !p.driveBackupEnabled -> null
+        p.backupProblem == BackupProblem.SIGN_IN -> "Backup needs you to sign in"
+        !isBackupOverdue(now, last) -> null
+        last == null -> "Not backed up yet"
+        else -> "Not backed up since " + BACKUP_DAY.format(last.atZone(ZoneId.systemDefault()))
+    }
+}
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -82,6 +105,7 @@ class HomeViewModel @Inject constructor(
             toConfirm = waiting,
             showChart = p.homeChart,
             chartIncome = p.homeChartIncome,
+            backupWarning = backupWarning(p, Instant.now()),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 

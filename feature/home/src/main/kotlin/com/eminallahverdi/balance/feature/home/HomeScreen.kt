@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
@@ -109,7 +110,7 @@ fun HomeRoute(
         HorizontalPager(pager, Modifier.fillMaxSize(), key = { it }) { page ->
             val month = monthOf(page)
             Box(Modifier.fillMaxSize()) {
-                MonthPage(month, state, viewModel, onOpenRecurring, onOpenConfirm) { categoryId, personId -> onOpenTransactions(categoryId, personId, month) }
+                MonthPage(month, state, viewModel, onOpenRecurring, onOpenConfirm, onOpenSettings) { categoryId, personId -> onOpenTransactions(categoryId, personId, month) }
                 // On the page, so its name moves with the swipe and a swipe that starts on it is a swipe of the page.
                 MonthTitle(month, onClick = { pickingMonth = true }, Modifier.padding(start = 16.dp, top = HEADER_TOP).height(HEADER_ROW))
             }
@@ -128,7 +129,7 @@ fun HomeRoute(
 }
 
 @Composable
-private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, onOpenRecurring: () -> Unit, onOpenConfirm: () -> Unit, onOpen: (categoryId: Long?, personId: Long?) -> Unit) {
+private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, onOpenRecurring: () -> Unit, onOpenConfirm: () -> Unit, onOpenSettings: () -> Unit, onOpen: (categoryId: Long?, personId: Long?) -> Unit) {
     val c = BtTheme.colors
     val summary by remember(month) { vm.summary(month) }.collectAsStateWithLifecycle(null)
     val isCurrent = month == YearMonth.now()
@@ -186,6 +187,10 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
                     )
                 }
             }
+        }
+        val backupWarning = state.backupWarning
+        if (isCurrent && backupWarning != null) {
+            item(key = "backup") { HomeNotice(Icons.Rounded.CloudOff, backupWarning, onOpenSettings) }
         }
         if (isCurrent && state.toConfirm > 0) {
             item(key = "confirm") { HomeNotice(Icons.Rounded.Notifications, "${state.toConfirm} to confirm", onOpenConfirm) }

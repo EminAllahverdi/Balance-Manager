@@ -1,6 +1,7 @@
 package com.eminallahverdi.balance.core.common
 
 import android.content.Context
+import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ListenableWorker
 import androidx.work.PeriodicWorkRequestBuilder
@@ -16,8 +17,13 @@ import java.time.ZoneId
  * by however late the last run was. The app starting uses KEEP: what's booked may be today's, running late under Doze.
  * Waits until it's booked: a worker that ends first leaves its next run queued with nothing to start it.
  */
-suspend inline fun <reified W : ListenableWorker> Context.bookDailyWork(name: String, minuteOfDay: Int, policy: ExistingPeriodicWorkPolicy) {
+suspend inline fun <reified W : ListenableWorker> Context.bookDailyWork(
+    name: String,
+    minuteOfDay: Int,
+    policy: ExistingPeriodicWorkPolicy,
+    constraints: Constraints = Constraints.NONE,
+) {
     val next = nextReminderAt(LocalDateTime.now(), minuteOfDay).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    val request = PeriodicWorkRequestBuilder<W>(Duration.ofDays(1)).setNextScheduleTimeOverride(next).build()
+    val request = PeriodicWorkRequestBuilder<W>(Duration.ofDays(1)).setConstraints(constraints).setNextScheduleTimeOverride(next).build()
     WorkManager.getInstance(this).enqueueUniquePeriodicWork(name, policy, request).await()
 }

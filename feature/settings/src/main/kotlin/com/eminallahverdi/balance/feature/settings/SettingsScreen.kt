@@ -165,6 +165,7 @@ private fun SettingsList(
                     onClick = onOpenRecurring,
                 ) { Chevron() }
             }
+            BackupSection()
             Section("Data") {
                 ExportRow(viewModel)
                 Divider()
@@ -441,7 +442,7 @@ private val WidgetBalanceMode.explanation: String
     }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
+internal fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Overline(title, Modifier.padding(horizontal = 4.dp))
         BtCard { Column { content() } }
@@ -449,7 +450,7 @@ private fun Section(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun SettingRow(
+internal fun SettingRow(
     icon: ImageVector,
     title: String,
     caption: String? = null,
@@ -476,11 +477,11 @@ private fun SettingRow(
 }
 
 @Composable
-private fun Chevron() {
+internal fun Chevron() {
     Icon(Icons.Rounded.ChevronRight, null, tint = BtTheme.colors.textMuted, modifier = Modifier.size(20.dp))
 }
 
 @Composable
-private fun Divider() {
+internal fun Divider() {
     Box(Modifier.fillMaxWidth().height(1.dp).background(BtTheme.colors.borderDefault))
 }
