@@ -9,7 +9,9 @@ import androidx.room.Upsert
 import com.eminallahverdi.balance.core.database.entity.AccountEntity
 import com.eminallahverdi.balance.core.database.entity.CategoryEntity
 import com.eminallahverdi.balance.core.database.entity.DebtEntity
+import com.eminallahverdi.balance.core.database.entity.MerchantAliasEntity
 import com.eminallahverdi.balance.core.database.entity.MerchantEntity
+import com.eminallahverdi.balance.core.database.entity.PendingEntryEntity
 import com.eminallahverdi.balance.core.database.entity.PersonEntity
 import com.eminallahverdi.balance.core.database.entity.RecurringPaymentEntity
 import com.eminallahverdi.balance.core.database.entity.TransactionEntity
@@ -158,6 +160,29 @@ interface RecurringPaymentDao {
 
     @Upsert suspend fun upsert(payment: RecurringPaymentEntity): Long
     @Query("DELETE FROM recurring_payment WHERE id = :id") suspend fun delete(id: Long)
+}
+
+@Dao
+interface PendingEntryDao {
+    /** Everything waiting, plus what was finished as added since [since]. */
+    @Query("SELECT * FROM pending_entry WHERE status = 'WAITING' OR (status = 'ADDED' AND posted_at >= :since) ORDER BY status = 'WAITING' DESC, posted_at DESC")
+    fun observe(since: Long): Flow<List<PendingEntryEntity>>
+
+    @Query("SELECT COUNT(*) FROM pending_entry WHERE status = 'WAITING'")
+    fun observeWaitingCount(): Flow<Int>
+
+    @Query("SELECT * FROM pending_entry WHERE id = :id") suspend fun get(id: Long): PendingEntryEntity?
+
+    /** Returns -1 for a notification already seen. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insert(entry: PendingEntryEntity): Long
+
+    @Query("UPDATE pending_entry SET status = :status WHERE id = :id") suspend fun setStatus(id: Long, status: String)
+
+    @Query("DELETE FROM pending_entry WHERE status <> 'WAITING' AND posted_at < :before") suspend fun deleteFinishedBefore(before: Long)
+
+    @Query("SELECT * FROM merchant_alias") fun observeAliases(): Flow<List<MerchantAliasEntity>>
+
+    @Upsert suspend fun upsertAlias(alias: MerchantAliasEntity)
 }
 
 @Dao

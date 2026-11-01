@@ -8,6 +8,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.eminallahverdi.balance.core.common.ApplicationScope
+import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
@@ -21,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
@@ -32,12 +34,17 @@ class WidgetRefresher @Inject constructor(
     @ApplicationContext private val context: Context,
     private val transactions: TransactionRepository,
     private val catalog: CatalogRepository,
+    private val bankAlerts: BankAlertRepository,
     private val preferences: UserPreferencesRepository,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
     @OptIn(FlowPreview::class)
     fun start() {
         scheduleMidnight()
+        scope.launch {
+            // Its own trigger: this count is all that widget shows, and it changes nothing the others show.
+            bankAlerts.waitingCount.distinctUntilChanged().drop(1).collect { ToConfirmWidget().updateAll(context) }
+        }
         scope.launch {
             // Room re-emits on every write to the table, so balances also fires for edits that leave the sums alone.
             combine(transactions.balances, catalog.categories, preferences.preferences) { _, _, _ -> }

@@ -6,6 +6,7 @@ import androidx.annotation.DrawableRes
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
+import com.eminallahverdi.balance.core.data.EXTRA_OPEN_CONFIRM
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.feature.transaction.QuickAddViewModel
 
@@ -17,6 +18,12 @@ fun publishAppShortcuts(context: Context) {
             shortcut(context, "add_expense", "Add expense", R.drawable.ic_shortcut_expense, TransactionKind.EXPENSE, rank = 0),
             shortcut(context, "add_income", "Add income", R.drawable.ic_shortcut_income, TransactionKind.INCOME, rank = 1),
             shortcut(context, "transfer", "Transfer", R.drawable.ic_shortcut_transfer, TransactionKind.TRANSFER, rank = 2),
+            ShortcutInfoCompat.Builder(context, "to_confirm")
+                .setShortLabel("To confirm")
+                .setIcon(IconCompat.createWithResource(context, R.drawable.ic_shortcut_confirm))
+                .setIntent(Intent(context, MainActivity::class.java).setAction(Intent.ACTION_VIEW).putExtra(EXTRA_OPEN_CONFIRM, true))
+                .setRank(3)
+                .build(),
         ),
     )
 }

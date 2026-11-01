@@ -20,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -163,6 +165,21 @@ fun BtIconButton(icon: ImageVector, contentDescription: String, onClick: () -> U
         modifier.size(44.dp).clip(CircleShape).background(BtTheme.colors.bgSurfaceRaised).clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { Icon(icon, contentDescription, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(22.dp)) }
+}
+
+/** The one switch style, so every on/off reads the same. */
+@Composable
+fun BtSwitch(checked: Boolean, onChange: (Boolean) -> Unit) {
+    Switch(
+        checked = checked,
+        onCheckedChange = onChange,
+        colors = SwitchDefaults.colors(
+            checkedTrackColor = BtTheme.colors.accentFill,
+            checkedThumbColor = BtTheme.colors.accentOn,
+            uncheckedTrackColor = BtTheme.colors.bgSurfaceHigh,
+            uncheckedThumbColor = BtTheme.colors.textMuted,
+        ),
+    )
 }
 
 /** The lime add button that floats over a long list, in reach of the thumb. Align it to the bottom end of the screen. */

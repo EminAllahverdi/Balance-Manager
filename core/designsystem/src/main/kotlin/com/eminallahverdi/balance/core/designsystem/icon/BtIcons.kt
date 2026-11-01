@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.LocalPharmacy
 import androidx.compose.material.icons.rounded.LocalTaxi
 import androidx.compose.material.icons.rounded.MedicalServices
 import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Pets
 import androidx.compose.material.icons.rounded.Redeem
@@ -73,6 +74,7 @@ object BtIcons {
         "pets" to Icons.Rounded.Pets,
         "payments" to Icons.Rounded.Payments,
         "account_balance" to Icons.Rounded.AccountBalance,
+        "notifications" to Icons.Rounded.Notifications,
         "account_balance_wallet" to Icons.Rounded.AccountBalanceWallet,
         "credit_card" to Icons.Rounded.CreditCard,
         "savings" to Icons.Rounded.Savings,

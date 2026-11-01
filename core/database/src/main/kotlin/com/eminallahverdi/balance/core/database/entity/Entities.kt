@@ -136,3 +136,30 @@ data class RecurringPaymentEntity(
     @ColumnInfo(name = "payments_left") val paymentsLeft: Int? = null,
     @ColumnInfo(name = "last_amount_minor") val lastAmountMinor: Long? = null,
 )
+
+/** A ready-made entry read from a bank's notification. Finished ones stay a while, so a repeated notification isn't offered twice. */
+@Entity(tableName = "pending_entry", indices = [Index(value = ["external_id"], unique = true)])
+data class PendingEntryEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "external_id") val externalId: String,
+    val source: String,
+    @ColumnInfo(name = "amount_minor") val amountMinor: Long,
+    val kind: String,
+    val merchant: String,
+    @ColumnInfo(name = "posted_at") val postedAt: Long,
+    /** The notification's title, which can say what a payment was when the text doesn't. */
+    val title: String = "",
+    /** "WAITING", "ADDED" or "SKIPPED". */
+    val status: String,
+)
+
+/** The merchant a bank's wording was confirmed as, so BRAVO SUPERMARKET comes back as Bravo. [raw] is lowercase. */
+@Entity(
+    tableName = "merchant_alias",
+    foreignKeys = [ForeignKey(entity = MerchantEntity::class, parentColumns = ["id"], childColumns = ["merchant_id"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("merchant_id")],
+)
+data class MerchantAliasEntity(
+    @PrimaryKey val raw: String,
+    @ColumnInfo(name = "merchant_id") val merchantId: Long,
+)

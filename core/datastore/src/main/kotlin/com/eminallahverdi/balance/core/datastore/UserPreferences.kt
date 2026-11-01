@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.Module
 import dagger.Provides
@@ -38,6 +39,12 @@ data class UserPreferences(
     /** Minutes after midnight, default 21:00. */
     val eveningReminderMinute: Int = 21 * 60,
     val bankNotificationsEnabled: Boolean = false,
+    /** Off until the user accepts it: the one thing that adds an entry without being asked. */
+    val autoConfirmKnownMerchants: Boolean = false,
+    /** Packages whose notifications are read. */
+    val bankApps: Set<String> = emptySet(),
+    /** Packages seen sending notifications, to pick [bankApps] from. Only the names, and only while bank notifications are on. */
+    val seenApps: Set<String> = emptySet(),
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
@@ -57,6 +64,9 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
         val evening = booleanPreferencesKey("evening_reminder")
         val eveningMinute = intPreferencesKey("evening_reminder_minute")
         val bank = booleanPreferencesKey("bank_notifications")
+        val autoConfirm = booleanPreferencesKey("auto_confirm_known_merchants")
+        val bankApps = stringSetPreferencesKey("bank_apps")
+        val seenApps = stringSetPreferencesKey("seen_apps")
     }
 
     val preferences: Flow<UserPreferences> = store.data.map { p ->
@@ -72,6 +82,9 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
             eveningReminderEnabled = p[K.evening] ?: true,
             eveningReminderMinute = p[K.eveningMinute] ?: (21 * 60),
             bankNotificationsEnabled = p[K.bank] ?: false,
+            autoConfirmKnownMerchants = p[K.autoConfirm] ?: false,
+            bankApps = p[K.bankApps].orEmpty(),
+            seenApps = p[K.seenApps].orEmpty(),
         )
     }
 
@@ -86,6 +99,11 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
     suspend fun setEveningReminder(enabled: Boolean) { store.edit { it[K.evening] = enabled } }
     suspend fun setEveningReminderMinute(minute: Int) { store.edit { it[K.eveningMinute] = minute } }
     suspend fun setBankNotifications(enabled: Boolean) { store.edit { it[K.bank] = enabled } }
+    suspend fun setAutoConfirmKnownMerchants(enabled: Boolean) { store.edit { it[K.autoConfirm] = enabled } }
+    suspend fun setBankApp(packageName: String, enabled: Boolean) {
+        store.edit { it[K.bankApps] = if (enabled) it[K.bankApps].orEmpty() + packageName else it[K.bankApps].orEmpty() - packageName }
+    }
+    suspend fun addSeenApps(packages: Set<String>) { store.edit { it[K.seenApps] = it[K.seenApps].orEmpty() + packages } }
 }
 
 @Module

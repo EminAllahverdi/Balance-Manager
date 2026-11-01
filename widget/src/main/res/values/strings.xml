@@ -5,4 +5,6 @@
     <string name="widget_quick_actions_description">Add an expense, income or transfer</string>
     <string name="widget_today">Today</string>
     <string name="widget_today_description">Today\'s spending and one-tap categories</string>
+    <string name="widget_to_confirm">To confirm</string>
+    <string name="widget_to_confirm_description">Bank payments waiting for you to confirm them</string>
 </resources>

@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
@@ -79,6 +80,7 @@ fun HomeRoute(
     onOpenSettings: () -> Unit,
     onOpenTransactions: (categoryId: Long?, personId: Long?, month: YearMonth) -> Unit,
     onOpenRecurring: () -> Unit,
+    onOpenConfirm: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -91,7 +93,7 @@ fun HomeRoute(
         // The pager runs behind the header, so a swipe on the month row is the same gesture as a swipe on the page.
         HorizontalPager(pager, Modifier.fillMaxSize(), key = { it }) { page ->
             val month = monthOf(page)
-            MonthPage(month, state, viewModel, onOpenRecurring) { categoryId, personId -> onOpenTransactions(categoryId, personId, month) }
+            MonthPage(month, state, viewModel, onOpenRecurring, onOpenConfirm) { categoryId, personId -> onOpenTransactions(categoryId, personId, month) }
         }
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = HEADER_TOP).height(HEADER_ROW), verticalAlignment = Alignment.CenterVertically) {
             MonthSwitcher(
@@ -110,7 +112,7 @@ fun HomeRoute(
 }
 
 @Composable
-private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, onOpenRecurring: () -> Unit, onOpen: (categoryId: Long?, personId: Long?) -> Unit) {
+private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, onOpenRecurring: () -> Unit, onOpenConfirm: () -> Unit, onOpen: (categoryId: Long?, personId: Long?) -> Unit) {
     val c = BtTheme.colors
     val summary by remember(month) { vm.summary(month) }.collectAsStateWithLifecycle(null)
     val isCurrent = month == YearMonth.now()
@@ -154,8 +156,11 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
                 }
             }
         }
+        if (isCurrent && state.toConfirm > 0) {
+            item(key = "confirm") { HomeNotice(Icons.Rounded.Notifications, "${state.toConfirm} to confirm", onOpenConfirm) }
+        }
         if (isCurrent && state.duePayments > 0) {
-            item(key = "due") { DuePayments(state.duePayments, onOpenRecurring) }
+            item(key = "due") { HomeNotice(Icons.Rounded.EventRepeat, if (state.duePayments == 1) "1 payment due" else "${state.duePayments} payments due", onOpenRecurring) }
         }
         val people = summary?.byPerson.orEmpty().filter { it.total.minor > 0 }
         if (people.isNotEmpty()) {
@@ -206,7 +211,7 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
 }
 
 @Composable
-private fun DuePayments(count: Int, onClick: () -> Unit) {
+private fun HomeNotice(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: () -> Unit) {
     val c = BtTheme.colors
     BtCard(Modifier.clip(BtShapes.md).clickable(role = Role.Button, onClick = onClick)) {
         Row(
@@ -214,8 +219,8 @@ private fun DuePayments(count: Int, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Icon(Icons.Rounded.EventRepeat, null, tint = c.statusWarning, modifier = Modifier.size(22.dp))
-            Text(if (count == 1) "1 payment due" else "$count payments due", style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
+            Icon(icon, null, tint = c.statusWarning, modifier = Modifier.size(22.dp))
+            Text(text, style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
             Icon(Icons.Rounded.ChevronRight, null, tint = c.textMuted, modifier = Modifier.size(20.dp))
         }
     }

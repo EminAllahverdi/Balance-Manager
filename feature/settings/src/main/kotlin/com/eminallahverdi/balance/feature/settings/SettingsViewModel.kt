@@ -2,6 +2,7 @@ package com.eminallahverdi.balance.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.RecurringRepository
 import com.eminallahverdi.balance.core.datastore.ThemePreference
@@ -24,6 +25,7 @@ data class SettingsUiState(
     val categoryCount: Int = 0,
     val peopleCount: Int = 0,
     val recurring: List<RecurringPayment> = emptyList(),
+    val toConfirm: Int = 0,
 ) {
     /** Quick add falls back to the first account until one is chosen, so show that here too. */
     val defaultAccount: Account? get() = accounts.firstOrNull { it.id == preferences.defaultExpenseAccountId } ?: accounts.firstOrNull()
@@ -40,11 +42,19 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     catalog: CatalogRepository,
     recurring: RecurringRepository,
+    bankAlerts: BankAlertRepository,
     private val prefs: UserPreferencesRepository,
 ) : ViewModel() {
 
-    val state: StateFlow<SettingsUiState> = combine(prefs.preferences, catalog.accounts, catalog.categories, catalog.people, recurring.payments) { p, accounts, categories, people, payments ->
+    val state: StateFlow<SettingsUiState> = combine(
+        combine(prefs.preferences, bankAlerts.waitingCount) { p, waiting -> p to waiting },
+        catalog.accounts,
+        catalog.categories,
+        catalog.people,
+        recurring.payments,
+    ) { (p, waiting), accounts, categories, people, payments ->
         SettingsUiState(
+            toConfirm = waiting,
             preferences = p,
             accounts = accounts.filterNot { it.isArchived },
             categoryCount = categories.count { it.parentId == null && !it.isArchived },
@@ -57,6 +67,8 @@ class SettingsViewModel @Inject constructor(
     fun setTheme(theme: ThemePreference) { viewModelScope.launch { prefs.setTheme(theme) } }
     fun setHideAmounts(hide: Boolean) { viewModelScope.launch { prefs.setHideAmounts(hide) } }
     fun setWidgetBalanceMode(mode: WidgetBalanceMode) { viewModelScope.launch { prefs.setWidgetBalanceMode(mode) } }
+    fun setBankNotifications(enabled: Boolean) { viewModelScope.launch { prefs.setBankNotifications(enabled) } }
+    fun setBankApp(packageName: String, enabled: Boolean) { viewModelScope.launch { prefs.setBankApp(packageName, enabled) } }
     fun setEveningReminder(enabled: Boolean) { viewModelScope.launch { prefs.setEveningReminder(enabled) } }
     fun setEveningReminderMinute(minute: Int) { viewModelScope.launch { prefs.setEveningReminderMinute(minute) } }
 }

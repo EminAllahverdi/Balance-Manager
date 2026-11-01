@@ -2,6 +2,7 @@ package com.eminallahverdi.balance.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.RecurringRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
@@ -36,6 +37,8 @@ data class HomeUiState(
     val expandedPersonId: Long? = null,
     /** Recurring payments waiting to be confirmed. */
     val duePayments: Int = 0,
+    /** Bank payments waiting on To confirm. */
+    val toConfirm: Int = 0,
 )
 
 @HiltViewModel
@@ -43,6 +46,7 @@ class HomeViewModel @Inject constructor(
     private val catalog: CatalogRepository,
     private val transactions: TransactionRepository,
     recurring: RecurringRepository,
+    bankAlerts: BankAlertRepository,
     private val prefs: UserPreferencesRepository,
 ) : ViewModel() {
 
@@ -61,8 +65,8 @@ class HomeViewModel @Inject constructor(
         transactions.balances,
         prefs.preferences,
         combine(view, expanded) { v, e -> v to e },
-        recurring.payments,
-    ) { balances, p, (v, e), payments ->
+        combine(recurring.payments, bankAlerts.waitingCount) { payments, waiting -> payments to waiting },
+    ) { balances, p, (v, e), (payments, waiting) ->
         val included = balances.filter { it.account.includeInTotal }
         val today = LocalDate.now()
         HomeUiState(
@@ -73,6 +77,7 @@ class HomeViewModel @Inject constructor(
             balances = included,
             expandedPersonId = e,
             duePayments = payments.count { it.isDue(today) },
+            toConfirm = waiting,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 

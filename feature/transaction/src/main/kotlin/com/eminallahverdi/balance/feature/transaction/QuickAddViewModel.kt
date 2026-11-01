@@ -3,6 +3,7 @@ package com.eminallahverdi.balance.feature.transaction
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.RecurringRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
@@ -12,12 +13,14 @@ import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
+import com.eminallahverdi.balance.core.model.PendingEntry
 import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.Transaction
 import com.eminallahverdi.balance.core.model.TransactionKind
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -51,6 +54,8 @@ data class QuickAddUiState(
     val editing: Transaction? = null,
     /** The reminder this entry was filled in from. Saving it moves that reminder to its next date. */
     val payment: RecurringPayment? = null,
+    /** Set when this is a bank notification being edited. It keeps the bank's merchant and account when the category changes. */
+    val pending: PendingEntry? = null,
     val saved: Boolean = false,
 ) {
     val amount: Money? get() = Money.parse(amountText)?.takeIf { it.minor > 0 }
@@ -70,6 +75,7 @@ class QuickAddViewModel @Inject constructor(
     private val catalog: CatalogRepository,
     private val transactions: TransactionRepository,
     private val recurring: RecurringRepository,
+    private val bankAlerts: BankAlertRepository,
     private val prefs: UserPreferencesRepository,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -82,11 +88,14 @@ class QuickAddViewModel @Inject constructor(
         val editingId = savedState.get<Long>(ARG_TRANSACTION)
         val requestedCategory = savedState.get<Long>(ARG_CATEGORY)
         val paymentId = savedState.get<Long>(ARG_PAYMENT)
+        val pendingId = savedState.get<Long>(ARG_PENDING)
         viewModelScope.launch {
             val editing = editingId?.let { transactions.get(it) }
             if (editing != null) loadForEditing(editing)
             paymentId?.let { recurring.get(it) }?.let { loadFromPayment(it) }
-            val startKind = editing?.kind ?: requestedKind
+            val pending = pendingId?.let { bankAlerts.entry(it) }
+            pending?.let { loadFromPending(it) }
+            val startKind = editing?.kind ?: pending?.kind ?: requestedKind
             val defaultAccount = prefs.current().defaultExpenseAccountId
             combine(catalog.accounts, catalog.categories, catalog.people) { a, c, p -> Triple(a, c, p) }
                 .collect { (accounts, categories, people) ->
@@ -147,6 +156,24 @@ class QuickAddViewModel @Inject constructor(
         }
     }
 
+    /** A ready-made entry from a bank notification. Nothing is saved until the user presses Save. */
+    private suspend fun loadFromPending(entry: PendingEntry) {
+        val guess = bankAlerts.guess(entry)
+        val category = catalog.categories.first().firstOrNull { it.id == guess.categoryId }
+        _state.update {
+            it.copy(
+                pending = entry,
+                amountText = entry.amount.toInputText(),
+                accountId = guess.accountId,
+                categoryId = category?.parentId ?: category?.id,
+                subCategoryId = category?.id?.takeIf { category.parentId != null },
+                merchant = guess.merchantName,
+                personId = guess.personId,
+                date = entry.postedAt.atZone(ZoneId.systemDefault()).toLocalDate(),
+            )
+        }
+    }
+
     private fun topLevel(all: List<Category>, kind: TransactionKind): List<Category> {
         val type = if (kind == TransactionKind.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
         return all.filter { it.parentId == null && it.type == type && !it.isArchived }
@@ -180,10 +207,10 @@ class QuickAddViewModel @Inject constructor(
             _state.update { st ->
                 st.copy(
                     subCategoryId = s.subCategoryId,
-                    merchant = s.merchantName.orEmpty(),
+                    merchant = if (st.pending != null) st.merchant else s.merchantName.orEmpty(),
                     recentMerchants = s.recentMerchants,
                     personId = s.personId?.takeIf { id -> st.people.any { it.id == id } } ?: st.people.firstOrNull()?.id,
-                    accountId = s.accountId?.takeIf { id -> st.accounts.any { it.id == id } } ?: st.accountId,
+                    accountId = s.accountId?.takeIf { id -> st.pending == null && st.accounts.any { it.id == id } } ?: st.accountId,
                 )
             }
         }
@@ -226,8 +253,10 @@ class QuickAddViewModel @Inject constructor(
                     createdAt = s.editing?.createdAt ?: Instant.EPOCH,
                 ),
                 merchantName = if (transfer) null else s.merchant,
+                externalId = s.pending?.externalId,
             )
             s.payment?.let { recurring.logged(it) }
+            s.pending?.let { bankAlerts.markAdded(it, s.merchant) }
             _state.update { it.copy(saved = true) }
         }
     }
@@ -251,6 +280,9 @@ class QuickAddViewModel @Inject constructor(
 
         /** Set to start filled in from a recurring payment's reminder. */
         const val ARG_PAYMENT = "paymentId"
+
+        /** Set to start filled in from a bank notification on To confirm. */
+        const val ARG_PENDING = "pendingId"
     }
 }
 

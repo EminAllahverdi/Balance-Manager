@@ -48,5 +48,17 @@
             android:excludeFromRecents="true"
             android:taskAffinity=""
             android:theme="@style/Theme.Balance.Unlock" />
+
+        <receiver
+            android:name=".ToConfirmWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_to_confirm">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_to_confirm_info" />
+        </receiver>
     </application>
 </manifest>

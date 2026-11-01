@@ -21,6 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.feature.accounts.AccountsRoute
 import com.eminallahverdi.balance.feature.catalog.CatalogRoute
+import com.eminallahverdi.balance.feature.confirm.ConfirmRoute
 import com.eminallahverdi.balance.feature.history.HistoryRoute
 import com.eminallahverdi.balance.feature.home.HomeRoute
 import com.eminallahverdi.balance.feature.insights.InsightsRoute
@@ -37,6 +38,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object CatalogDestination
 @Serializable data object RecurringDestination
 @Serializable data object LoansDestination
+@Serializable data object ConfirmDestination
 
 /** History narrowed to what was tapped on Home. The names match the ARG_ keys in HistoryViewModel. */
 @Serializable data class TransactionsDestination(val categoryId: Long?, val personId: Long?, val month: String)
@@ -51,8 +53,11 @@ fun BalanceApp(
     onTransfer: () -> Unit,
     onOpenTransaction: (Long) -> Unit,
     onAddPayment: (Long) -> Unit,
+    onEditPending: (Long) -> Unit,
     openRecurring: Boolean,
     onRecurringOpened: () -> Unit,
+    openConfirm: Boolean,
+    onConfirmOpened: () -> Unit,
 ) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
@@ -60,6 +65,12 @@ fun BalanceApp(
         if (openRecurring && backStack != null) {
             nav.navigate(RecurringDestination) { launchSingleTop = true }
             onRecurringOpened()
+        }
+    }
+    LaunchedEffect(openConfirm, backStack != null) {
+        if (openConfirm && backStack != null) {
+            nav.navigate(ConfirmDestination) { launchSingleTop = true }
+            onConfirmOpened()
         }
     }
     val destination = backStack?.destination
@@ -82,6 +93,7 @@ fun BalanceApp(
                         nav.navigate(TransactionsDestination(categoryId, personId, month.toString())) { launchSingleTop = true }
                     },
                     onOpenRecurring = { nav.navigate(RecurringDestination) { launchSingleTop = true } },
+                    onOpenConfirm = { nav.navigate(ConfirmDestination) { launchSingleTop = true } },
                 )
             }
             composable<HistoryDestination> { HistoryRoute(onOpen = onOpenTransaction) }
@@ -95,11 +107,13 @@ fun BalanceApp(
                 )
             }
             composable<LoansDestination> { LoansRoute(onBack = { nav.popBackStack() }) }
+            composable<ConfirmDestination> { ConfirmRoute(onBack = { nav.popBackStack() }, onEdit = onEditPending) }
             composable<SettingsDestination> {
                 SettingsRoute(
                     onBack = { nav.popBackStack() },
                     onOpenCatalog = { nav.navigate(CatalogDestination) { launchSingleTop = true } },
                     onOpenRecurring = { nav.navigate(RecurringDestination) { launchSingleTop = true } },
+                    onOpenConfirm = { nav.navigate(ConfirmDestination) { launchSingleTop = true } },
                 )
             }
             composable<CatalogDestination> { CatalogRoute(onBack = { nav.popBackStack() }) }

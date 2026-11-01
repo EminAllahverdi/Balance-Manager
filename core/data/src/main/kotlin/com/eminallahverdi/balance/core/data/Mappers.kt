@@ -4,6 +4,7 @@ import com.eminallahverdi.balance.core.database.entity.AccountEntity
 import com.eminallahverdi.balance.core.database.entity.CategoryEntity
 import com.eminallahverdi.balance.core.database.entity.DebtEntity
 import com.eminallahverdi.balance.core.database.entity.MerchantEntity
+import com.eminallahverdi.balance.core.database.entity.PendingEntryEntity
 import com.eminallahverdi.balance.core.database.entity.PersonEntity
 import com.eminallahverdi.balance.core.database.entity.RecurringPaymentEntity
 import com.eminallahverdi.balance.core.database.entity.TransactionEntity
@@ -16,6 +17,8 @@ import com.eminallahverdi.balance.core.model.DebtDirection
 import com.eminallahverdi.balance.core.model.LoanTerms
 import com.eminallahverdi.balance.core.model.Merchant
 import com.eminallahverdi.balance.core.model.Money
+import com.eminallahverdi.balance.core.model.PendingEntry
+import com.eminallahverdi.balance.core.model.PendingStatus
 import com.eminallahverdi.balance.core.model.Person
 import com.eminallahverdi.balance.core.model.RecurringFrequency
 import com.eminallahverdi.balance.core.model.RecurringPayment
@@ -100,3 +103,15 @@ internal fun Transaction.toEntity(externalId: String? = null) = TransactionEntit
 
 internal fun DebtEntity.toModel() = Debt(id, counterparty, DebtDirection.valueOf(direction), Money(amountMinor), categoryId, note, LocalDate.ofEpochDay(date))
 internal fun Debt.toEntity() = DebtEntity(id, counterparty, direction.name, amount.minor, categoryId, note, date.toEpochDay())
+
+internal fun PendingEntryEntity.toModel() = PendingEntry(
+    id = id,
+    externalId = externalId,
+    source = source,
+    amount = Money(amountMinor),
+    kind = TransactionKind.valueOf(kind),
+    merchant = merchant,
+    postedAt = Instant.ofEpochMilli(postedAt),
+    status = PendingStatus.valueOf(status),
+    title = title,
+)

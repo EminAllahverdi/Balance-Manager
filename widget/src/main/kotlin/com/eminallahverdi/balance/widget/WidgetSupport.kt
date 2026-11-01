@@ -35,7 +35,9 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.eminallahverdi.balance.core.common.ApplicationScope
+import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
+import com.eminallahverdi.balance.core.data.EXTRA_OPEN_CONFIRM
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.ThemePreference
 import com.eminallahverdi.balance.core.datastore.UserPreferences
@@ -60,6 +62,7 @@ private const val QUICK_ADD_ACTIVITY = "com.eminallahverdi.balance.QuickAddActiv
 @InstallIn(SingletonComponent::class)
 internal interface WidgetEntryPoint {
     fun transactions(): TransactionRepository
+    fun bankAlerts(): BankAlertRepository
     fun catalog(): CatalogRepository
     fun preferences(): UserPreferencesRepository
 
@@ -90,6 +93,13 @@ internal fun quickAddAction(context: Context, kind: TransactionKind, categoryId:
 internal fun openAppAction(context: Context): Action = actionStartActivity(
     Intent().setClassName(context.packageName, MAIN_ACTIVITY)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+)
+
+/** The app, on To confirm. */
+internal fun openConfirmAction(context: Context): Action = actionStartActivity(
+    Intent().setClassName(context.packageName, MAIN_ACTIVITY)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        .putExtra(EXTRA_OPEN_CONFIRM, true),
 )
 
 /** radius-lg and a translucent bg-surface, inside the design's hairline. */

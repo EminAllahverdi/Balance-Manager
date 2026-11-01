@@ -1,7 +1,10 @@
 package com.eminallahverdi.balance.feature.settings
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -22,19 +25,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.EventRepeat
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,14 +49,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.datastore.ThemePreference
 import com.eminallahverdi.balance.core.datastore.WidgetBalanceMode
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
+import com.eminallahverdi.balance.core.designsystem.component.BtSwitch
 import com.eminallahverdi.balance.core.designsystem.component.BtTimePickerSheet
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
@@ -60,11 +70,17 @@ import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 
 @Composable
-fun SettingsRoute(onBack: () -> Unit, onOpenCatalog: () -> Unit, onOpenRecurring: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsRoute(
+    onBack: () -> Unit,
+    onOpenCatalog: () -> Unit,
+    onOpenRecurring: () -> Unit,
+    onOpenConfirm: () -> Unit,
+    viewModel: SettingsViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var pickingTime by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxSize()) {
-        SettingsList(state, viewModel, onBack, onOpenCatalog, onOpenRecurring, onPickTime = { pickingTime = true })
+        SettingsList(state, viewModel, onBack, onOpenCatalog, onOpenRecurring, onOpenConfirm, onPickTime = { pickingTime = true })
         BtTimePickerSheet(
             visible = pickingTime,
             title = "Reminder time",
@@ -82,6 +98,7 @@ private fun SettingsList(
     onBack: () -> Unit,
     onOpenCatalog: () -> Unit,
     onOpenRecurring: () -> Unit,
+    onOpenConfirm: () -> Unit,
     onPickTime: () -> Unit,
 ) {
     val themes = ThemePreference.entries
@@ -121,9 +138,11 @@ private fun SettingsList(
                     title = "Hide balance and income",
                     caption = "Tap the eye on Home to show them",
                     onClick = { viewModel.setHideAmounts(!state.preferences.hideAmountsInApp) },
-                ) { SettingSwitch(state.preferences.hideAmountsInApp, viewModel::setHideAmounts) }
+                ) { BtSwitch(state.preferences.hideAmountsInApp, viewModel::setHideAmounts) }
             }
             Section("Reminders") {
+                BankNotificationRows(state, viewModel, onOpenConfirm)
+                Divider()
                 EveningReminderRows(state, viewModel, onPickTime)
                 Divider()
                 SettingRow(
@@ -190,6 +209,92 @@ private fun WidgetBalanceRow(state: SettingsUiState, vm: SettingsViewModel) {
     }
 }
 
+/** Reading notifications is Android's most sensitive permission, so it's asked for here with the reason, only when it's turned on. */
+@Composable
+private fun BankNotificationRows(state: SettingsUiState, vm: SettingsViewModel, onOpenConfirm: () -> Unit) {
+    val context = LocalContext.current
+    val preferences = state.preferences
+    val on = preferences.bankNotificationsEnabled
+    var hasAccess by remember { mutableStateOf(context.canReadNotifications()) }
+    var explaining by remember { mutableStateOf(false) }
+    var pickingApps by remember { mutableStateOf(false) }
+    // The switch for this is in Android's settings, so it can change while this screen is away.
+    LifecycleResumeEffect(Unit) {
+        hasAccess = context.canReadNotifications()
+        onPauseOrDispose {}
+    }
+    val setEnabled = { enabled: Boolean ->
+        vm.setBankNotifications(enabled)
+        if (enabled && !hasAccess) explaining = true
+    }
+    val appNames = preferences.bankApps.map(context::appLabel).sorted().joinToString(", ")
+    SettingRow(
+        icon = Icons.Rounded.NotificationsActive,
+        title = "Bank notifications",
+        caption = when {
+            !on -> "Turn bank payments into ready-made entries"
+            !hasAccess -> "Needs notification access"
+            appNames.isEmpty() -> "Pick your bank apps"
+            else -> "$appNames · ${state.toConfirm} to confirm"
+        },
+        onClick = { if (on && !hasAccess) explaining = true else setEnabled(!on) },
+    ) { BtSwitch(on, setEnabled) }
+    if (on) {
+        Divider()
+        SettingRow(icon = Icons.Rounded.AccountBalance, title = "Bank apps", onClick = { pickingApps = true }) {
+            Text("${preferences.bankApps.size}", style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+            Chevron()
+        }
+        Divider()
+        SettingRow(icon = Icons.Rounded.Notifications, title = "To confirm", onClick = onOpenConfirm) {
+            Text("${state.toConfirm}", style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+            Chevron()
+        }
+    }
+    if (explaining) {
+        AlertDialog(
+            onDismissRequest = { explaining = false },
+            title = { Text("Allow notification access") },
+            text = {
+                Text(
+                    "Balance needs Android's notification access to see payments from your bank apps. It reads only the apps " +
+                        "you pick, nothing leaves your phone, and entries wait for you to confirm them.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    explaining = false
+                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                }) { Text("Open settings") }
+            },
+            dismissButton = { TextButton(onClick = { explaining = false }) { Text("Not now") } },
+        )
+    }
+    if (pickingApps) {
+        // Several can be picked, so choosing leaves the sheet open, and it closes by tapping away.
+        ChoiceSheet("Bank apps", onClose = { pickingApps = false }) { _ ->
+            Text(
+                "Apps appear here once they've sent a notification. Only the ones you tick are read.",
+                style = BtTheme.type.caption,
+                color = BtTheme.colors.textSecondary,
+            )
+            // An app with no name here has no launcher icon, so it isn't one the user would recognise.
+            preferences.seenApps.filter { it in preferences.bankApps || context.appLabel(it) != it }.sortedBy(context::appLabel).forEach { app ->
+                OptionRow(
+                    text = context.appLabel(app),
+                    selected = app in preferences.bankApps,
+                    onClick = { vm.setBankApp(app, app !in preferences.bankApps) },
+                )
+            }
+        }
+    }
+}
+
+private fun Context.canReadNotifications(): Boolean = packageName in NotificationManagerCompat.getEnabledListenerPackages(this)
+
+private fun Context.appLabel(app: String): String =
+    runCatching { packageManager.getApplicationLabel(packageManager.getApplicationInfo(app, 0)).toString() }.getOrDefault(app)
+
 @Composable
 private fun EveningReminderRows(state: SettingsUiState, vm: SettingsViewModel, onPickTime: () -> Unit) {
     val preferences = state.preferences
@@ -204,7 +309,7 @@ private fun EveningReminderRows(state: SettingsUiState, vm: SettingsViewModel, o
         title = "Evening reminder",
         caption = "If nothing was added that day",
         onClick = { setEnabled(!preferences.eveningReminderEnabled) },
-    ) { SettingSwitch(preferences.eveningReminderEnabled, setEnabled) }
+    ) { BtSwitch(preferences.eveningReminderEnabled, setEnabled) }
     if (preferences.eveningReminderEnabled) {
         Divider()
         SettingRow(icon = Icons.Rounded.Schedule, title = "Reminder time", onClick = onPickTime) {
@@ -262,20 +367,6 @@ private fun SettingRow(
         }
         trailing()
     }
-}
-
-@Composable
-private fun SettingSwitch(checked: Boolean, onChange: (Boolean) -> Unit) {
-    Switch(
-        checked = checked,
-        onCheckedChange = onChange,
-        colors = SwitchDefaults.colors(
-            checkedTrackColor = BtTheme.colors.accentFill,
-            checkedThumbColor = BtTheme.colors.accentOn,
-            uncheckedTrackColor = BtTheme.colors.bgSurfaceHigh,
-            uncheckedThumbColor = BtTheme.colors.textMuted,
-        ),
-    )
 }
 
 @Composable

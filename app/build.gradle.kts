@@ -43,6 +43,7 @@ dependencies {
     implementation(project(":feature:insights"))
     implementation(project(":feature:recurring"))
     implementation(project(":feature:loans"))
+    implementation(project(":feature:confirm"))
     implementation(project(":widget"))
 
     implementation(libs.androidx.core.ktx)
