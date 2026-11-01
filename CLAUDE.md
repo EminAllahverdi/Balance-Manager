@@ -84,7 +84,7 @@ The AVD `Pixel_3a_API_30` (Android 11) boots with `emulator -avd Pixel_3a_API_30
 The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. The home-screen widgets and the launcher shortcuts (add expense, add income, transfer) work. Settings has only rows that work. The owner's real Money Manager history is imported on their phone (debug app) and checked against the backup: every balance and month matched.
 
 Next, in order:
-1. Prove Drive on the phone: sign-in, a real upload, a night's run, and listing what's there. Sign-in and every Drive call have only reached Google's sign-in page so far. The archive and restore are proven by the round-trip test, but restoring from Drive hasn't run for real.
+1. Finish proving Drive on the phone. Sign-in and a real upload work, and the first night's run is booked for 03:00. Still to see: that night's run, and a restore from Drive, which has only been proven by the round-trip test.
 2. Finalizing, starting with the signed release build and the final app name. Real data should live in a real install. The debug and release apps have separate data, so the import or a Drive restore is run again in the release app, and the release key's SHA-1 needs its own OAuth client in the same Google Cloud project.
 3. First-run onboarding, which also asks for the notification permission and offers a Drive restore: the evening reminder is on by default, so nothing else asks on a fresh install.
 4. Wear OS, very last.
