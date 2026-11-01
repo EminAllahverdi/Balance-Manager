@@ -188,4 +188,9 @@ interface PendingEntryDao {
 @Dao
 interface MaintenanceDao {
     @Query("DELETE FROM txn") suspend fun clearTransactions()
+    @Query("DELETE FROM debt") suspend fun clearDebts()
+    @Query("DELETE FROM recurring_payment") suspend fun clearRecurring()
+    @Query("DELETE FROM pending_entry") suspend fun clearPending()
+    @Query("DELETE FROM merchant") suspend fun clearMerchants()
+    @Query("DELETE FROM account") suspend fun clearAccounts()
 }

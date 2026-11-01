@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -59,6 +60,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.common.DateLabels
+import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.common.askToUnlock
 import com.eminallahverdi.balance.core.common.canUnlockDevice
 import com.eminallahverdi.balance.core.datastore.ThemePreference
@@ -71,8 +73,11 @@ import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
 import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
+import com.eminallahverdi.balance.core.designsystem.component.PrimaryButton
 import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
+import com.eminallahverdi.balance.core.model.Money
+import com.eminallahverdi.balance.importer.moneymanager.ImportPreview
 import java.time.LocalDate
 
 @Composable
@@ -160,7 +165,11 @@ private fun SettingsList(
                     onClick = onOpenRecurring,
                 ) { Chevron() }
             }
-            Section("Data") { ExportRow(viewModel) }
+            Section("Data") {
+                ExportRow(viewModel)
+                Divider()
+                ImportRow(viewModel)
+            }
         }
     }
 }
@@ -257,6 +266,53 @@ private fun ExportRow(vm: SettingsViewModel) {
         caption = message ?: "Every entry, as a spreadsheet",
         onClick = { pickFile.launch("balance-${LocalDate.now()}.csv") },
     ) { Chevron() }
+}
+
+/** A backup, an optional mapping file, and a look at what would change before anything does. */
+@Composable
+private fun ImportRow(vm: SettingsViewModel) {
+    val state by vm.importState.collectAsStateWithLifecycle()
+    val pickBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { file -> file?.let(vm::chooseBackup) }
+    val pickMapping = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { file -> file?.let(vm::chooseMapping) }
+    SettingRow(
+        icon = Icons.Rounded.Upload,
+        title = "Import from Money Manager",
+        caption = state.message ?: "Carry on from a backup of your old app",
+        onClick = { pickBackup.launch(arrayOf("*/*")) },
+    ) { Chevron() }
+    val preview = state.preview ?: return
+    ChoiceSheet("Import from Money Manager", onClose = vm::closeImport) { choose ->
+        ImportSummary(preview)
+        OptionRow(
+            text = "Mapping file",
+            selected = state.hasMapping,
+            onClick = { pickMapping.launch(arrayOf("*/*")) },
+            caption = "Optional: how your categories and tags become these",
+        )
+        Text("This replaces the accounts, entries, loans and reminders now in the app.", style = BtTheme.type.caption, color = BtTheme.colors.statusWarning)
+        PrimaryButton("Replace and import", onClick = { choose(vm::runImport) }, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+@Composable
+private fun ImportSummary(preview: ImportPreview) {
+    val c = BtTheme.colors
+    val plan = preview.plan
+    val years = plan.entries.map { it.date.year }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (years.isNotEmpty()) Text("${plan.entries.size} entries, ${years.min()} to ${years.max()}", style = BtTheme.type.bodyStrong, color = c.textPrimary)
+        Text("Accounts: " + plan.accounts.joinToString(", ") { it.name }, style = BtTheme.type.caption, color = c.textSecondary)
+        if (preview.newCategories.isNotEmpty()) {
+            Text("New categories: " + preview.newCategories.joinToString(", "), style = BtTheme.type.caption, color = c.textSecondary)
+        }
+        if (plan.differences.isEmpty()) {
+            Text("Every account's balance matches the backup", style = BtTheme.type.caption, color = c.moneyIncome)
+        }
+        plan.differences.forEach {
+            val entries = MoneyFormat.format(Money(it.fromEntries), signed = true)
+            Text("${it.account} would be $entries, not ${MoneyFormat.format(Money(it.inBackup), signed = true)}", style = BtTheme.type.caption, color = c.moneyExpense)
+        }
+    }
 }
 
 /** Reading notifications is Android's most sensitive permission, so it's asked for here with the reason, only when it's turned on. */

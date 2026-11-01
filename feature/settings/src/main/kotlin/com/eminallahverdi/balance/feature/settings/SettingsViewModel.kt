@@ -17,6 +17,8 @@ import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.transactionsToCsv
+import com.eminallahverdi.balance.importer.moneymanager.ImportPreview
+import com.eminallahverdi.balance.importer.moneymanager.MoneyManagerImporter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -27,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
@@ -48,6 +51,13 @@ data class SettingsUiState(
     }
 }
 
+/** [preview] opens the sheet. [message] is what the row says about the last attempt. */
+data class ImportUiState(
+    val preview: ImportPreview? = null,
+    val hasMapping: Boolean = false,
+    val message: String? = null,
+)
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     catalog: CatalogRepository,
@@ -55,14 +65,19 @@ class SettingsViewModel @Inject constructor(
     bankAlerts: BankAlertRepository,
     private val transactions: TransactionRepository,
     private val prefs: UserPreferencesRepository,
+    private val importer: MoneyManagerImporter,
     @ApplicationContext private val context: Context,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val exportResult = MutableStateFlow<String?>(null)
+    private val importing = MutableStateFlow(ImportUiState())
+    private var backupFile: Uri? = null
+    private var mappingFile: Uri? = null
 
     /** What the last export came to, for its row. */
     val exportMessage: StateFlow<String?> = exportResult
+    val importState: StateFlow<ImportUiState> = importing
 
     val state: StateFlow<SettingsUiState> = combine(
         combine(prefs.preferences, bankAlerts.waitingCount) { p, waiting -> p to waiting },
@@ -99,6 +114,39 @@ class SettingsViewModel @Inject constructor(
                 entries.size == 1 -> "1 entry saved"
                 else -> "${entries.size} entries saved"
             }
+        }
+    }
+
+    fun chooseBackup(file: Uri) {
+        backupFile = file
+        mappingFile = null
+        loadPreview()
+    }
+
+    fun chooseMapping(file: Uri) {
+        mappingFile = file
+        loadPreview()
+    }
+
+    fun closeImport() = importing.update { it.copy(preview = null) }
+
+    private fun loadPreview() {
+        val backup = backupFile ?: return
+        importing.update { it.copy(message = "Reading the backup…") }
+        viewModelScope.launch {
+            runCatching { importer.prepare(backup, mappingFile) }
+                .onSuccess { preview -> importing.value = ImportUiState(preview, hasMapping = mappingFile != null) }
+                .onFailure { importing.update { it.copy(message = "Couldn't read that file") } }
+        }
+    }
+
+    /** Nothing changes before this, and the database rolls back if it fails partway. */
+    fun runImport() {
+        val plan = importing.value.preview?.plan ?: return
+        importing.value = ImportUiState(message = "Importing…")
+        viewModelScope.launch {
+            val done = runCatching { importer.import(plan) }.isSuccess
+            importing.value = ImportUiState(message = if (done) "${plan.entries.size} entries imported" else "The import failed, so nothing changed")
         }
     }
 
