@@ -6,6 +6,7 @@ import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.datastore.ThemePreference
 import com.eminallahverdi.balance.core.datastore.UserPreferences
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
+import com.eminallahverdi.balance.core.datastore.WidgetBalanceMode
 import com.eminallahverdi.balance.core.model.Account
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -43,4 +44,5 @@ class SettingsViewModel @Inject constructor(
     fun setDefaultAccount(id: Long) { viewModelScope.launch { prefs.setDefaultExpenseAccount(id) } }
     fun setTheme(theme: ThemePreference) { viewModelScope.launch { prefs.setTheme(theme) } }
     fun setHideAmounts(hide: Boolean) { viewModelScope.launch { prefs.setHideAmounts(hide) } }
+    fun setWidgetBalanceMode(mode: WidgetBalanceMode) { viewModelScope.launch { prefs.setWidgetBalanceMode(mode) } }
 }

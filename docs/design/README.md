@@ -45,13 +45,13 @@ Use **Material Symbols Rounded**, weight 400 and outlined, at 22 px in rows and 
 - `PersonStrip`: one card per person with their monthly total.
 - `CategoryRow`: icon tile, name, people line, amount, chevron, and a person split bar (6 px tall, 2 px gaps). Tapping opens that month's transactions, where each one can be edited.
 - `TransactionRow`: icon tile, merchant or sub-category, the line "category · sub · account", amount, `PersonTag`.
-- `Chip`: default (`bg-surface-raised` with a hairline) or selected (`accent-fill`). A filter chip ends in a small arrow and opens a `FilterSheet`.
+- `Chip`: default (`bg-surface-raised` with a hairline) or selected (`accent-fill`). A filter chip ends in a small arrow and opens a `ChoiceSheet`.
 - `SegmentedToggle`: Category / Person, or Expense / Income / Transfer.
 - `QuickAddSheet`: amount, category, sub-category, merchant, for whom, date, note, and a custom keypad with Save.
-- `FilterSheet`: a bottom sheet for one filter, used instead of a menu. Long choices become grids that fit one screen: a year stepper over a 12-month grid, or a 4-column category grid. Short choices are rows with a check on the selected one. The first option always clears the filter.
+- `ChoiceSheet`: a bottom sheet for picking one thing, used instead of a menu or spinner everywhere: History filters and Settings. Long choices become grids that fit one screen: a year stepper over a 12-month grid, or a 4-column category grid. Short choices are `OptionRow`s with a check on the selected one, and a caption line when a choice needs explaining. In a filter, the first option always clears it.
 - `EditorSheet`: a bottom sheet with a live preview, the title and Remove in the header, then the fields, then Save. Remove sits at the top so it's visible without scrolling, and it always asks first.
 - `BottomBar`: Home, History, Insights, Accounts, with a centre lime add button 64 px with 22 px corners.
-- Widgets: `BalanceWidget` 2×1, `QuickActionsWidget` 4×1, `TodayWidget` 4×2. All use `radius-lg` and a translucent `bg-surface`.
+- Widgets: `BalanceWidget` 2×1, `QuickActionsWidget` 4×1, `TodayWidget` 4×2. All use `radius-lg` and a translucent `bg-surface`. Text uses the system font, because home-screen widgets can't load the bundled ones. The four one-tap categories are the first four in the user's own order.
 
 ## Writing
 

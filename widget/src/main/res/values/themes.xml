@@ -1,0 +1,9 @@
+<resources>
+    <!-- Shows only the fingerprint prompt, over the home screen. Below Android 9 that prompt is an AppCompat dialog. -->
+    <style name="Theme.Balance.Unlock" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+</resources>

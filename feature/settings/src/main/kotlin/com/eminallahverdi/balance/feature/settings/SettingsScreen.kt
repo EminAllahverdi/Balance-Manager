@@ -23,8 +23,7 @@ import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -41,8 +40,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.datastore.ThemePreference
+import com.eminallahverdi.balance.core.datastore.WidgetBalanceMode
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
+import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
+import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
+import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
@@ -80,6 +83,8 @@ fun SettingsRoute(onBack: () -> Unit, onOpenCatalog: () -> Unit, viewModel: Sett
                 ) { Chevron() }
             }
             Section("Privacy") {
+                WidgetBalanceRow(state, viewModel)
+                Divider()
                 SettingRow(
                     icon = Icons.Rounded.BlurOn,
                     title = "Hide balance and income",
@@ -105,23 +110,70 @@ fun SettingsRoute(onBack: () -> Unit, onOpenCatalog: () -> Unit, viewModel: Sett
 @Composable
 private fun AccountRow(state: SettingsUiState, vm: SettingsViewModel) {
     var open by remember { mutableStateOf(false) }
-    Box {
-        SettingRow(
-            icon = Icons.Rounded.AccountBalanceWallet,
-            title = "Default expense account",
-            caption = "Picked first when you add an expense",
-            onClick = { open = true },
-        ) {
-            Text(state.defaultAccount?.name.orEmpty(), style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
-            Chevron()
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+    SettingRow(
+        icon = Icons.Rounded.AccountBalanceWallet,
+        title = "Default expense account",
+        caption = "Picked first when you add an expense",
+        onClick = { open = true },
+    ) {
+        Text(state.defaultAccount?.name.orEmpty(), style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+        Chevron()
+    }
+    if (open) {
+        ChoiceSheet("Default expense account", onClose = { open = false }) { choose ->
             state.accounts.forEach { account ->
-                DropdownMenuItem(text = { Text(account.name) }, onClick = { vm.setDefaultAccount(account.id); open = false })
+                OptionRow(
+                    text = account.name,
+                    selected = account.id == state.defaultAccount?.id,
+                    onClick = { choose { vm.setDefaultAccount(account.id) } },
+                    leading = { CategoryTile(account.icon, account.color, size = 32.dp, iconSize = 18.dp, corner = 10.dp) },
+                )
             }
         }
     }
 }
+
+@Composable
+private fun WidgetBalanceRow(state: SettingsUiState, vm: SettingsViewModel) {
+    var open by remember { mutableStateOf(false) }
+    val preferences = state.preferences
+    SettingRow(
+        icon = Icons.Rounded.VisibilityOff,
+        title = "Widget balance",
+        caption = "How the home-screen balance is shown",
+        onClick = { open = true },
+    ) {
+        Text(preferences.widgetBalanceMode.label(preferences.widgetRevealSeconds), style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+        Chevron()
+    }
+    if (open) {
+        ChoiceSheet("Widget balance", onClose = { open = false }) { choose ->
+            WidgetBalanceMode.entries.forEach { mode ->
+                OptionRow(
+                    text = mode.label(preferences.widgetRevealSeconds),
+                    selected = mode == preferences.widgetBalanceMode,
+                    onClick = { choose { vm.setWidgetBalanceMode(mode) } },
+                    caption = mode.explanation,
+                )
+            }
+        }
+    }
+}
+
+private fun WidgetBalanceMode.label(revealSeconds: Int): String = when (this) {
+    WidgetBalanceMode.ALWAYS_SHOW -> "Always show"
+    WidgetBalanceMode.ALWAYS_HIDE -> "Always hide"
+    WidgetBalanceMode.TAP_TO_SHOW -> "Tap to show · $revealSeconds s"
+    WidgetBalanceMode.FINGERPRINT -> "Fingerprint to show"
+}
+
+private val WidgetBalanceMode.explanation: String
+    get() = when (this) {
+        WidgetBalanceMode.ALWAYS_SHOW -> "Balance is always visible."
+        WidgetBalanceMode.ALWAYS_HIDE -> "Never shown on the home screen."
+        WidgetBalanceMode.TAP_TO_SHOW -> "Tap to show, then it hides again."
+        WidgetBalanceMode.FINGERPRINT -> "Touch opens a small fingerprint prompt."
+    }
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {

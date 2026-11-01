@@ -8,35 +8,24 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -44,6 +33,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
+import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
+import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
@@ -53,7 +44,6 @@ import com.eminallahverdi.balance.core.model.CategoryType
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
-import kotlinx.coroutines.launch
 
 /** Matches how far back Home can swipe. */
 private const val YEARS_BACK = 49
@@ -68,66 +58,31 @@ internal enum class FilterSheet(val title: String) {
 }
 
 /** Picks one filter value. Grids keep the longer choices on one screen, where a menu would run off it. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun HistoryFilterSheet(sheet: FilterSheet, state: HistoryUiState, vm: HistoryViewModel, onClose: () -> Unit) {
     val filter = state.filter
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
-    val choose = { apply: () -> Unit ->
-        apply()
-        scope.launch { sheetState.hide() }.invokeOnCompletion { onClose() }
-        Unit
-    }
-
-    ModalBottomSheet(onDismissRequest = onClose, sheetState = sheetState, containerColor = BtTheme.colors.bgSurface) {
-        Column(
-            Modifier.fillMaxWidth().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(sheet.title, style = BtTheme.type.titleMedium, color = BtTheme.colors.textPrimary, modifier = Modifier.padding(bottom = 4.dp))
-            when (sheet) {
-                FilterSheet.MONTH -> MonthPicker(filter.month) { month -> choose { vm.setMonth(month) } }
-                FilterSheet.CATEGORY -> CategoryPicker(state.categories, filter.categoryId) { id -> choose { vm.setCategory(id) } }
-                FilterSheet.PERSON -> {
-                    OptionRow("Everyone", filter.personId == null, onClick = { choose { vm.setPerson(null) } })
-                    state.people.forEach { person ->
-                        OptionRow(person.name, person.id == filter.personId, onClick = { choose { vm.setPerson(person.id) } }, leading = { PersonDot(person.color, 10.dp) })
-                    }
+    ChoiceSheet(sheet.title, onClose) { choose ->
+        when (sheet) {
+            FilterSheet.MONTH -> MonthPicker(filter.month) { month -> choose { vm.setMonth(month) } }
+            FilterSheet.CATEGORY -> CategoryPicker(state.categories, filter.categoryId) { id -> choose { vm.setCategory(id) } }
+            FilterSheet.PERSON -> {
+                OptionRow("Everyone", filter.personId == null, onClick = { choose { vm.setPerson(null) } })
+                state.people.forEach { person ->
+                    OptionRow(person.name, person.id == filter.personId, onClick = { choose { vm.setPerson(person.id) } }, leading = { PersonDot(person.color, 10.dp) })
                 }
-                FilterSheet.ACCOUNT -> {
-                    OptionRow("All accounts", filter.accountId == null, onClick = { choose { vm.setAccount(null) } })
-                    state.accounts.forEach { account ->
-                        OptionRow(
-                            text = account.name,
-                            selected = account.id == filter.accountId,
-                            onClick = { choose { vm.setAccount(account.id) } },
-                            leading = { CategoryTile(account.icon, account.color, size = 32.dp, iconSize = 18.dp, corner = 10.dp) },
-                        )
-                    }
+            }
+            FilterSheet.ACCOUNT -> {
+                OptionRow("All accounts", filter.accountId == null, onClick = { choose { vm.setAccount(null) } })
+                state.accounts.forEach { account ->
+                    OptionRow(
+                        text = account.name,
+                        selected = account.id == filter.accountId,
+                        onClick = { choose { vm.setAccount(account.id) } },
+                        leading = { CategoryTile(account.icon, account.color, size = 32.dp, iconSize = 18.dp, corner = 10.dp) },
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun OptionRow(text: String, selected: Boolean, onClick: () -> Unit, leading: (@Composable () -> Unit)? = null) {
-    val c = BtTheme.colors
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 52.dp)
-            .clip(BtShapes.md)
-            .background(if (selected) c.bgSurfaceHigh else Color.Transparent)
-            .clickable(role = Role.RadioButton, onClick = onClick)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        leading?.invoke()
-        Text(text, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-        if (selected) Icon(Icons.Rounded.Check, "Selected", tint = c.accentText, modifier = Modifier.size(20.dp))
     }
 }
 

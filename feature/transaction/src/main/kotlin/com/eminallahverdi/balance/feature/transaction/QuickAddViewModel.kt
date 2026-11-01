@@ -75,6 +75,7 @@ class QuickAddViewModel @Inject constructor(
     init {
         val requestedKind = savedState.get<String>(ARG_KIND)?.let { runCatching { TransactionKind.valueOf(it) }.getOrNull() } ?: TransactionKind.EXPENSE
         val editingId = savedState.get<Long>(ARG_TRANSACTION)
+        val requestedCategory = savedState.get<Long>(ARG_CATEGORY)
         viewModelScope.launch {
             val editing = editingId?.let { transactions.get(it) }
             if (editing != null) loadForEditing(editing)
@@ -83,6 +84,7 @@ class QuickAddViewModel @Inject constructor(
             combine(catalog.accounts, catalog.categories, catalog.people) { a, c, p -> Triple(a, c, p) }
                 .collect { (accounts, categories, people) ->
                     val active = accounts.filterNot { it.isArchived }
+                    val firstLoad = _state.value.loading
                     _state.update { s ->
                         val accountId = s.accountId ?: active.firstOrNull { it.id == defaultAccount }?.id ?: active.firstOrNull()?.id
                         s.copy(
@@ -97,6 +99,7 @@ class QuickAddViewModel @Inject constructor(
                             personId = s.personId ?: people.firstOrNull()?.id,
                         )
                     }
+                    if (firstLoad) _state.value.categories.firstOrNull { it.id == requestedCategory }?.let(::selectCategory)
                 }
         }
     }
@@ -216,6 +219,9 @@ class QuickAddViewModel @Inject constructor(
 
         /** Set to edit a saved transaction instead of adding one. */
         const val ARG_TRANSACTION = "transactionId"
+
+        /** Set to start with this category picked, as a one-tap category on the widget does. */
+        const val ARG_CATEGORY = "categoryId"
     }
 }
 

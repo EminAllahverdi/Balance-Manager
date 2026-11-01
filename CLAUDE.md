@@ -7,6 +7,7 @@ Personal Android app for tracking every expense and income for one household. It
 - Screens (approved for the MVP): https://claude.ai/artifact/SxvUVfe8cVcaBCsfdG8jhW
 - Keep the design current: once a UI change is confirmed on a device, add anything the artboards don't show to the screens file, and to the design system if it's a new pattern. Features not built yet stay in the design as they are.
 - Compose implementation: `core/designsystem`. `BtTheme.colors` and `BtTheme.type` mirror `docs/design/tokens.json` one to one. When a token changes, update both.
+- Picking one thing always opens a bottom sheet (`ChoiceSheet` and `OptionRow`), never a dropdown menu or spinner, even for a short list.
 
 ## Stack
 Kotlin and Jetpack Compose (Material 3 under our own design system), Hilt, Room, DataStore, Coroutines/Flow, type-safe Navigation Compose, Glance widgets, WorkManager. No backend. Backup goes to the Google Drive app-data folder (planned).
@@ -14,7 +15,7 @@ Kotlin and Jetpack Compose (Material 3 under our own design system), Hilt, Room,
 ## Modules
 ```
 build-logic/convention   Gradle convention plugins: bm.android.application | library | compose | feature, bm.hilt, bm.room, bm.jvm.library
-app                      MainActivity, QuickAddActivity (translucent, opens over the home screen), navigation, bottom bar
+app                      MainActivity, QuickAddActivity (translucent, opens over the home screen), navigation, bottom bar, launcher shortcuts
 core:model               Pure Kotlin. Money (minor units), Person, Category (parentId = sub-category), Account, Transaction(Kind), SpendingCalculator
 core:common              Dispatchers, MoneyFormat (₼), DateLabels
 core:designsystem        Theme, bundled fonts (Manrope, Space Grotesk), BtIcons (string key -> ImageVector), components
@@ -26,9 +27,9 @@ feature:transaction      Quick add: step 1 amount + category + keypad, step 2 de
 feature:catalog          Categories, sub-categories and people: add, edit, drag to reorder, archive and restore, photo avatars (AvatarStore in core:data)
 feature:history          Search, month/person/category/account filters in bottom sheets, day groups. Tapping a row opens quick add to edit or delete it. The History tab, and from Home the same screen pre-filtered with a back button (TransactionsDestination)
 feature:insights         Week/month/year: stacked bars by person (tap a bar to select it), daily average, saved, biggest category changes. Numbers come from InsightsCalculator in core:model
-feature:settings         Default expense account, theme, hide amounts, way into the catalog. Rows are added as the features behind them land
+feature:settings         Default expense account, theme, widget balance, hide amounts, way into the catalog. Rows are added as the features behind them land
 feature:accounts         Balances, default account, in-total and widget switches, add/edit/archive, adjust balance, recent transfers. Transfers themselves are added in quick add
-widget                   to do: Glance 2x1 balance (privacy modes), 4x1 actions, 4x2 today + categories
+widget                   Glance 2x1 balance (always show, always hide, tap or fingerprint to reveal), 4x1 actions, 4x2 today + one-tap categories. WidgetRefresher redraws them when data changes and at midnight
 importer:moneymanager    to do: reads .mmbackup (zip -> SQLite MyFinance.db) on the device
 ```
 
@@ -51,10 +52,10 @@ importer:moneymanager    to do: reads .mmbackup (zip -> SQLite MyFinance.db) on 
 CI (`.github/workflows/android.yml`) runs both on every push and uploads the debug APK.
 
 ## Status (branch feat/mvp-foundation)
-The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. Settings has only rows that work: app lock, widget balance, reminders, backup, import and export join it with their features.
+The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. The home-screen widgets and the launcher shortcuts (add expense, add income, transfer) work. Settings has only rows that work: app lock, reminders, backup, import and export join it with their features.
 
 Next, in order:
-1. `widget` (Glance) and app shortcuts, then the Money Manager importer, which uses a mapping file kept on the device, never in this repo.
+1. The Money Manager importer, which uses a mapping file kept on the device, never in this repo. The owner imports their real backup once every feature is finished.
 2. Evening reminder, recurring payments and Drive backup (WorkManager).
 
 Polish, after all of the above:
@@ -62,3 +63,6 @@ Polish, after all of the above:
 - Home card chart view: an icon on the Home card swaps the card's content for a pie chart of that month, with a selector for expenses or income. While the chart shows, the icon becomes the normal-view icon and switches back. The choice is saved in `UserPreferences`, so the card stays in whichever view the user left it.
 - Insights charts: review the chart design and make it cleaner, more beautiful and more modern. The approved artboard is the starting point, not the limit.
 - Accounts actions: Transfer's lime fill beside the outlined Adjust balance reads like a selected tab, not an action. Show the fix in the design first (edit the current design system and screens) and get the owner's approval there before changing code.
+- Widget picker: the launcher shows only the app icon as each widget's preview. Give them `android:previewLayout` layouts that look like the real widgets.
+- Quick add's account picker is the last `DropdownMenu`. Move it to a `ChoiceSheet`.
+- Light theme: pale category colours such as Transport's yellow are faint on their tinted tiles, in the app and on the Today widget.

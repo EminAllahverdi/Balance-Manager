@@ -37,5 +37,5 @@ include(":feature:insights")
 include(":feature:accounts")
 include(":feature:catalog")
 include(":feature:settings")
-// include(":widget") // added as the module lands
+include(":widget")
 // include(":importer:moneymanager") // added as the module lands
