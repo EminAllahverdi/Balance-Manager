@@ -41,6 +41,7 @@ dependencies {
     implementation(project(":feature:settings"))
     implementation(project(":feature:accounts"))
     implementation(project(":feature:insights"))
+    implementation(project(":feature:recurring"))
     implementation(project(":widget"))
 
     implementation(libs.androidx.core.ktx)

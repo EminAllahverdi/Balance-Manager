@@ -3,6 +3,7 @@ package com.eminallahverdi.balance.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.data.CatalogRepository
+import com.eminallahverdi.balance.core.data.RecurringRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.AccountBalance
@@ -12,6 +13,7 @@ import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.SpendingCalculator
 import com.eminallahverdi.balance.core.model.sum
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -32,12 +34,15 @@ data class HomeUiState(
     val total: Money = Money.ZERO,
     val balances: List<AccountBalance> = emptyList(),
     val expandedPersonId: Long? = null,
+    /** Recurring payments waiting to be confirmed. */
+    val duePayments: Int = 0,
 )
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val catalog: CatalogRepository,
     private val transactions: TransactionRepository,
+    recurring: RecurringRepository,
     private val prefs: UserPreferencesRepository,
 ) : ViewModel() {
 
@@ -56,8 +61,10 @@ class HomeViewModel @Inject constructor(
         transactions.balances,
         prefs.preferences,
         combine(view, expanded) { v, e -> v to e },
-    ) { balances, p, (v, e) ->
+        recurring.payments,
+    ) { balances, p, (v, e), payments ->
         val included = balances.filter { it.account.includeInTotal }
+        val today = LocalDate.now()
         HomeUiState(
             loading = false,
             view = v,
@@ -65,6 +72,7 @@ class HomeViewModel @Inject constructor(
             total = included.map { it.balance }.sum(),
             balances = included,
             expandedPersonId = e,
+            duePayments = payments.count { it.isDue(today) },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 

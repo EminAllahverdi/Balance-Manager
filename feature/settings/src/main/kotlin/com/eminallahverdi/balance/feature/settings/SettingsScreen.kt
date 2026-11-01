@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Icon
@@ -51,7 +52,7 @@ import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 
 @Composable
-fun SettingsRoute(onBack: () -> Unit, onOpenCatalog: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsRoute(onBack: () -> Unit, onOpenCatalog: () -> Unit, onOpenRecurring: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val themes = ThemePreference.entries
     Column(Modifier.fillMaxSize().background(BtTheme.colors.bgCanvas).verticalScroll(rememberScrollState()).navigationBarsPadding()) {
@@ -102,6 +103,14 @@ fun SettingsRoute(onBack: () -> Unit, onOpenCatalog: () -> Unit, viewModel: Sett
                         ),
                     )
                 }
+            }
+            Section("Reminders") {
+                SettingRow(
+                    icon = Icons.Rounded.EventRepeat,
+                    title = "Recurring payments",
+                    caption = state.recurringSummary,
+                    onClick = onOpenRecurring,
+                ) { Chevron() }
             }
         }
     }

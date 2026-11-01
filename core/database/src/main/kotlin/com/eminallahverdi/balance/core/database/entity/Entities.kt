@@ -90,3 +90,26 @@ data class TransactionEntity(
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long,
 )
+
+@Entity(
+    tableName = "recurring_payment",
+    foreignKeys = [
+        ForeignKey(entity = AccountEntity::class, parentColumns = ["id"], childColumns = ["account_id"], onDelete = ForeignKey.RESTRICT),
+        ForeignKey(entity = CategoryEntity::class, parentColumns = ["id"], childColumns = ["category_id"], onDelete = ForeignKey.RESTRICT),
+        ForeignKey(entity = PersonEntity::class, parentColumns = ["id"], childColumns = ["person_id"], onDelete = ForeignKey.SET_NULL),
+    ],
+    indices = [Index("account_id"), Index("category_id"), Index("person_id")],
+)
+data class RecurringPaymentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    @ColumnInfo(name = "amount_minor") val amountMinor: Long,
+    @ColumnInfo(name = "account_id") val accountId: Long,
+    @ColumnInfo(name = "category_id") val categoryId: Long,
+    @ColumnInfo(name = "person_id") val personId: Long? = null,
+    /** "WEEKLY", "MONTHLY" or "YEARLY". */
+    val frequency: String,
+    /** LocalDate.toEpochDay(). */
+    @ColumnInfo(name = "next_date") val nextDate: Long,
+    @ColumnInfo(name = "anchor_day") val anchorDay: Int,
+)

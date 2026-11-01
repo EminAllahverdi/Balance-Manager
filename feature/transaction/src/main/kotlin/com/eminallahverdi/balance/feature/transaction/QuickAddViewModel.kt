@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.data.CatalogRepository
+import com.eminallahverdi.balance.core.data.RecurringRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.Account
@@ -11,6 +12,7 @@ import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
+import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.Transaction
 import com.eminallahverdi.balance.core.model.TransactionKind
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,6 +49,8 @@ data class QuickAddUiState(
     val note: String = "",
     /** The saved transaction being changed, or null when adding a new one. */
     val editing: Transaction? = null,
+    /** The reminder this entry was filled in from. Saving it moves that reminder to its next date. */
+    val payment: RecurringPayment? = null,
     val saved: Boolean = false,
 ) {
     val amount: Money? get() = Money.parse(amountText)?.takeIf { it.minor > 0 }
@@ -65,6 +69,7 @@ data class QuickAddUiState(
 class QuickAddViewModel @Inject constructor(
     private val catalog: CatalogRepository,
     private val transactions: TransactionRepository,
+    private val recurring: RecurringRepository,
     private val prefs: UserPreferencesRepository,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -76,9 +81,11 @@ class QuickAddViewModel @Inject constructor(
         val requestedKind = savedState.get<String>(ARG_KIND)?.let { runCatching { TransactionKind.valueOf(it) }.getOrNull() } ?: TransactionKind.EXPENSE
         val editingId = savedState.get<Long>(ARG_TRANSACTION)
         val requestedCategory = savedState.get<Long>(ARG_CATEGORY)
+        val paymentId = savedState.get<Long>(ARG_PAYMENT)
         viewModelScope.launch {
             val editing = editingId?.let { transactions.get(it) }
             if (editing != null) loadForEditing(editing)
+            paymentId?.let { recurring.get(it) }?.let { loadFromPayment(it) }
             val startKind = editing?.kind ?: requestedKind
             val defaultAccount = prefs.current().defaultExpenseAccountId
             combine(catalog.accounts, catalog.categories, catalog.people) { a, c, p -> Triple(a, c, p) }
@@ -119,6 +126,23 @@ class QuickAddViewModel @Inject constructor(
                 personId = t.personId,
                 date = t.date,
                 note = t.note,
+            )
+        }
+    }
+
+    /** A ready-made entry from a reminder. Nothing is saved until the user presses Save. */
+    private suspend fun loadFromPayment(payment: RecurringPayment) {
+        val category = catalog.categories.first().firstOrNull { it.id == payment.categoryId }
+        _state.update {
+            it.copy(
+                payment = payment,
+                amountText = payment.amount.toInputText(),
+                accountId = payment.accountId,
+                categoryId = category?.parentId ?: category?.id,
+                subCategoryId = category?.id?.takeIf { category.parentId != null },
+                merchant = payment.name,
+                personId = payment.personId,
+                date = payment.nextDate,
             )
         }
     }
@@ -202,6 +226,7 @@ class QuickAddViewModel @Inject constructor(
                 ),
                 merchantName = if (transfer) null else s.merchant,
             )
+            s.payment?.let { recurring.advance(it) }
             _state.update { it.copy(saved = true) }
         }
     }
@@ -222,6 +247,9 @@ class QuickAddViewModel @Inject constructor(
 
         /** Set to start with this category picked, as a one-tap category on the widget does. */
         const val ARG_CATEGORY = "categoryId"
+
+        /** Set to start filled in from a recurring payment's reminder. */
+        const val ARG_PAYMENT = "paymentId"
     }
 }
 

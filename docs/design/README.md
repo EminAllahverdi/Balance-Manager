@@ -48,6 +48,7 @@ Use **Material Symbols Rounded**, weight 400 and outlined, at 22 px in rows and 
 - `Chip`: default (`bg-surface-raised` with a hairline) or selected (`accent-fill`). A filter chip ends in a small arrow and opens a `ChoiceSheet`.
 - `SegmentedToggle`: Category / Person, or Expense / Income / Transfer.
 - `QuickAddSheet`: amount, category, sub-category, merchant, for whom, date, note, and a custom keypad with Save.
+- `RecurringPayment`: a reminder, never an entry. Nothing adds itself: when one is due and missing from the list it shows in the Due list, as a row on Home and in a daily notification, with Skip and Add. Add opens `QuickAddSheet` filled in, for the user to check and save. A reminder clears on its own once an entry with the same name, or the same category and amount, is in the list.
 - `ChoiceSheet`: a bottom sheet for picking one thing, used instead of a menu or spinner everywhere: History filters and Settings. Long choices become grids that fit one screen: a year stepper over a 12-month grid, or a 4-column category grid. Short choices are `OptionRow`s with a check on the selected one, and a caption line when a choice needs explaining. In a filter, the first option always clears it.
 - `EditorSheet`: a bottom sheet with a live preview, the title and Remove in the header, then the fields, then Save. Remove sits at the top so it's visible without scrolling, and it always asks first.
 - `BottomBar`: Home, History, Insights, Accounts, with a centre lime add button 64 px with 22 px corners.

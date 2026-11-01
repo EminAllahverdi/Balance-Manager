@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
@@ -23,6 +24,7 @@ import com.eminallahverdi.balance.feature.catalog.CatalogRoute
 import com.eminallahverdi.balance.feature.history.HistoryRoute
 import com.eminallahverdi.balance.feature.home.HomeRoute
 import com.eminallahverdi.balance.feature.insights.InsightsRoute
+import com.eminallahverdi.balance.feature.recurring.RecurringRoute
 import com.eminallahverdi.balance.feature.settings.SettingsRoute
 import kotlinx.serialization.Serializable
 
@@ -32,15 +34,32 @@ import kotlinx.serialization.Serializable
 @Serializable data object AccountsDestination
 @Serializable data object SettingsDestination
 @Serializable data object CatalogDestination
+@Serializable data object RecurringDestination
 
 /** History narrowed to what was tapped on Home. The names match the ARG_ keys in HistoryViewModel. */
 @Serializable data class TransactionsDestination(val categoryId: Long?, val personId: Long?, val month: String)
 
-/** The main shell: the tab content above the bottom bar. [onAdd] opens quick add, [onTransfer] the same sheet on Transfer, [onOpenTransaction] it to edit. */
+/**
+ * The main shell: the tab content above the bottom bar. [onAdd] opens quick add, [onTransfer] the same sheet on Transfer,
+ * [onOpenTransaction] it to edit and [onAddPayment] it filled in from a reminder. [openRecurring] goes to the reminders, when one is tapped.
+ */
 @Composable
-fun BalanceApp(onAdd: () -> Unit, onTransfer: () -> Unit, onOpenTransaction: (Long) -> Unit) {
+fun BalanceApp(
+    onAdd: () -> Unit,
+    onTransfer: () -> Unit,
+    onOpenTransaction: (Long) -> Unit,
+    onAddPayment: (Long) -> Unit,
+    openRecurring: Boolean,
+    onRecurringOpened: () -> Unit,
+) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
+    LaunchedEffect(openRecurring, backStack != null) {
+        if (openRecurring && backStack != null) {
+            nav.navigate(RecurringDestination) { launchSingleTop = true }
+            onRecurringOpened()
+        }
+    }
     val destination = backStack?.destination
     val isSelected = { tab: TopLevelTab -> destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true }
 
@@ -60,6 +79,7 @@ fun BalanceApp(onAdd: () -> Unit, onTransfer: () -> Unit, onOpenTransaction: (Lo
                     onOpenTransactions = { categoryId, personId, month ->
                         nav.navigate(TransactionsDestination(categoryId, personId, month.toString())) { launchSingleTop = true }
                     },
+                    onOpenRecurring = { nav.navigate(RecurringDestination) { launchSingleTop = true } },
                 )
             }
             composable<HistoryDestination> { HistoryRoute(onOpen = onOpenTransaction) }
@@ -70,9 +90,11 @@ fun BalanceApp(onAdd: () -> Unit, onTransfer: () -> Unit, onOpenTransaction: (Lo
                 SettingsRoute(
                     onBack = { nav.popBackStack() },
                     onOpenCatalog = { nav.navigate(CatalogDestination) { launchSingleTop = true } },
+                    onOpenRecurring = { nav.navigate(RecurringDestination) { launchSingleTop = true } },
                 )
             }
             composable<CatalogDestination> { CatalogRoute(onBack = { nav.popBackStack() }) }
+            composable<RecurringDestination> { RecurringRoute(onBack = { nav.popBackStack() }, onAddPayment = onAddPayment) }
         }
         // Settings and its sub-screens are full screen.
         if (destination == null || TopLevelTab.entries.any(isSelected)) {

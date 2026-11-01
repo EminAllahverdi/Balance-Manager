@@ -37,5 +37,6 @@ include(":feature:insights")
 include(":feature:accounts")
 include(":feature:catalog")
 include(":feature:settings")
+include(":feature:recurring")
 include(":widget")
 // include(":importer:moneymanager") // added as the module lands

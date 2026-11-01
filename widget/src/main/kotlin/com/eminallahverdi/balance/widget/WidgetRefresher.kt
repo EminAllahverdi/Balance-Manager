@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 private const val MIDNIGHT_WORK = "widget-midnight"
@@ -40,6 +41,8 @@ class WidgetRefresher @Inject constructor(
         scope.launch {
             // Room re-emits on every write to the table, so balances also fires for edits that leave the sums alone.
             combine(transactions.balances, catalog.categories, preferences.preferences) { _, _, _ -> }
+                // The first value is what's already drawn. Each redraw keeps a job awake for about 45 s, and the process also starts for background work.
+                .drop(1)
                 .debounce(300.milliseconds)
                 .collect {
                     BalanceWidget().updateAll(context)

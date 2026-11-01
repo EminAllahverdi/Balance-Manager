@@ -10,6 +10,7 @@ import com.eminallahverdi.balance.core.database.entity.AccountEntity
 import com.eminallahverdi.balance.core.database.entity.CategoryEntity
 import com.eminallahverdi.balance.core.database.entity.MerchantEntity
 import com.eminallahverdi.balance.core.database.entity.PersonEntity
+import com.eminallahverdi.balance.core.database.entity.RecurringPaymentEntity
 import com.eminallahverdi.balance.core.database.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -24,7 +25,8 @@ interface PersonDao {
     @Upsert suspend fun upsert(person: PersonEntity): Long
     @Update suspend fun updateAll(people: List<PersonEntity>)
     @Query("DELETE FROM person WHERE id = :id") suspend fun delete(id: Long)
-    @Query("SELECT COUNT(*) FROM txn WHERE person_id = :id") suspend fun usageCount(id: Long): Int
+    @Query("SELECT (SELECT COUNT(*) FROM txn WHERE person_id = :id) + (SELECT COUNT(*) FROM recurring_payment WHERE person_id = :id)")
+    suspend fun usageCount(id: Long): Int
 }
 
 @Dao
@@ -38,7 +40,12 @@ interface CategoryDao {
     @Upsert suspend fun upsert(category: CategoryEntity): Long
     @Update suspend fun updateAll(categories: List<CategoryEntity>)
     @Query("DELETE FROM category WHERE id = :id") suspend fun delete(id: Long)
-    @Query("SELECT COUNT(*) FROM txn WHERE category_id = :id OR category_id IN (SELECT id FROM category WHERE parent_id = :id)")
+    @Query(
+        """
+        SELECT (SELECT COUNT(*) FROM txn WHERE category_id = :id OR category_id IN (SELECT id FROM category WHERE parent_id = :id))
+            + (SELECT COUNT(*) FROM recurring_payment WHERE category_id = :id OR category_id IN (SELECT id FROM category WHERE parent_id = :id))
+        """,
+    )
     suspend fun usageCount(id: Long): Int
 }
 
@@ -53,7 +60,13 @@ interface AccountDao {
     @Upsert suspend fun upsert(account: AccountEntity): Long
     @Update suspend fun updateAll(accounts: List<AccountEntity>)
     @Query("DELETE FROM account WHERE id = :id") suspend fun delete(id: Long)
-    @Query("SELECT COUNT(*) FROM txn WHERE account_id = :id OR to_account_id = :id") suspend fun usageCount(id: Long): Int
+    @Query(
+        """
+        SELECT (SELECT COUNT(*) FROM txn WHERE account_id = :id OR to_account_id = :id)
+            + (SELECT COUNT(*) FROM recurring_payment WHERE account_id = :id)
+        """,
+    )
+    suspend fun usageCount(id: Long): Int
 }
 
 @Dao
@@ -115,6 +128,20 @@ interface TransactionDao {
     @Query("DELETE FROM txn WHERE id = :id") suspend fun delete(id: Long)
     @Query("SELECT COUNT(*) FROM txn") suspend fun count(): Int
     @Query("SELECT external_id FROM txn WHERE external_id IS NOT NULL") suspend fun externalIds(): List<String>
+}
+
+@Dao
+interface RecurringPaymentDao {
+    @Query("SELECT * FROM recurring_payment ORDER BY next_date, name")
+    fun observeAll(): Flow<List<RecurringPaymentEntity>>
+
+    @Query("SELECT * FROM recurring_payment WHERE id = :id") suspend fun get(id: Long): RecurringPaymentEntity?
+
+    @Query("SELECT * FROM recurring_payment WHERE next_date <= :epochDay ORDER BY next_date, name")
+    suspend fun dueBy(epochDay: Long): List<RecurringPaymentEntity>
+
+    @Upsert suspend fun upsert(payment: RecurringPaymentEntity): Long
+    @Query("DELETE FROM recurring_payment WHERE id = :id") suspend fun delete(id: Long)
 }
 
 @Dao
