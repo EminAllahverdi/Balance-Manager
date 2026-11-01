@@ -1,0 +1,46 @@
+<!-- A soft diagonal band crossing the widget. Most of each pass is off to the side, which gives the pause between waves. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="300dp"
+            android:height="100dp"
+            android:viewportWidth="300"
+            android:viewportHeight="100">
+            <group
+                android:name="sweep"
+                android:translateX="-220">
+                <group
+                    android:pivotX="70"
+                    android:pivotY="50"
+                    android:rotation="18">
+                    <path android:pathData="M0,-120h140v340h-140z">
+                        <aapt:attr name="android:fillColor">
+                            <gradient
+                                android:centerColor="@color/widget_sweep"
+                                android:endColor="@color/widget_sweep_clear"
+                                android:endX="140"
+                                android:endY="0"
+                                android:startColor="@color/widget_sweep_clear"
+                                android:startX="0"
+                                android:startY="0"
+                                android:type="linear" />
+                        </aapt:attr>
+                    </path>
+                </group>
+            </group>
+        </vector>
+    </aapt:attr>
+    <target android:name="sweep">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="2200"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="translateX"
+                android:repeatCount="infinite"
+                android:valueFrom="-220"
+                android:valueTo="620"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+</animated-vector>

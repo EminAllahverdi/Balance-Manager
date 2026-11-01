@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -31,10 +32,13 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,17 +49,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
@@ -63,7 +72,10 @@ import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.Category
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneOffset
+import java.time.format.TextStyle as JavaTextStyle
+import java.util.Locale
 import kotlin.math.abs
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
@@ -87,6 +99,54 @@ private const val WHEEL_TICK_MILLIS = 15L
 
 /** Out of 255. */
 private const val WHEEL_TICK_STRENGTH = 150
+
+/** Matches how far back Home can swipe. */
+private const val YEARS_BACK = 49
+private const val MONTHS_PER_ROW = 3
+
+/** Any month up to this one: a year at a time, so it stays on one screen. */
+@Composable
+fun MonthPicker(selected: YearMonth?, onSelect: (YearMonth) -> Unit) {
+    val now = YearMonth.now()
+    var year by rememberSaveable { mutableIntStateOf((selected ?: now).year) }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        YearStep(Icons.Rounded.ChevronLeft, "Previous year", enabled = year > now.year - YEARS_BACK) { year-- }
+        Text(year.toString(), style = BtTheme.type.titleMedium, color = BtTheme.colors.textPrimary, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+        YearStep(Icons.Rounded.ChevronRight, "Next year", enabled = year < now.year) { year++ }
+    }
+    (1..12).map { YearMonth.of(year, it) }.chunked(MONTHS_PER_ROW).forEach { row ->
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            row.forEach { month ->
+                MonthCell(month, selected == month, enabled = month <= now, onClick = { onSelect(month) }, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun YearStep(icon: ImageVector, description: String, enabled: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier.size(44.dp).alpha(if (enabled) 1f else 0.3f).clip(BtShapes.full).clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, description, tint = BtTheme.colors.textSecondary) }
+}
+
+@Composable
+private fun MonthCell(month: YearMonth, selected: Boolean, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = BtTheme.colors
+    Box(
+        modifier
+            .height(48.dp)
+            .alpha(if (enabled) 1f else 0.35f)
+            .clip(BtShapes.key)
+            .background(if (selected) c.accentFill else c.bgSurfaceRaised)
+            .clickable(enabled = enabled, role = Role.RadioButton, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(month.month.getDisplayName(JavaTextStyle.SHORT, Locale.ENGLISH), style = BtTheme.type.label, color = if (selected) c.accentOn else c.textPrimary)
+    }
+}
 
 /** Chips in one line for picking a category inside a sheet, where a sheet on a sheet is too much. */
 @Composable

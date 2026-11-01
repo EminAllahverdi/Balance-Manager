@@ -4,17 +4,14 @@ import android.content.Context
 import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.eminallahverdi.balance.core.common.ApplicationScope
+import com.eminallahverdi.balance.core.common.bookDailyWork
 import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.time.Duration
-import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
@@ -27,6 +24,7 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 private const val MIDNIGHT_WORK = "widget-midnight"
+private const val MIDNIGHT = 0
 
 /** Redraws the widgets whenever their data changes, wherever the change came from, and rolls Today over at midnight. */
 @Singleton
@@ -40,7 +38,7 @@ class WidgetRefresher @Inject constructor(
 ) {
     @OptIn(FlowPreview::class)
     fun start() {
-        scheduleMidnight()
+        scope.launch { context.bookDailyWork<MidnightRefreshWorker>(MIDNIGHT_WORK, MIDNIGHT, ExistingPeriodicWorkPolicy.KEEP) }
         scope.launch {
             // Its own trigger: this count is all that widget shows, and it changes nothing the others show.
             bankAlerts.waitingCount.distinctUntilChanged().drop(1).collect { ToConfirmWidget().updateAll(context) }
@@ -58,19 +56,12 @@ class WidgetRefresher @Inject constructor(
                 }
         }
     }
-
-    private fun scheduleMidnight() {
-        val now = LocalDateTime.now()
-        val request = PeriodicWorkRequestBuilder<MidnightRefreshWorker>(Duration.ofDays(1))
-            .setInitialDelay(Duration.between(now, now.toLocalDate().plusDays(1).atStartOfDay()))
-            .build()
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(MIDNIGHT_WORK, ExistingPeriodicWorkPolicy.KEEP, request)
-    }
 }
 
 class MidnightRefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         TodayWidget().updateAll(applicationContext)
+        applicationContext.bookDailyWork<MidnightRefreshWorker>(MIDNIGHT_WORK, MIDNIGHT, ExistingPeriodicWorkPolicy.UPDATE)
         return Result.success()
     }
 }

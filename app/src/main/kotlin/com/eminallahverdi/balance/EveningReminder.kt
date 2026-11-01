@@ -9,26 +9,22 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import androidx.work.await
 import com.eminallahverdi.balance.core.common.ApplicationScope
+import com.eminallahverdi.balance.core.common.bookDailyWork
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.isReminderTimeReached
-import com.eminallahverdi.balance.core.model.nextReminderAt
 import com.eminallahverdi.balance.feature.transaction.QuickAddViewModel
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import java.time.Duration
 import java.time.LocalDateTime
-import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -61,9 +57,8 @@ class EveningReminder @Inject constructor(
                     val (enabled, minute) = setting
                     when {
                         !enabled -> WorkManager.getInstance(context).cancelUniqueWork(DAILY_WORK)
-                        // The process starting changes nothing: what's booked may be today's, running late under Doze.
-                        index == 0 -> book(context, minute, ExistingPeriodicWorkPolicy.KEEP)
-                        else -> book(context, minute, ExistingPeriodicWorkPolicy.UPDATE)
+                        index == 0 -> context.bookDailyWork<EveningReminderWorker>(DAILY_WORK, minute, ExistingPeriodicWorkPolicy.KEEP)
+                        else -> context.bookDailyWork<EveningReminderWorker>(DAILY_WORK, minute, ExistingPeriodicWorkPolicy.UPDATE)
                     }
                 }
         }
@@ -72,18 +67,6 @@ class EveningReminder @Inject constructor(
             transactions.balances.drop(1).collect { NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID) }
         }
     }
-}
-
-/**
- * Each run books the next at the set time, because a plain daily period slips later by however late the last run was.
- * Waits until it's booked: a worker that ends first leaves its next run queued with nothing to start it.
- */
-private suspend fun book(context: Context, minute: Int, policy: ExistingPeriodicWorkPolicy) {
-    val next = nextReminderAt(LocalDateTime.now(), minute).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    val request = PeriodicWorkRequestBuilder<EveningReminderWorker>(Duration.ofDays(1))
-        .setNextScheduleTimeOverride(next)
-        .build()
-    WorkManager.getInstance(context).enqueueUniquePeriodicWork(DAILY_WORK, policy, request).await()
 }
 
 @EntryPoint
@@ -104,7 +87,7 @@ class EveningReminderWorker(context: Context, params: WorkerParameters) : Corout
         if (isReminderTimeReached(now, minute) && app.transactions().observeDetails(DateRange(today, today)).first().isEmpty()) {
             showReminder(applicationContext)
         }
-        book(applicationContext, minute, ExistingPeriodicWorkPolicy.UPDATE)
+        applicationContext.bookDailyWork<EveningReminderWorker>(DAILY_WORK, minute, ExistingPeriodicWorkPolicy.UPDATE)
         return Result.success()
     }
 }

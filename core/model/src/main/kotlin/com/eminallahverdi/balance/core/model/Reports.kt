@@ -36,7 +36,21 @@ data class MonthSummary(
     val income: Money,
     val byCategory: List<CategorySpending>,
     val byPerson: List<PersonSpending>,
+    val incomeByCategory: List<Share<Category>>,
 )
+
+/** One part of a pie chart. A null [category] is everything too small to get its own. */
+data class PieSlice(val category: Category?, val amount: Money, val percent: Long)
+
+/** The biggest [limit] shares and the rest as one, because thin slices only crowd a chart. A lone leftover keeps its name. */
+fun pieSlices(shares: List<Share<Category>>, limit: Int = 5): List<PieSlice> {
+    val total = shares.map { it.amount }.sum().minor.coerceAtLeast(1)
+    fun slice(category: Category?, amount: Money) = PieSlice(category, amount, (amount.minor * 100 + total / 2) / total)
+    val sorted = shares.filter { it.amount.minor > 0 }.sortedByDescending { it.amount }
+    if (sorted.size <= limit + 1) return sorted.map { slice(it.key, it.amount) }
+    val (shown, rest) = sorted.take(limit) to sorted.drop(limit)
+    return shown.map { slice(it.key, it.amount) } + slice(null, rest.map { it.amount }.sum())
+}
 
 /** Pure aggregation so it can be unit-tested without a database. */
 object SpendingCalculator {
@@ -85,6 +99,11 @@ object SpendingCalculator {
             income = income.map { it.transaction.amount }.sum(),
             byCategory = byCategory,
             byPerson = byPerson,
+            incomeByCategory = income
+                .filter { topCategory(it) != null }
+                .groupBy { topCategory(it)!! }
+                .map { (category, rows) -> Share(category, rows.map { it.transaction.amount }.sum()) }
+                .sortedByDescending { it.amount },
         )
     }
 }

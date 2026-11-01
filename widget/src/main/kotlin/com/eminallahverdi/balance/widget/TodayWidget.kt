@@ -37,6 +37,7 @@ import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.designsystem.icon.BtIcons
 import com.eminallahverdi.balance.core.designsystem.theme.BtColors
+import com.eminallahverdi.balance.core.designsystem.theme.tileGlyph
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
 import com.eminallahverdi.balance.core.model.DateRange
@@ -131,7 +132,7 @@ private fun RowScope.CategoryTile(category: Category, c: BtColors) {
         Box(
             GlanceModifier.size(48.dp).cornerRadius(16.dp).background(ColorProvider(hue.copy(alpha = 0.18f))),
             contentAlignment = Alignment.Center,
-        ) { WidgetIcon(BtIcons.of(category.icon), hue, 24.dp) }
+        ) { WidgetIcon(BtIcons.of(category.icon), c.tileGlyph(hue), 24.dp) }
         Spacer(GlanceModifier.height(6.dp))
         Text(category.name, style = widgetText(c.textSecondary, 11.sp, FontWeight.Medium), maxLines = 1)
     }

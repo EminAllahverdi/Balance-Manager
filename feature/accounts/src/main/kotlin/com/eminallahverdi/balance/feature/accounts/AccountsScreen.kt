@@ -105,8 +105,8 @@ fun AccountsRoute(onTransfer: () -> Unit, onOpenTransaction: (Long) -> Unit, onO
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ActionButton("Transfer", Icons.Rounded.SwapHoriz, primary = true, enabled = state.canTransfer, onClick = onTransfer, modifier = Modifier.weight(1f))
-                ActionButton("Adjust balance", Icons.Rounded.Tune, primary = false, enabled = true, onClick = viewModel::openAdjust, modifier = Modifier.weight(1f))
+                ActionButton("Transfer", Icons.Rounded.SwapHoriz, enabled = state.canTransfer, onClick = onTransfer, modifier = Modifier.weight(1f))
+                ActionButton("Adjust balance", Icons.Rounded.Tune, enabled = true, onClick = viewModel::openAdjust, modifier = Modifier.weight(1f))
             }
         }
         items(state.balances, key = { it.account.id }) { balance ->
@@ -141,23 +141,22 @@ fun AccountsRoute(onTransfer: () -> Unit, onOpenTransaction: (Long) -> Unit, onO
     }
 }
 
+/** Both weigh the same: a lime one beside a plain one read as a selected tab. */
 @Composable
-private fun ActionButton(text: String, icon: ImageVector, primary: Boolean, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ActionButton(text: String, icon: ImageVector, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = BtTheme.colors
-    val content = if (primary) c.accentOn else c.textPrimary
     Row(
         modifier
-            .height(48.dp)
+            .height(52.dp)
             .alpha(if (enabled) 1f else 0.5f)
-            .clip(BtShapes.full)
-            .background(if (primary) c.accentFill else c.bgSurfaceRaised)
-            .then(if (primary) Modifier else Modifier.border(1.dp, c.borderDefault, BtShapes.full))
+            .clip(BtShapes.md)
+            .background(c.bgSurface)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
-        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, tint = if (primary) content else c.textSecondary, modifier = Modifier.size(20.dp))
-        Text(text, style = BtTheme.type.bodyStrong, color = content)
+        Icon(icon, null, tint = c.accentText, modifier = Modifier.size(20.dp))
+        Text(text, style = BtTheme.type.bodyStrong, color = c.textPrimary)
     }
 }
 

@@ -45,6 +45,9 @@ data class UserPreferences(
     val bankApps: Set<String> = emptySet(),
     /** Packages seen sending notifications, to pick [bankApps] from. Only the names, and only while bank notifications are on. */
     val seenApps: Set<String> = emptySet(),
+    /** Home's card shows the month's pie chart instead of the balance. */
+    val homeChart: Boolean = false,
+    val homeChartIncome: Boolean = false,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
@@ -67,6 +70,8 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
         val autoConfirm = booleanPreferencesKey("auto_confirm_known_merchants")
         val bankApps = stringSetPreferencesKey("bank_apps")
         val seenApps = stringSetPreferencesKey("seen_apps")
+        val homeChart = booleanPreferencesKey("home_chart")
+        val homeChartIncome = booleanPreferencesKey("home_chart_income")
     }
 
     val preferences: Flow<UserPreferences> = store.data.map { p ->
@@ -85,6 +90,8 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
             autoConfirmKnownMerchants = p[K.autoConfirm] ?: false,
             bankApps = p[K.bankApps].orEmpty(),
             seenApps = p[K.seenApps].orEmpty(),
+            homeChart = p[K.homeChart] ?: false,
+            homeChartIncome = p[K.homeChartIncome] ?: false,
         )
     }
 
@@ -104,6 +111,8 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
         store.edit { it[K.bankApps] = if (enabled) it[K.bankApps].orEmpty() + packageName else it[K.bankApps].orEmpty() - packageName }
     }
     suspend fun addSeenApps(packages: Set<String>) { store.edit { it[K.seenApps] = it[K.seenApps].orEmpty() + packages } }
+    suspend fun setHomeChart(enabled: Boolean) { store.edit { it[K.homeChart] = enabled } }
+    suspend fun setHomeChartIncome(income: Boolean) { store.edit { it[K.homeChartIncome] = income } }
 }
 
 @Module

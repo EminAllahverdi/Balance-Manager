@@ -11,4 +11,5 @@ dependencies {
     api(project(":core:model"))
     api(libs.kotlinx.coroutines.android)
     api(libs.androidx.biometric)
+    api(libs.androidx.work.runtime.ktx)
 }

@@ -39,6 +39,8 @@ data class HomeUiState(
     val duePayments: Int = 0,
     /** Bank payments waiting on To confirm. */
     val toConfirm: Int = 0,
+    val showChart: Boolean = false,
+    val chartIncome: Boolean = false,
 )
 
 @HiltViewModel
@@ -78,11 +80,15 @@ class HomeViewModel @Inject constructor(
             expandedPersonId = e,
             duePayments = payments.count { it.isDue(today) },
             toConfirm = waiting,
+            showChart = p.homeChart,
+            chartIncome = p.homeChartIncome,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     fun setView(v: HomeView) = view.update { v }
     fun togglePerson(id: Long) = expanded.update { if (it == id) null else id }
+    fun setShowChart(show: Boolean) { viewModelScope.launch { prefs.setHomeChart(show) } }
+    fun setChartIncome(income: Boolean) { viewModelScope.launch { prefs.setHomeChartIncome(income) } }
 
     /** The same setting as Settings' "Hide amounts", so it holds across the app and after a restart. */
     fun toggleHideAmounts() {

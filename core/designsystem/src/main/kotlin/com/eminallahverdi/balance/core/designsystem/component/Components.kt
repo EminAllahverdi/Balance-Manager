@@ -46,6 +46,8 @@ import coil.compose.AsyncImage
 import com.eminallahverdi.balance.core.designsystem.icon.BtIcons
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
+import com.eminallahverdi.balance.core.designsystem.theme.TILE_TINT
+import com.eminallahverdi.balance.core.designsystem.theme.tileGlyph
 import com.eminallahverdi.balance.core.model.Person
 
 /** Stored colours are ARGB longs (0xFFRRGGBB). */
@@ -56,10 +58,10 @@ fun Long.toColor() = Color(this.toInt())
 fun CategoryTile(icon: String, color: Long, modifier: Modifier = Modifier, size: Dp = 40.dp, iconSize: Dp = 22.dp, corner: Dp = 12.dp) {
     val hue = color.toColor()
     Box(
-        modifier = modifier.size(size).clip(RoundedCornerShape(corner)).background(hue.copy(alpha = 0.16f)),
+        modifier = modifier.size(size).clip(RoundedCornerShape(corner)).background(hue.copy(alpha = TILE_TINT)),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(BtIcons.of(icon), contentDescription = null, tint = hue, modifier = Modifier.size(iconSize))
+        Icon(BtIcons.of(icon), contentDescription = null, tint = BtTheme.colors.tileGlyph(hue), modifier = Modifier.size(iconSize))
     }
 }
 

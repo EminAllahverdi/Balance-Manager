@@ -1,0 +1,17 @@
+<resources>
+    <color name="widget_surface">#E0121519</color>
+    <color name="widget_hairline">#12F2F4F7</color>
+    <color name="widget_surface_high">#1F242B</color>
+    <color name="widget_text_primary">#F2F4F7</color>
+    <color name="widget_text_secondary">#AEB6C1</color>
+    <color name="widget_text_muted">#8A94A3</color>
+    <color name="widget_accent_text">#C8F169</color>
+    <color name="widget_money_income">#4ADE9B</color>
+    <color name="widget_status_warning">#F5B544</color>
+    <color name="widget_sweep">#24FFFFFF</color>
+    <color name="widget_sweep_clear">#00FFFFFF</color>
+    <color name="widget_sample_green">#5DCAA5</color>
+    <color name="widget_sample_orange">#FF9F6E</color>
+    <color name="widget_sample_amber">#FFD166</color>
+    <color name="widget_sample_blue">#8AB4F8</color>
+</resources>

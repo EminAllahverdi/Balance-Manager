@@ -1,0 +1,5 @@
+<!-- White at 18 %, so a multiply tint leaves the hue at 18 % behind its glyph. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#2EFFFFFF" />
+    <corners android:radius="16dp" />
+</shape>

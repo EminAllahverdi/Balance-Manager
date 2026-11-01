@@ -45,8 +45,6 @@ import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -75,6 +73,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
+import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
+import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonAvatar
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
@@ -247,19 +247,24 @@ private fun AmountBox(state: QuickAddUiState, vm: QuickAddViewModel) {
 @Composable
 private fun AccountPicker(label: String, accounts: List<Account>, selected: Account?, onSelect: (Long) -> Unit) {
     var open by remember { mutableStateOf(false) }
-    Box {
-        Column(horizontalAlignment = Alignment.End, modifier = Modifier.clip(BtShapes.sm).clickable { open = true }.padding(4.dp)) {
-            Overline(label)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.AccountBalanceWallet, null, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(selected?.name ?: "Account", style = BtTheme.type.bodyStrong, color = BtTheme.colors.textPrimary)
-                Icon(Icons.Rounded.ExpandMore, null, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
-            }
+    Column(horizontalAlignment = Alignment.End, modifier = Modifier.clip(BtShapes.sm).clickable { open = true }.padding(4.dp)) {
+        Overline(label)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.AccountBalanceWallet, null, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(selected?.name ?: "Account", style = BtTheme.type.bodyStrong, color = BtTheme.colors.textPrimary)
+            Icon(Icons.Rounded.ExpandMore, null, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+    }
+    if (open) {
+        ChoiceSheet("$label account", onClose = { open = false }) { choose ->
             accounts.forEach { a ->
-                DropdownMenuItem(text = { Text(a.name) }, onClick = { onSelect(a.id); open = false }, leadingIcon = { Icon(BtIcons.of(a.icon), null) })
+                OptionRow(
+                    text = a.name,
+                    selected = a.id == selected?.id,
+                    onClick = { choose { onSelect(a.id) } },
+                    leading = { CategoryTile(a.icon, a.color, size = 32.dp, iconSize = 18.dp, corner = 10.dp) },
+                )
             }
         }
     }

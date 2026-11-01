@@ -9,11 +9,10 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.eminallahverdi.balance.core.common.ApplicationScope
 import com.eminallahverdi.balance.core.common.MoneyFormat
+import com.eminallahverdi.balance.core.common.bookDailyWork
 import com.eminallahverdi.balance.core.data.RecurringRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.model.RecurringPayment
@@ -22,8 +21,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import java.time.Duration
-import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
@@ -35,7 +32,7 @@ import kotlinx.coroutines.launch
 private const val DAILY_WORK = "payment-reminders"
 private const val CHANNEL = "payment-reminders"
 private const val NOTIFICATION_ID = 1
-private const val REMINDER_HOUR = 10L
+private const val REMINDER_MINUTE = 10 * 60
 
 /** Tells MainActivity to open the recurring screen, when a reminder is tapped. */
 const val EXTRA_OPEN_RECURRING = "openRecurring"
@@ -50,12 +47,7 @@ class PaymentReminders @Inject constructor(
 ) {
     @OptIn(FlowPreview::class)
     fun start() {
-        val now = LocalDateTime.now()
-        val nextReminder = now.toLocalDate().atStartOfDay().plusHours(REMINDER_HOUR).let { if (it.isAfter(now)) it else it.plusDays(1) }
-        val request = PeriodicWorkRequestBuilder<PaymentReminderWorker>(Duration.ofDays(1))
-            .setInitialDelay(Duration.between(now, nextReminder))
-            .build()
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(DAILY_WORK, ExistingPeriodicWorkPolicy.KEEP, request)
+        scope.launch { context.bookDailyWork<PaymentReminderWorker>(DAILY_WORK, REMINDER_MINUTE, ExistingPeriodicWorkPolicy.KEEP) }
         scope.launch {
             // Room re-emits on every write to the table, so this runs after any entry is added, edited or removed.
             transactions.balances.debounce(300.milliseconds).collect { recurring.settleLogged() }
@@ -74,6 +66,7 @@ class PaymentReminderWorker(context: Context, params: WorkerParameters) : Corout
         val recurring = EntryPointAccessors.fromApplication(applicationContext, PaymentReminderEntryPoint::class.java).recurring()
         recurring.settleLogged()
         showReminder(applicationContext, recurring.due())
+        applicationContext.bookDailyWork<PaymentReminderWorker>(DAILY_WORK, REMINDER_MINUTE, ExistingPeriodicWorkPolicy.UPDATE)
         return Result.success()
     }
 }

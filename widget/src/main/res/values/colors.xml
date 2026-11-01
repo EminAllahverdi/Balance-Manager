@@ -1,0 +1,20 @@
+<resources>
+    <!-- BtColors, for the layouts the launcher draws before Glance runs. These follow the system theme, not the one set in the app. -->
+    <color name="widget_surface">#E0FFFFFF</color>
+    <color name="widget_hairline">#120B0D10</color>
+    <color name="widget_surface_high">#E3E6E1</color>
+    <color name="widget_text_primary">#0B0D10</color>
+    <color name="widget_text_secondary">#5C6570</color>
+    <color name="widget_text_muted">#5C6570</color>
+    <color name="widget_accent_fill">#C8F169</color>
+    <color name="widget_accent_on">#0B0D10</color>
+    <color name="widget_accent_text">#4A7A00</color>
+    <color name="widget_money_income">#11845B</color>
+    <color name="widget_status_warning">#A86A00</color>
+    <color name="widget_sweep">#120B0D10</color>
+    <color name="widget_sweep_clear">#000B0D10</color>
+    <color name="widget_sample_green">#1F8A68</color>
+    <color name="widget_sample_orange">#C25A1E</color>
+    <color name="widget_sample_amber">#A87800</color>
+    <color name="widget_sample_blue">#2F6FD0</color>
+</resources>

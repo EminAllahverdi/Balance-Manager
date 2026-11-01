@@ -1,8 +1,8 @@
 package com.eminallahverdi.balance.feature.insights
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -62,8 +63,12 @@ import kotlin.math.max
 
 private val CHART_HEIGHT = 224.dp
 private val BAR_MAX_HEIGHT = 150.dp
-private val BAR_MIN_HEIGHT = 3.dp
-private val BAR_WIDTH = 38.dp
+private val BAR_MIN_HEIGHT = 4.dp
+private val BAR_MAX_WIDTH = 36.dp
+private val BAR_CORNER = 10.dp
+private val BAR_FOOT = 4.dp
+private const val BAR_WIDTH_SHARE = 0.72f
+private const val BAR_FADE = 0.4f
 private const val TOP_CHANGES = 3
 
 /** How the money moved: period by period, who it was for, and what changed most. */
@@ -147,21 +152,21 @@ private fun changeColor(change: Money, neutral: Color): Color = when {
 @Composable
 private fun Bars(period: InsightPeriod, overview: InsightOverview, vm: InsightsViewModel) {
     val biggest = max(overview.bars.maxOf { it.spent.minor }, 1L)
-    Column {
-        Row(Modifier.fillMaxWidth().height(CHART_HEIGHT), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            overview.bars.forEachIndexed { i, bar ->
-                BarColumn(period, bar, biggest, selected = i == overview.selectedIndex, onClick = { vm.select(i) }, modifier = Modifier.weight(1f))
-            }
+    Row(Modifier.fillMaxWidth().height(CHART_HEIGHT), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        overview.bars.forEachIndexed { i, bar ->
+            BarColumn(period, bar, biggest, selected = i == overview.selectedIndex, onClick = { vm.select(i) }, modifier = Modifier.weight(1f))
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(BtTheme.colors.borderDefault))
     }
 }
 
+/** One stacked bar. The rest fade back from the selected one, which alone carries a figure: the heading above has it exact. */
 @Composable
 private fun BarColumn(period: InsightPeriod, bar: InsightBar, biggest: Long, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = BtTheme.colors
     val name = period.barLabel(bar.range)
     val spoken = "$name, ${MoneyFormat.format(bar.spent)}"
+    val height by animateDpAsState(max(BAR_MAX_HEIGHT.value * bar.spent.minor / biggest, BAR_MIN_HEIGHT.value).dp, label = "bar")
+    val fade by animateFloatAsState(if (selected) 1f else BAR_FADE, label = "bar fade")
     Column(
         modifier
             .fillMaxHeight()
@@ -172,28 +177,22 @@ private fun BarColumn(period: InsightPeriod, bar: InsightBar, biggest: Long, sel
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.Bottom),
     ) {
-        if (!bar.spent.isZero) {
-            FittedAmount(
-                MoneyFormat.short(bar.spent),
-                BtTheme.type.amountSmall.copy(fontSize = 11.sp, lineHeight = 14.sp),
-                color = if (selected) c.textPrimary else c.textSecondary,
-            )
+        if (selected && !bar.spent.isZero) {
+            FittedAmount(MoneyFormat.short(bar.spent), BtTheme.type.amountSmall.copy(fontSize = 11.sp, lineHeight = 14.sp))
         }
         Column(
             Modifier
-                .width(BAR_WIDTH)
-                .border(2.dp, if (selected) c.accentFill else Color.Transparent, RoundedCornerShape(6.dp))
-                .padding(5.dp),
+                .fillMaxWidth(BAR_WIDTH_SHARE)
+                .widthIn(max = BAR_MAX_WIDTH)
+                .height(height)
+                .graphicsLayer { alpha = fade }
+                .clip(RoundedCornerShape(topStart = BAR_CORNER, topEnd = BAR_CORNER, bottomStart = BAR_FOOT, bottomEnd = BAR_FOOT))
+                .background(if (bar.byPerson.isEmpty()) c.bgSurfaceHigh else Color.Transparent),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            if (bar.byPerson.isEmpty()) {
-                Box(Modifier.fillMaxWidth().height(BAR_MIN_HEIGHT).clip(RoundedCornerShape(3.dp)).background(c.bgSurfaceHigh))
-            }
-            bar.byPerson.forEach { (person, amount) ->
+            bar.byPerson.filter { it.amount.minor > 0 }.forEach { (person, amount) ->
                 key(person.id) {
-                    val target = max(BAR_MAX_HEIGHT.value * amount.minor / biggest, BAR_MIN_HEIGHT.value).dp
-                    val height by animateDpAsState(target, label = "bar")
-                    Box(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(3.dp)).background(person.color.toColor()))
+                    Box(Modifier.fillMaxWidth().weight(amount.minor.toFloat()).background(person.color.toColor()))
                 }
             }
         }
@@ -206,15 +205,19 @@ private fun BarColumn(period: InsightPeriod, bar: InsightBar, biggest: Long, sel
     }
 }
 
+/** Doubles as the selected bar's breakdown: who it was for, and how much. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Legend(overview: InsightOverview) {
     if (overview.people.isEmpty()) return
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    val c = BtTheme.colors
+    val amounts = overview.selected.byPerson.associate { it.key.id to it.amount }
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         overview.people.forEach { person ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 PersonDot(person.color)
-                Text(person.name, style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+                Text(person.name, style = BtTheme.type.caption, color = c.textSecondary)
+                Text(MoneyFormat.format(amounts[person.id] ?: Money.ZERO), style = BtTheme.type.amountSmall.copy(fontSize = 12.sp, lineHeight = 16.sp), color = c.textPrimary)
             }
         }
     }
