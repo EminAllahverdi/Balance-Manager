@@ -1,5 +1,6 @@
 package com.eminallahverdi.balance.widget
 
+import androidx.compose.ui.unit.dp
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.datastore.UserPreferences
 import com.eminallahverdi.balance.core.datastore.WidgetBalanceMode
@@ -16,6 +17,9 @@ import com.eminallahverdi.balance.core.model.TransactionKind
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
 import org.junit.Test
+
+/** The text width of a 2×1 on the owner's phone. */
+private val ROOM = 106.dp
 
 class WidgetStateTest {
     private val today = LocalDate.of(2026, 11, 1)
@@ -58,6 +62,23 @@ class WidgetStateTest {
         val state = balance(WidgetBalanceMode.ALWAYS_HIDE, secondsLeft = 4)
         assertThat(state.amount).isEqualTo(MoneyFormat.HIDDEN)
         assertThat(state.caption).isEqualTo("Hidden")
+    }
+
+    @Test fun `an ordinary balance stays at full size`() {
+        assertThat(amountTextSize("₼1,234.56", ROOM, fontScale = 1f).value).isEqualTo(20f)
+        assertThat(amountTextSize(MoneyFormat.HIDDEN, ROOM, fontScale = 1f).value).isEqualTo(20f)
+    }
+
+    @Test fun `a long balance shrinks to fit the room`() {
+        val amount = "−₼12,345,678.90"
+        val size = amountTextSize(amount, ROOM, fontScale = 1f).value
+        assertThat(size).isLessThan(20f)
+        assertThat(size * amount.length * 0.46f).isAtMost(ROOM.value)
+    }
+
+    @Test fun `a larger system font leaves the amount the same width`() {
+        val amount = "₼12,345.00"
+        assertThat(amountTextSize(amount, ROOM, fontScale = 1.5f).value).isLessThan(amountTextSize(amount, ROOM, fontScale = 1f).value)
     }
 
     @Test fun `today counts expenses only`() {

@@ -29,7 +29,7 @@ feature:history          Search, month/person/category/account filters in bottom
 feature:insights         Week/month/year: stacked bars by person (tap a bar to select it), daily average, saved, biggest category changes. Numbers come from InsightsCalculator in core:model
 feature:settings         Default expense account, theme, widget balance, hide amounts, way into the catalog. Rows are added as the features behind them land
 feature:accounts         Balances, default account, in-total and widget switches, add/edit/archive, adjust balance, recent transfers. Transfers themselves are added in quick add
-widget                   Glance 2x1 balance (always show, always hide, tap or fingerprint to reveal), 4x1 actions, 4x2 today + one-tap categories. WidgetRefresher redraws them when data changes and at midnight
+widget                   Glance 2x1 balance (always show, always hide, tap or fingerprint to reveal, with a + that always adds an expense), 4x1 actions, 4x2 today + one-tap categories. WidgetRefresher redraws them when data changes and at midnight
 importer:moneymanager    to do: reads .mmbackup (zip -> SQLite MyFinance.db) on the device
 ```
 

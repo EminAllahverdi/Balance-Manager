@@ -51,7 +51,7 @@ Use **Material Symbols Rounded**, weight 400 and outlined, at 22 px in rows and 
 - `ChoiceSheet`: a bottom sheet for picking one thing, used instead of a menu or spinner everywhere: History filters and Settings. Long choices become grids that fit one screen: a year stepper over a 12-month grid, or a 4-column category grid. Short choices are `OptionRow`s with a check on the selected one, and a caption line when a choice needs explaining. In a filter, the first option always clears it.
 - `EditorSheet`: a bottom sheet with a live preview, the title and Remove in the header, then the fields, then Save. Remove sits at the top so it's visible without scrolling, and it always asks first.
 - `BottomBar`: Home, History, Insights, Accounts, with a centre lime add button 64 px with 22 px corners.
-- Widgets: `BalanceWidget` 2×1, `QuickActionsWidget` 4×1, `TodayWidget` 4×2. All use `radius-lg` and a translucent `bg-surface`. Text uses the system font, because home-screen widgets can't load the bundled ones. The four one-tap categories are the first four in the user's own order.
+- Widgets: `BalanceWidget` 2×1, `QuickActionsWidget` 4×1, `TodayWidget` 4×2. `BalanceWidget` has two tap areas: the + in its corner always adds an expense, and the rest of the card follows the Widget balance setting. The amount sits below the +, at 20, and shrinks further when it's long. All use `radius-lg` and a translucent `bg-surface`. Text uses the system font, because home-screen widgets can't load the bundled ones. The four one-tap categories are the first four in the user's own order.
 
 ## Writing
 
