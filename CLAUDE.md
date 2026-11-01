@@ -1,6 +1,6 @@
-# Balance Manager — notes for Claude Code
+# Cibim — notes for Claude Code
 
-Personal Android app for tracking every expense and income for one household. It replaces the Money Manager app. Owner: Emin, a senior Android developer. The repo is **public**: never commit personal data, backups (`*.mmbackup`, `*.db`), real names of family members, or signing keys.
+Personal Android app for tracking every expense and income for one household, called Cibim. It replaces the Money Manager app. The repo, the code and the package name `com.eminallahverdi.balance` stay Balance: the package can't change now that real data and the Google sign-in depend on it. Owner: Emin, a senior Android developer. The repo is **public**: never commit personal data, backups (`*.mmbackup`, `*.db`), real names of family members, or signing keys.
 
 ## Where the design lives
 - Design system (tokens, type, guidelines): https://claude.ai/artifact/4ifuwdoahAni7s3raTtnZJ. A copy is in `docs/design/` (`tokens.json`, `README.md`).
@@ -85,7 +85,7 @@ The build is green locally. `app` has navigation (Home, History, Insights, Accou
 
 Next, in order:
 1. Finish proving Drive on the phone. Sign-in and a real upload work, and the first night's run is booked for 03:00. Still to see: that night's run, and a restore from Drive, which has only been proven by the round-trip test.
-2. Finalizing, starting with the signed release build and the final app name. Real data should live in a real install. The debug and release apps have separate data, so the import or a Drive restore is run again in the release app, and the release key's SHA-1 needs its own OAuth client in the same Google Cloud project.
+2. Finalizing, starting with the signed release build. Real data should live in a real install. The debug and release apps have separate data, so the import or a Drive restore is run again in the release app, and the release key's SHA-1 needs its own OAuth client in the same Google Cloud project.
 3. First-run onboarding, which also asks for the notification permission and offers a Drive restore: the evening reminder is on by default, so nothing else asks on a fresh install.
 4. Wear OS, very last.
 

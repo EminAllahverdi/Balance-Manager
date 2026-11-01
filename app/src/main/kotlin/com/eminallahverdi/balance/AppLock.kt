@@ -85,7 +85,7 @@ fun AppLockGate(prefs: UserPreferencesRepository, lock: AppLock, content: @Compo
             // Until the setting is read, so a locked app never flashes what's behind it.
             enabled == null -> Box(Modifier.fillMaxSize().background(BtTheme.colors.bgCanvas))
             enabled == true && lock.isLocked -> {
-                val unlock = { activity.askToUnlock("Unlock Balance", lock::unlock) }
+                val unlock = { activity.askToUnlock("Unlock Cibim", lock::unlock) }
                 LaunchedEffect(Unit) { unlock() }
                 LockScreen(onUnlock = unlock, onBack = { activity.moveTaskToBack(true) })
             }
@@ -110,7 +110,7 @@ private fun LockScreen(onUnlock: () -> Unit, onBack: () -> Unit) {
         Box(Modifier.size(72.dp).clip(CircleShape).background(c.bgSurfaceRaised), contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.Lock, null, tint = c.textSecondary, modifier = Modifier.size(32.dp))
         }
-        Text("Balance is locked", style = BtTheme.type.titleLarge, color = c.textPrimary)
+        Text("Cibim is locked", style = BtTheme.type.titleLarge, color = c.textPrimary)
         Text("Use your fingerprint or your phone's PIN", style = BtTheme.type.body, color = c.textSecondary, modifier = Modifier.padding(bottom = 12.dp))
         PrimaryButton("Unlock", onUnlock)
     }
