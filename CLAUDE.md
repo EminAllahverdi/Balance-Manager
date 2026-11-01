@@ -76,7 +76,7 @@ The backup round trip is an instrumented test, which CI doesn't run. Always aim 
 ANDROID_SERIAL=emulator-5554 ./gradlew :core:backup:connectedDebugAndroidTest
 ```
 
-Drive needs one thing that can't live in this repo: a Google Cloud project owned by the app's owner, with the Drive API on, the consent screen published (the `drive.appdata` scope needs no review, but testing mode ends consent after 7 days), and an Android OAuth client for each package name and signing SHA-1. Until then, turning on backup says it isn't set up.
+Drive runs through the owner's Google Cloud project, Cibim: Drive API on, published to production (the `drive.appdata` scope needs no review, but testing mode ends consent after 7 days), and an Android OAuth client for each package name and signing SHA-1. The debug app's client exists. The consent screen links to this repo and `docs/privacy.md`, so moving that file means updating Branding. A build with no client says Drive isn't set up.
 
 The AVD `Pixel_3a_API_30` (Android 11) boots with `emulator -avd Pixel_3a_API_30`. `installDebug` installs to everything connected, so while the phone is plugged in, install to the emulator alone with `adb -s emulator-5554 install -r app/build/outputs/apk/debug/app-debug.apk`. Test bank notifications with `adb -s emulator-5554 shell "cmd notification post -S bigtext -t 'Bank' tag 'Payment 12.40 AZN, SHOP'"`, which arrive from the app called Shell. Rounded widgets need Android 12, so they're square there.
 
@@ -84,7 +84,7 @@ The AVD `Pixel_3a_API_30` (Android 11) boots with `emulator -avd Pixel_3a_API_30
 The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. The home-screen widgets and the launcher shortcuts (add expense, add income, transfer) work. Settings has only rows that work. The owner's real Money Manager history is imported on their phone (debug app) and checked against the backup: every balance and month matched.
 
 Next, in order:
-1. The owner sets up the Google Cloud project (see Commands). Then prove Drive on the phone: sign-in, a real upload, a night's run, and listing what's there. Sign-in and every Drive call have only reached Google's sign-in page so far. The archive and restore are proven by the round-trip test, but restoring from Drive hasn't run for real.
+1. Prove Drive on the phone: sign-in, a real upload, a night's run, and listing what's there. Sign-in and every Drive call have only reached Google's sign-in page so far. The archive and restore are proven by the round-trip test, but restoring from Drive hasn't run for real.
 2. Finalizing, starting with the signed release build and the final app name. Real data should live in a real install. The debug and release apps have separate data, so the import or a Drive restore is run again in the release app, and the release key's SHA-1 needs its own OAuth client in the same Google Cloud project.
 3. First-run onboarding, which also asks for the notification permission and offers a Drive restore: the evening reminder is on by default, so nothing else asks on a fresh install.
 4. Wear OS, very last.
