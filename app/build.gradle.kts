@@ -49,7 +49,7 @@ android {
         create("dev") {
             dimension = "environment"
             applicationIdSuffix = ".dev"
-            versionNameSuffix = "-dev.$commitCount"
+            versionNameSuffix = "-dev"
         }
         create("prod") {
             dimension = "environment"

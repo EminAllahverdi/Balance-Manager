@@ -53,8 +53,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.pm.PackageInfoCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -171,8 +173,22 @@ private fun SettingsList(
                 Divider()
                 ImportRow(viewModel)
             }
+            VersionLine()
         }
     }
+}
+
+/** Which app and build this is, so it's plain which one is installed when two sit side by side. */
+@Composable
+private fun VersionLine() {
+    val context = LocalContext.current
+    val version = remember { context.appVersion() }
+    Text(version, style = BtTheme.type.caption, color = BtTheme.colors.textMuted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+}
+
+private fun Context.appVersion(): String {
+    val info = packageManager.getPackageInfo(packageName, 0)
+    return "${applicationInfo.loadLabel(packageManager)} ${info.versionName} (${PackageInfoCompat.getLongVersionCode(info)})"
 }
 
 @Composable
