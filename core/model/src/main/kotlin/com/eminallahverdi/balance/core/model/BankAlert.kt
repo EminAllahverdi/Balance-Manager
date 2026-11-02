@@ -32,7 +32,10 @@ data class PendingEntry(
  * send with it, which includes their commission. Taking cash out is a transfer, not spending, and a plus sign means money
  * came in. Anything it can't read stays off the page, and the bank's own notification is untouched.
  */
-fun parseBankNotification(title: String, text: String, appName: String = ""): BankAlert? {
+fun parseBankNotification(title: String, text: String, appName: String = ""): BankAlert? =
+    readBankNotification(title.replace(INVISIBLE, ""), text.replace(INVISIBLE, ""), appName)
+
+private fun readBankNotification(title: String, text: String, appName: String): BankAlert? {
     val message = "$title\n$text"
     if (SECURITY_WORDS.containsMatchIn(message) || OFFER_WORDS.containsMatchIn(message)) return null
     val sum = AMOUNT.findAll(message).firstOrNull { !it.isSideFigure(message) } ?: return null
@@ -96,6 +99,9 @@ private const val START = """(?<![\p{L}\d])"""
 private const val END = """(?![\p{L}\d])"""
 
 private fun words(pattern: String) = Regex(pattern, RegexOption.IGNORE_CASE)
+
+/** Text-direction marks and the like, which banks put inside a sum. They don't show on screen, but they'd split -15.24₼ apart. */
+private val INVISIBLE = Regex("""\p{Cf}""")
 
 // Separators only count in proper thousands, so a card number beside a sum never joins it.
 private const val NUMBER = """(?<![\d*.,])(?:\d{1,3}(?:[  ,.]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)"""

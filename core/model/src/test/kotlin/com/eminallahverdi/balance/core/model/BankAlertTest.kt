@@ -138,6 +138,34 @@ class BankAlertTest {
         assertThat(alert.cardEnding).isEqualTo("1234")
     }
 
+    // A bank wraps its sums in left-to-right marks, which a screenshot can't show. This is that wording, character for character.
+    private val mark = "‎"
+
+    @Test fun `invisible marks around a sum don't hide it`() {
+        val alert = parse("SOME*SHOP.COM\nKart: **1234\nBalans: ${mark}2,744.29${mark}₼", title = "💸 Ödəniş: -${mark}15.24${mark}₼")!!
+        assertThat(alert.amount).isEqualTo(Money(15_24))
+        assertThat(alert.kind).isEqualTo(TransactionKind.EXPENSE)
+        assertThat(alert.merchant).isEqualTo("SHOP.COM")
+        assertThat(alert.cardEnding).isEqualTo("1234")
+    }
+
+    @Test fun `invisible marks don't change what a notification means`() {
+        val foreign = parse("ZETAFLIX\nKart: **1234", title = "💸 Ödəniş: -${mark}9.49${mark}\$ (-${mark}16.31${mark}₼)")!!
+        assertThat(foreign.amount).isEqualTo(Money(16_31))
+        val cash = parse("SOME MARKET\nKart: **1234", title = "💸 Nağdlaşdırma: -${mark}70.00${mark}₼")!!
+        assertThat(cash.kind).isEqualTo(TransactionKind.TRANSFER)
+        val incoming = parse("SOMEONE\nKart: **1234", title = "Köçürmə: +${mark}50.00${mark}₼")!!
+        assertThat(incoming.kind).isEqualTo(TransactionKind.INCOME)
+    }
+
+    @Test fun `marks in a shop's name don't end up in it`() {
+        assertThat(parse("${mark}SOME SHOP${mark}\nKart: **1234", title = "Ödəniş: -5.00₼")!!.merchant).isEqualTo("SOME SHOP")
+    }
+
+    @Test fun `a balance with marks around it still isn't the payment`() {
+        assertThat(parse("Balans: ${mark}533.12${mark}₼")).isNull()
+    }
+
     @Test fun `a foreign payment in the title uses its manat figure`() {
         val alert = parse("ZETAFLIX\nKart: **1234\nBalans: 900.00₼", title = "💸 Ödəniş: -9.49\$ (-16.31₼)")!!
         assertThat(alert.amount).isEqualTo(Money(16_31))
