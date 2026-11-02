@@ -4,8 +4,10 @@ import android.content.Context
 import com.eminallahverdi.balance.core.common.IoDispatcher
 import com.eminallahverdi.balance.core.datastore.BackupProblem
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
+import com.eminallahverdi.balance.core.model.AppEnvironment
 import com.eminallahverdi.balance.core.model.DriveBackup
 import com.eminallahverdi.balance.core.model.backupsToDelete
+import com.eminallahverdi.balance.core.model.backupsToOffer
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.time.Instant
@@ -25,6 +27,7 @@ class DriveBackups @Inject constructor(
     private val authorization: DriveAuthorization,
     private val drive: DriveFiles,
     private val preferences: UserPreferencesRepository,
+    private val environment: AppEnvironment,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) {
     /** Sends one backup and clears out old ones, and records how it went for the indicators. It never throws. */
@@ -37,8 +40,8 @@ class DriveBackups @Inject constructor(
         val file = File.createTempFile("backup", ".zip", context.cacheDir)
         val sent = runCatching {
             val facts = archive.write(file)
-            drive.upload(access.token, file, "balance-${FILE_NAME_TIME.format(Instant.now())}.zip", facts.entries)
-            backupsToDelete(drive.list(access.token)).forEach { drive.delete(access.token, it.id) }
+            drive.upload(access.token, file, "balance-${FILE_NAME_TIME.format(Instant.now())}.zip", facts.entries, environment)
+            backupsToDelete(environment, drive.list(access.token)).forEach { drive.delete(access.token, it.id) }
         }.isSuccess
         file.delete()
         if (sent) preferences.setBackedUp(Instant.now().toEpochMilli()) else preferences.setBackupProblem(BackupProblem.FAILED)
@@ -46,7 +49,7 @@ class DriveBackups @Inject constructor(
     }
 
     suspend fun list(token: String): List<DriveBackup> = withContext(io) {
-        drive.list(token).sortedByDescending { it.createdAt }
+        backupsToOffer(environment, drive.list(token)).sortedByDescending { it.createdAt }
     }
 
     /** Downloads and checks [backup]. It takes over the next time the app starts. */

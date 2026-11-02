@@ -1,16 +1,59 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.bm.android.application)
     alias(libs.plugins.bm.hilt)
     alias(libs.plugins.kotlin.serialization)
 }
 
+// Never committed. CI writes its own from secrets, and without one everything is signed with the debug key so it still builds.
+val keystore: Properties? = providers.fileContents(rootProject.layout.projectDirectory.file("keystore.properties")).asText.orNull
+    ?.let { text -> Properties().apply { load(text.reader()) } }
+
+// One number that only goes up, so a build always installs over an older one, whichever machine made it.
+val commitCount: Int = runCatching {
+    providers.exec {
+        commandLine("git", "rev-list", "--count", "HEAD")
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim().toInt()
+}.getOrDefault(1)
+
 android {
     namespace = "com.eminallahverdi.balance"
 
     defaultConfig {
         applicationId = "com.eminallahverdi.balance"
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = commitCount
+        versionName = providers.gradleProperty("appVersion").getOrElse("1.0.0")
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    signingConfigs {
+        keystore?.let { key ->
+            create("cibim") {
+                storeFile = rootProject.file(key.getProperty("storeFile"))
+                storePassword = key.getProperty("storePassword")
+                keyAlias = key.getProperty("keyAlias")
+                keyPassword = key.getProperty("keyPassword")
+            }
+        }
+    }
+    val signing = signingConfigs.findByName("cibim") ?: signingConfigs.getByName("debug")
+
+    flavorDimensions += "environment"
+    productFlavors {
+        // The app to try things in, beside the real one, with its own name, icon and data.
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev.$commitCount"
+        }
+        create("prod") {
+            dimension = "environment"
+        }
     }
 
     buildTypes {
@@ -18,13 +61,18 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Until a release keystore is configured, release builds are signed with the debug key so they install.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signing
         }
         debug {
-            applicationIdSuffix = ".debug"
+            // The same key as release, so a build from the IDE and one from CI can replace each other, and Drive knows both.
+            signingConfig = signing
         }
     }
+}
+
+androidComponents {
+    // Prod is only ever a real release: this is the build that holds the real data.
+    beforeVariants(selector().withFlavor("environment" to "prod").withBuildType("debug")) { it.enable = false }
 }
 
 dependencies {

@@ -60,33 +60,43 @@ importer:moneymanager    Reads a Money Manager backup on the device (a zip behin
 - A notification's card decides its account, ahead of every other guess, when an account has that card's last four digits saved (Accounts, edit an account). Those digits are the only card detail kept, and they stay on the device and in its backup. A withdrawal goes from that account to the first cash account, with no merchant, category or person, so it can't count as spending and auto-confirm never acts on it. With no cash account it has no Confirm, and Edit opens quick add as a transfer.
 - The evening reminder goes off at the time set in Settings, only if nothing is dated today, and opens quick add. Adding an entry clears it. A run so late it's the next morning stays quiet.
 - Every Room schema change needs a migration, because the owner's real data lives in this database. From the import on, treat the data on the phone as real: never wipe it to test something.
-- A backup keeps the last 7 in the app-data folder, which only this app can see. A night with no backup shows on Home from about 30 hours after the last one (`isBackupOverdue`), and it taps through to Settings. With backups off, nothing nags: that was the user's choice. The debug and release apps share backups as long as both are registered in the same Google Cloud project.
+- A backup keeps the last 7 in the app-data folder, which only this app can see. A night with no backup shows on Home from about 30 hours after the last one (`isBackupOverdue`), and it taps through to Settings. With backups off, nothing nags: that was the user's choice. Dev and Prod share that one folder, because Drive gives one per Google Cloud project, so each backup is marked with its environment. An app only ever counts and deletes its own, so testing can't push out a real backup. Prod never offers Dev's backups. Dev offers real ones too, marked Real data, to try an update on a copy of them, and restoring only reads. A backup with no mark is from before Dev existed, and counts as Prod's.
 - The import is told how to map things by a JSON file on the device (`ImportMapping` documents it), because it names the owner's family. It never goes in this repo, and `*-mapping.json` is gitignored. Test data for the importer uses invented names only. In the old app, tags did three jobs (people, sub-categories, merchants), and the categories named after people really meant "for whom", so both become the For whom field. Entries with no category were balance corrections and import as `ADJUSTMENT`. Taksit income was an offset for paying by card, and the bank loan paid out was not earnings, so both import as `INTERNAL`: the balance stays right and they aren't income.
 - The app must work for anyone the owner shares it with. First run shows onboarding: name, people, a category template, and optionally an import or a Drive restore.
 
 ## Commands
 ```
 ./gradlew testDebugUnitTest :core:model:test   # unit tests, all modules (core:model is pure JVM, so it has `test`, not `testDebugUnitTest`)
-./gradlew :app:assembleDebug         # debug APK (applicationId com.eminallahverdi.balance.debug)
-./gradlew :app:installDebug          # to a connected phone
+./gradlew :app:assembleDevDebug      # Cibim Dev for everyday work (applicationId com.eminallahverdi.balance.dev)
+./gradlew :app:assembleDevRelease    # Cibim Dev shrunk with R8, the way it ships
+./gradlew :app:assembleProdRelease   # Cibim, the real app (applicationId com.eminallahverdi.balance)
 ```
-CI (`.github/workflows/android.yml`) runs both on every push and uploads the debug APK.
+CI (`.github/workflows/android.yml`) runs the tests and a dev debug build on every push, and publishes from main and from tags (see below).
+
+## Environments and releases
+Two flavors, side by side on one phone, each with its own name, icon and data: `dev` (Cibim Dev, violet icon) to try changes, and `prod` (Cibim) for the real data. Prod has no debug variant, so the variants are `devDebug`, `devRelease` and `prodRelease`. Only `app` has flavors; other modules learn which app they're in through the injected `AppEnvironment`.
+
+Release flow, with no USB: pushing to main publishes `dev-<commits>` as a GitHub pre-release, the newest 5 kept. Once it holds up on the phone, tagging that commit, like `git tag v1.2.0 <commit>`, then pushing the tag, publishes that same code as Cibim 1.2.0, with its R8 mapping beside the APK to read crash traces. The phone gets both from GitHub Releases, through the Obtainium app or by tapping the APK. They're public, like the repo, and hold no personal data. A build Android refuses as older means its version code is lower: `versionCode` counts commits, which is why CI checks out with `fetch-depth: 0`. `versionName` comes from the tag through `-PappVersion`.
+
+Signing: every variant uses one key, read from `keystore.properties` (see `keystore.properties.example`). CI writes that file from the secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. With no key a build falls back to the debug key, so CI and a fresh clone still build, but publishing needs the real one. The owner creates and holds the key: its password never passes through Claude, and it's never committed. Losing it means no build can update the installed apps again: they'd need reinstalling and a Drive restore. A key can't be added to an install signed with another one, so a debug-key build of Prod has to be uninstalled before the real one goes on.
+
+R8 only runs on `*Release`, so anything that works by name or reflection can break there and nowhere else. After a change like that, try `devRelease`. Release builds aren't debuggable, so `run-as` doesn't work on them.
 
 The backup round trip is an instrumented test, which CI doesn't run. Always aim it at the emulator, or it installs to the phone too:
 ```
 ANDROID_SERIAL=emulator-5554 ./gradlew :core:backup:connectedDebugAndroidTest
 ```
 
-Drive runs through the owner's Google Cloud project, Cibim: Drive API on, published to production (the `drive.appdata` scope needs no review, but testing mode ends consent after 7 days), and an Android OAuth client for each package name and signing SHA-1. The debug app's client exists. The consent screen links to this repo and `docs/privacy.md`, so moving that file means updating Branding. A build with no client says Drive isn't set up.
+Drive runs through the owner's Google Cloud project, Cibim: Drive API on, published to production (the `drive.appdata` scope needs no review, but testing mode ends consent after 7 days), and an Android OAuth client for each package name and signing SHA-1, which `./gradlew :app:signingReport` prints. Prod, Dev and the old debug app each have one, and Prod and Dev share the real key's SHA-1. The consent screen links to this repo and `docs/privacy.md`, so moving that file means updating Branding. A build with no client says Drive isn't set up.
 
-The AVD `Pixel_3a_API_30` (Android 11) boots with `emulator -avd Pixel_3a_API_30`. `installDebug` installs to everything connected, so while the phone is plugged in, install to the emulator alone with `adb -s emulator-5554 install -r app/build/outputs/apk/debug/app-debug.apk`. Test bank notifications with `adb -s emulator-5554 shell "cmd notification post -S bigtext -t 'Bank' tag 'Payment 12.40 AZN, SHOP'"`, which arrive from the app called Shell. Rounded widgets need Android 12, so they're square there.
+The AVD `Pixel_3a_API_30` (Android 11) boots with `emulator -avd Pixel_3a_API_30`. `installDevDebug` installs to everything connected, so while the phone is plugged in, install to the emulator alone with `adb -s emulator-5554 install -r app/build/outputs/apk/dev/debug/app-dev-debug.apk`. Test bank notifications with `adb -s emulator-5554 shell "cmd notification post -S bigtext -t 'Bank' tag 'Payment 12.40 AZN, SHOP'"`, which arrive from the app called Shell. Rounded widgets need Android 12, so they're square there.
 
 ## Status (branch feat/mvp-foundation)
-The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. The home-screen widgets and the launcher shortcuts (add expense, add income, transfer) work. Settings has only rows that work. The owner's real Money Manager history is imported on their phone (debug app) and checked against the backup: every balance and month matched.
+The build is green locally. `app` has navigation (Home, History, Insights, Accounts, Settings) with the bottom bar and centre + button, `QuickAddActivity` hosting `QuickAddRoute`, and `FirstRunSeeder` applying `StarterTemplate.household()` until onboarding exists. `feature:catalog` is reached from Settings. Every tab is a real screen. The home-screen widgets and the launcher shortcuts (add expense, add income, transfer) work. Settings has only rows that work. The owner's real Money Manager history is imported on their phone (old debug app) and checked against the backup: every balance and month matched.
 
 Next, in order:
 1. Finish proving Drive on the phone. Sign-in, a real upload and the first night's run at 03:00 all work. Still to see: a restore from Drive, which has only been proven by the round-trip test.
-2. Finalizing, starting with the signed release build. Real data should live in a real install. The debug and release apps have separate data, so the import or a Drive restore is run again in the release app, and the release key's SHA-1 needs its own OAuth client in the same Google Cloud project.
+2. Move the real data to Prod. It's still in the old debug app, `com.eminallahverdi.balance.debug`, which no build makes any more. Install Cibim and use Restore from Google Drive, check it against the old app, and only then uninstall the old one. Until then keep it: its copy of the data is the real one, and its backup code predates the environment marks, so it counts every backup in the folder.
 3. First-run onboarding, which also asks for the notification permission and offers a Drive restore: the evening reminder is on by default, so nothing else asks on a fresh install.
 4. Wear OS, very last.
 

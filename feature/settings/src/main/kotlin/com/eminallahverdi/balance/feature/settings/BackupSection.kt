@@ -28,6 +28,7 @@ import com.eminallahverdi.balance.core.designsystem.component.BtSwitch
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
 import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
+import com.eminallahverdi.balance.core.model.AppEnvironment
 import com.eminallahverdi.balance.core.model.DriveBackup
 import java.time.Instant
 import java.time.LocalDate
@@ -86,7 +87,7 @@ internal fun BackupSection(viewModel: BackupViewModel = hiltViewModel()) {
                     text = backupTime(backup.createdAt.toEpochMilli()).replaceFirstChar { it.uppercase() },
                     selected = false,
                     onClick = { choose { confirming = backup } },
-                    caption = backup.entries?.let { "$it entries" },
+                    caption = backupCaption(backup, viewModel.showsBackupSource),
                 )
             }
         }
@@ -114,6 +115,12 @@ private fun BackupUiState.status(): String = when {
     lastBackupAt == null -> "Not backed up yet"
     problem == BackupProblem.FAILED -> "Last try failed. Last backed up ${backupTime(lastBackupAt)}"
     else -> "Last backed up ${backupTime(lastBackupAt)}"
+}
+
+/** Dev also offers real backups, so it says which is which. Prod only ever has its own. */
+private fun backupCaption(backup: DriveBackup, showSource: Boolean): String? {
+    val source = if (showSource) (if (backup.environment == AppEnvironment.PROD) "Real data" else "Test data") else null
+    return listOfNotNull(backup.entries?.let { "$it entries" }, source).joinToString(" · ").ifEmpty { null }
 }
 
 private fun backupTime(millis: Long): String {

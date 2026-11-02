@@ -23,10 +23,35 @@ class BackupTest {
 
     @Test fun `the newest are kept, whatever order they came in`() {
         val backups = (1..9).map { DriveBackup("b$it", now.minus(Duration.ofDays(it.toLong())), entries = null) }.shuffled()
-        assertThat(backupsToDelete(backups).map { it.id }).containsExactly("b8", "b9")
+        assertThat(backupsToDelete(AppEnvironment.PROD, backups).map { it.id }).containsExactly("b8", "b9")
     }
 
     @Test fun `nothing goes while there are few`() {
-        assertThat(backupsToDelete(listOf(DriveBackup("b1", now, null)))).isEmpty()
+        assertThat(backupsToDelete(AppEnvironment.PROD, listOf(DriveBackup("b1", now, null)))).isEmpty()
+    }
+
+    private fun backup(id: String, daysAgo: Long, environment: AppEnvironment) =
+        DriveBackup(id, now.minus(Duration.ofDays(daysAgo)), entries = null, environment = environment)
+
+    @Test fun `a week of testing can't push out a real backup`() {
+        val real = (1L..7L).map { backup("real$it", it + 20, AppEnvironment.PROD) }
+        val test = (1L..20L).map { backup("test$it", it, AppEnvironment.DEV) }
+        assertThat(backupsToDelete(AppEnvironment.PROD, real + test)).isEmpty()
+    }
+
+    @Test fun `dev only ever deletes dev's backups`() {
+        val real = (1L..9L).map { backup("real$it", it, AppEnvironment.PROD) }
+        val test = (1L..9L).map { backup("test$it", it, AppEnvironment.DEV) }
+        assertThat(backupsToDelete(AppEnvironment.DEV, real + test).map { it.id }).containsExactly("test8", "test9")
+    }
+
+    @Test fun `prod never offers test data`() {
+        val backups = listOf(backup("real", 1, AppEnvironment.PROD), backup("test", 1, AppEnvironment.DEV))
+        assertThat(backupsToOffer(AppEnvironment.PROD, backups).map { it.id }).containsExactly("real")
+    }
+
+    @Test fun `dev can restore a real backup, to try an update on a copy of it`() {
+        val backups = listOf(backup("real", 1, AppEnvironment.PROD), backup("test", 1, AppEnvironment.DEV))
+        assertThat(backupsToOffer(AppEnvironment.DEV, backups).map { it.id }).containsExactly("real", "test")
     }
 }

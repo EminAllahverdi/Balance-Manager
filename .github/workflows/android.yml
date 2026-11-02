@@ -3,6 +3,7 @@ name: Android CI
 on:
   push:
     branches: [ main, "feat/**", "fix/**" ]
+    tags: [ "v*" ]
   pull_request:
 
 concurrency:
@@ -15,6 +16,9 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The version code counts every commit, so a shallow clone would say 1.
+          fetch-depth: 0
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -23,7 +27,7 @@ jobs:
       - name: Build and unit-test
         run: |
           set -o pipefail
-          ./gradlew testDebugUnitTest :core:model:test :app:assembleDebug --continue 2>&1 | tee build.log
+          ./gradlew testDebugUnitTest :core:model:test :app:assembleDevDebug --continue 2>&1 | tee build.log
       - name: Report build errors as annotations
         if: failure()
         run: |
@@ -41,6 +45,74 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: balance-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: cibim-dev-debug-apk
+          path: app/build/outputs/apk/dev/debug/*.apk
           retention-days: 14
+
+  # Main publishes Cibim Dev to try on the phone. A tag like v1.2.0 on a commit that held up publishes Cibim.
+  publish:
+    needs: build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Look for the signing key
+        id: key
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "::error title=Signing::A release needs the KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD secrets."
+            exit 1
+          else
+            echo "::notice title=Signing::No signing key in the repo's secrets yet, so nothing was published."
+          fi
+      - uses: actions/setup-java@v4
+        if: steps.key.outputs.found == 'true'
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.key.outputs.found == 'true'
+      - name: Sign in with the key
+        if: steps.key.outputs.found == 'true'
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/cibim-release.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/cibim-release.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+      - name: Publish Cibim Dev
+        if: steps.key.outputs.found == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          # No configuration cache here: it would hold the passwords on disk.
+          ./gradlew :app:assembleDevRelease --no-configuration-cache
+          BUILD="$(git rev-list --count HEAD)"
+          mv app/build/outputs/apk/dev/release/app-dev-release.apk "cibim-dev-$BUILD.apk"
+          mv app/build/outputs/mapping/devRelease/mapping.txt "mapping-dev-$BUILD.txt"
+          gh release create "dev-$BUILD" "cibim-dev-$BUILD.apk" "mapping-dev-$BUILD.txt" \
+            --target "$GITHUB_SHA" --prerelease --title "dev-$BUILD" --notes "Cibim Dev from $GITHUB_SHA. For testing: it has its own data."
+          # Only the newest few, and only dev ones: a real release is never touched.
+          gh release list --limit 100 --json tagName --jq '.[].tagName | select(startswith("dev-"))' \
+            | tail -n +6 | xargs -r -n1 gh release delete --yes --cleanup-tag
+      - name: Publish Cibim
+        if: steps.key.outputs.found == 'true' && startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ./gradlew :app:assembleProdRelease -PappVersion="$VERSION" --no-configuration-cache
+          mv app/build/outputs/apk/prod/release/app-prod-release.apk "cibim-$VERSION.apk"
+          mv app/build/outputs/mapping/prodRelease/mapping.txt "mapping-$VERSION.txt"
+          gh release create "$GITHUB_REF_NAME" "cibim-$VERSION.apk" "mapping-$VERSION.txt" --title "Cibim $VERSION" --generate-notes

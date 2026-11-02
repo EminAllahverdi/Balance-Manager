@@ -10,6 +10,7 @@ import com.eminallahverdi.balance.core.backup.DriveAuthorization
 import com.eminallahverdi.balance.core.backup.DriveBackups
 import com.eminallahverdi.balance.core.datastore.BackupProblem
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
+import com.eminallahverdi.balance.core.model.AppEnvironment
 import com.eminallahverdi.balance.core.model.DriveBackup
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -42,7 +43,9 @@ class BackupViewModel @Inject constructor(
     private val prefs: UserPreferencesRepository,
     private val authorization: DriveAuthorization,
     private val backups: DriveBackups,
+    environment: AppEnvironment,
 ) : ViewModel() {
+    val showsBackupSource: Boolean = environment == AppEnvironment.DEV
     private val session = MutableStateFlow(BackupUiState())
     private var waitingOnConsent: DriveTask? = null
     private var token: String? = null

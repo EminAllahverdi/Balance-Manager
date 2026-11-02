@@ -1,5 +1,6 @@
 package com.eminallahverdi.balance.core.backup
 
+import com.eminallahverdi.balance.core.model.AppEnvironment
 import com.eminallahverdi.balance.core.model.DriveBackup
 import java.io.File
 import java.io.IOException
@@ -17,6 +18,7 @@ private const val UPLOAD_API = "https://www.googleapis.com/upload/drive/v3/files
 private const val LIST_QUERY = "?spaces=appDataFolder&pageSize=100&fields=files(id,createdTime,appProperties)"
 private const val BOUNDARY = "balance-backup-boundary"
 private const val ENTRIES_PROPERTY = "entries"
+private const val ENVIRONMENT_PROPERTY = "environment"
 private const val CONNECT_MILLIS = 20_000
 private const val READ_MILLIS = 60_000
 
@@ -31,13 +33,16 @@ private data class RemoteFile(val id: String, val createdTime: String, val appPr
 @Serializable
 private data class NewFile(val name: String, val parents: List<String>, val appProperties: Map<String, String>)
 
+/** Only Dev marks its backups as its own. Anything else is treated as real data, the safe way round. */
 internal fun parseBackups(body: String): List<DriveBackup> = json.decodeFromString<FileList>(body).files.map {
-    DriveBackup(it.id, Instant.parse(it.createdTime), it.appProperties[ENTRIES_PROPERTY]?.toIntOrNull())
+    val dev = it.appProperties[ENVIRONMENT_PROPERTY] == AppEnvironment.DEV.name
+    DriveBackup(it.id, Instant.parse(it.createdTime), it.appProperties[ENTRIES_PROPERTY]?.toIntOrNull(), if (dev) AppEnvironment.DEV else AppEnvironment.PROD)
 }
 
-/** The part of a multipart upload that comes before the file. The folder is Drive's hidden one, which only this app can see. */
-internal fun uploadHead(name: String, entries: Int): String {
-    val metadata = json.encodeToString(NewFile(name, listOf("appDataFolder"), mapOf(ENTRIES_PROPERTY to entries.toString())))
+/** The part of a multipart upload that comes before the file. The folder is Drive's hidden one, which only this app and its other environment can see. */
+internal fun uploadHead(name: String, entries: Int, environment: AppEnvironment): String {
+    val properties = mapOf(ENTRIES_PROPERTY to entries.toString(), ENVIRONMENT_PROPERTY to environment.name)
+    val metadata = json.encodeToString(NewFile(name, listOf("appDataFolder"), properties))
     return "--$BOUNDARY\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n$metadata\r\n--$BOUNDARY\r\nContent-Type: application/zip\r\n\r\n"
 }
 
@@ -48,8 +53,8 @@ internal fun uploadTail(): String = "\r\n--$BOUNDARY--\r\n"
 class DriveFiles @Inject constructor() {
     fun list(token: String): List<DriveBackup> = connect("$API$LIST_QUERY", token).readAll().let(::parseBackups)
 
-    fun upload(token: String, file: File, name: String, entries: Int) {
-        val head = uploadHead(name, entries).toByteArray()
+    fun upload(token: String, file: File, name: String, entries: Int, environment: AppEnvironment) {
+        val head = uploadHead(name, entries, environment).toByteArray()
         val tail = uploadTail().toByteArray()
         val connection = connect(UPLOAD_API, token, "POST")
         connection.doOutput = true
