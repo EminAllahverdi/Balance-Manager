@@ -54,6 +54,8 @@ data class Account(
     val showOnWidget: Boolean = true,
     val sortOrder: Int = 0,
     val isArchived: Boolean = false,
+    /** The card's last four digits, so a bank notification from this card lands on this account. */
+    val cardEnding: String = "",
 )
 
 /** A shop or service. Remembers what you picked last time so the next entry is pre-filled. */

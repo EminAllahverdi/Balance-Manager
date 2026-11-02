@@ -48,6 +48,7 @@ data class AccountEntity(
     @ColumnInfo(name = "show_on_widget") val showOnWidget: Boolean = true,
     @ColumnInfo(name = "sort_order") val sortOrder: Int = 0,
     @ColumnInfo(name = "is_archived") val isArchived: Boolean = false,
+    @ColumnInfo(name = "card_ending", defaultValue = "") val cardEnding: String = "",
 )
 
 @Entity(tableName = "merchant", indices = [Index(value = ["name"], unique = true)])
@@ -151,6 +152,7 @@ data class PendingEntryEntity(
     val title: String = "",
     /** "WAITING", "ADDED" or "SKIPPED". */
     val status: String,
+    @ColumnInfo(name = "card_ending", defaultValue = "") val cardEnding: String = "",
 )
 
 /** The merchant a bank's wording was confirmed as, so BRAVO SUPERMARKET comes back as Bravo. [raw] is lowercase. */

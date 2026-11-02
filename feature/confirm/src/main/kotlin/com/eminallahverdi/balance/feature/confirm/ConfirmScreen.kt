@@ -67,7 +67,7 @@ fun ConfirmRoute(onBack: () -> Unit, onEdit: (Long) -> Unit, viewModel: ConfirmV
         item {
             Text(hint(state), style = BtTheme.type.caption, color = c.textSecondary, modifier = Modifier.padding(horizontal = 4.dp))
         }
-        items(state.rows, key = { it.item.entry.id }) { row -> EntryCard(row, viewModel, onEdit) }
+        items(state.rows, key = { it.item.entry.id }) { row -> EntryCard(row, state.hideAmounts, viewModel, onEdit) }
         if (state.listening) item(key = "auto") { AutoConfirmRow(state.autoConfirm, viewModel::setAutoConfirm) }
     }
     if (state.askingAutoConfirm) {
@@ -93,7 +93,7 @@ private fun hint(state: ConfirmUiState): String = when {
 }
 
 @Composable
-private fun EntryCard(row: ConfirmRow, vm: ConfirmViewModel, onEdit: (Long) -> Unit) {
+private fun EntryCard(row: ConfirmRow, hideAmounts: Boolean, vm: ConfirmViewModel, onEdit: (Long) -> Unit) {
     val c = BtTheme.colors
     val entry = row.item.entry
     val tileCategory = row.category ?: row.parent
@@ -119,7 +119,7 @@ private fun EntryCard(row: ConfirmRow, vm: ConfirmViewModel, onEdit: (Long) -> U
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                CategoryTile(tileCategory?.icon ?: "notifications", tileCategory?.color ?: 0xFF8A94A3)
+                CategoryTile(tileCategory?.icon ?: if (row.isTransfer) "swap_horiz" else "notifications", tileCategory?.color ?: 0xFF8A94A3)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(row.title, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -128,7 +128,7 @@ private fun EntryCard(row: ConfirmRow, vm: ConfirmViewModel, onEdit: (Long) -> U
                     }
                 }
                 Text(
-                    (if (income) "+" else "") + MoneyFormat.format(entry.amount),
+                    if (hideAmounts && entry.kind != TransactionKind.EXPENSE) MoneyFormat.HIDDEN else (if (income) "+" else "") + MoneyFormat.format(entry.amount),
                     style = BtTheme.type.amountMedium,
                     color = if (income) c.moneyIncome else c.textPrimary,
                 )

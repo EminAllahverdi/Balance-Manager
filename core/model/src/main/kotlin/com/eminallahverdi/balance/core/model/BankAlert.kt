@@ -3,7 +3,7 @@ package com.eminallahverdi.balance.core.model
 import java.time.Instant
 
 /** A payment or incoming sum read from a bank's notification, before the user has decided about it. */
-data class BankAlert(val amount: Money, val kind: TransactionKind, val merchant: String)
+data class BankAlert(val amount: Money, val kind: TransactionKind, val merchant: String, val cardEnding: String = "")
 
 enum class PendingStatus { WAITING, ADDED, SKIPPED }
 
@@ -20,15 +20,17 @@ data class PendingEntry(
     val status: PendingStatus = PendingStatus.WAITING,
     /** The notification's title, which can say what a payment was when the text doesn't. */
     val title: String = "",
+    /** The card's last four digits, which say which account this was when an account has them saved. */
+    val cardEnding: String = "",
 )
 
 /**
  * Reads a notification from any bank, or returns null when it isn't a payment: a login code, an offer, a balance on its own.
  *
- * Nothing here knows about a particular bank. No two word these alike, and the app has never seen a real one, so this looks
- * for what every one has: a sum in manats, and words around it that mean money moved. A card payment in another currency is
- * read from the manat figure banks send with it, which includes their commission. Anything it can't read stays off the page,
- * and the bank's own notification is untouched.
+ * Nothing here knows about a particular bank, because no two word these alike. This looks for what every one has: a sum in
+ * manats, and words around it that mean money moved. A card payment in another currency is read from the manat figure banks
+ * send with it, which includes their commission. Taking cash out is a transfer, not spending, and a plus sign means money
+ * came in. Anything it can't read stays off the page, and the bank's own notification is untouched.
  */
 fun parseBankNotification(title: String, text: String, appName: String = ""): BankAlert? {
     val message = "$title\n$text"
@@ -36,9 +38,14 @@ fun parseBankNotification(title: String, text: String, appName: String = ""): Ba
     val sum = AMOUNT.findAll(message).firstOrNull { !it.isSideFigure(message) } ?: return null
     val amount = parseAmount(sum.groups["before"]?.value ?: sum.groups["after"]?.value ?: return null) ?: return null
     if (amount.isZero || !MONEY_MOVED_WORDS.containsMatchIn(message)) return null
-    val kind = if (INCOMING_WORDS.containsMatchIn(message)) TransactionKind.INCOME else TransactionKind.EXPENSE
+    val kind = when {
+        INCOMING_WORDS.containsMatchIn(message) || message.substring(0, sum.range.first).trimEnd().endsWith('+') -> TransactionKind.INCOME
+        CASH_WORDS.containsMatchIn(message) -> TransactionKind.TRANSFER
+        else -> TransactionKind.EXPENSE
+    }
     val titleMerchant = if (title.trim().equals(appName.trim(), ignoreCase = true)) "" else merchantIn(title, sum.value)
-    return BankAlert(amount, kind, merchantIn(text, sum.value).ifBlank { titleMerchant })
+    val merchant = merchantIn(text, sum.value).ifBlank { titleMerchant }
+    return BankAlert(amount, kind, merchant, CARD_ENDING.find(message)?.groupValues?.get(1).orEmpty())
 }
 
 /** A balance, a commission or an exchange rate: a sum in manats, but not what was paid. */
@@ -62,10 +69,26 @@ private fun merchantIn(text: String, sum: String): String {
     return text.split(CLAUSE_END)
         .map { clause -> clause.replace(sum, " ").replace(FOREIGN_SUM, " ").replace(LEADING_WORDS, " ").replace(PUNCTUATION, " ").trim().trim('.', '-').trim() }
         .firstOrNull { clause -> clause.any(Char::isLetter) && !NOT_A_MERCHANT.containsMatchIn(clause) }
+        ?.let(::withoutCardNoise)
         .orEmpty()
 }
 
+/**
+ * ANTHROPIC* CLAUDE SUB is Claude and Spotify P48A9CB5BF is Spotify. What's before a star is who took the payment for the
+ * shop, and a payment reference changes every time, so leaving it in would make every charge a new merchant.
+ */
+private fun withoutCardNoise(name: String): String {
+    val shop = name.substringAfter('*', name).trim().ifEmpty { name }
+    val words = shop.split(WHITESPACE).filterNot(::isPaymentReference).dropLastWhile { BILLING_WORD.matches(it) }
+    return words.joinToString(" ").ifEmpty { name }
+}
+
+private fun isPaymentReference(word: String): Boolean =
+    word.length >= SHORTEST_REFERENCE && word.count(Char::isDigit) >= DIGITS_IN_A_REFERENCE && word.any(Char::isLetter)
+
 private const val WORDS_BEFORE_A_SUM = 20
+private const val SHORTEST_REFERENCE = 8
+private const val DIGITS_IN_A_REFERENCE = 3
 private const val FOREIGN_CURRENCY = """USD|EUR|GBP|TRY|RUB|\$|€|£|₺|₽"""
 
 // Word edges spelled out, because \b treats ö and ə as letters on Android but not on the JVM the tests run on.
@@ -84,6 +107,9 @@ private val FOREIGN_SUM = words("""(?:\d[\d.,]*\s*(?:$FOREIGN_CURRENCY))|(?:(?:$
 private val EXCHANGE_RATE = words("""${START}1(?:[.,]0+)?\s*(?:$FOREIGN_CURRENCY)\s*=\s*$""")
 private val CLAUSE_END = Regex("""[,;\n|]|\.\s""")
 private val PUNCTUATION = Regex("""[:()–—]""")
+private val WHITESPACE = Regex("""\s+""")
+private val CARD_ENDING = Regex("""\*+\s*(\d{4})(?!\d)""")
+private val BILLING_WORD = words("""sub|subscription|membership""")
 
 private val SECURITY_WORDS = words("""$START(otp|kod|kodu|kodunuz|code|şifrə|sifre|parol|password|пароль|код)$END""")
 private val OFFER_WORDS = words("""(təklif|kampaniya|endirim|keşbek|kesbek|cashback|promo|$START(offer|bonus)|предлож|акци|скидк)""")
@@ -91,11 +117,15 @@ private val SIDE_FIGURE_WORDS = words(
     """(balans|balance|qalıq|qaliq|mövcud|movcud|баланс|остаток|доступно|limit|лимит|komissiya|commission|комисси|kurs|məzənnə|mezenne|курс|$START(fee|rate)$END)""",
 )
 
+// Cash out of a card, wherever it was taken. The place in the notification isn't a shop.
+private const val CASH_OUT = """n[aə][ğg]dl[aə][şs]d[ıi]r|bankomat|${START}atm$END|withdraw|снятие|наличн"""
+private val CASH_WORDS = words(CASH_OUT)
+
 /** A notification with a sum in it but none of these is a statement, not something that happened. */
 private val MONEY_MOVED_WORDS = words(
-    """(ödəniş|odenis|alış|alis|məxaric|mexaric|çıxarış|çıxarıl|çıxıl|cixaris|nağdlaşdır|köçürmə|kocurme|mədaxil|medaxil|daxil ol|daxilolma|ödənildi|tutul|silin|hesab|kart|""" +
-        """payment|purchase|paid|withdraw|transfer|received|credited|debited|deposit|spent|charged|card|account|""" +
-        """оплата|покупка|списан|снятие|перевод|зачисл|пополнен|поступлен|карт|счет|счёт|\*+\s*\d{3,4})""",
+    """(ödəniş|odenis|alış|alis|məxaric|mexaric|çıxarış|çıxarıl|çıxıl|cixaris|$CASH_OUT|köçürmə|kocurme|mədaxil|medaxil|daxil ol|daxilolma|ödənildi|tutul|silin|hesab|kart|""" +
+        """payment|purchase|paid|transfer|received|credited|debited|deposit|spent|charged|card|account|""" +
+        """оплата|покупка|списан|перевод|зачисл|пополнен|поступлен|карт|счет|счёт|\*+\s*\d{3,4})""",
 )
 private val INCOMING_WORDS = words("""(mədaxil|medaxil|daxil ol|daxilolma|received|credited|deposit|incoming|зачисл|пополнен|поступлен)""")
 

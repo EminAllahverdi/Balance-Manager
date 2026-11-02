@@ -50,6 +50,7 @@ import com.eminallahverdi.balance.core.designsystem.theme.CategoryPalette
 import com.eminallahverdi.balance.core.model.AccountType
 
 private val ACCOUNT_ICONS = listOf("credit_card", "payments", "account_balance_wallet", "account_balance", "savings")
+private const val CARD_DIGITS = 4
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,6 +85,17 @@ internal fun AccountEditorSheet(editor: AccountsSheet.Editor, state: AccountsUiS
                 AccountType.entries.forEach { type ->
                     BtChip(type.label, account.type == type, { vm.update(account.copy(type = type)) })
                 }
+            }
+        }
+        if (account.type != AccountType.CASH) {
+            EditorField("Card's last 4 digits") {
+                BtTextField(
+                    value = account.cardEnding,
+                    placeholder = "",
+                    onChange = { vm.update(account.copy(cardEnding = it.filter(Char::isDigit).take(CARD_DIGITS))) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+                Text("Bank notifications from this card go to this account.", style = BtTheme.type.caption, color = BtTheme.colors.textMuted)
             }
         }
         EditorField("Icon") {

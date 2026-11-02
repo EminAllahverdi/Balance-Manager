@@ -71,4 +71,28 @@ class ConfirmRowTest {
     @Test fun `the caption shows who and from where`() {
         assertThat(row().caption).isEqualTo("Me · Card")
     }
+
+    private val wallet = Account(2, "Cash", AccountType.CASH, "account_balance_wallet", 0)
+
+    private fun withdrawal(toAccount: Account?) = ConfirmRow(
+        PendingItem(entry.copy(kind = TransactionKind.TRANSFER), EntryGuess("", null, null, card.id, isKnown = false, toAccountId = toAccount?.id)),
+        category = null,
+        parent = null,
+        person = null,
+        account = card,
+        toAccount = toAccount,
+    )
+
+    @Test fun `a withdrawal shows both accounts and needs no category`() {
+        val row = withdrawal(wallet)
+        assertThat(row.title).isEqualTo("Cash withdrawal")
+        assertThat(row.caption).isEqualTo("Card → Cash")
+        assertThat(row.canConfirm).isTrue()
+    }
+
+    @Test fun `a withdrawal with no cash account goes through Edit`() {
+        val row = withdrawal(null)
+        assertThat(row.caption).isEqualTo("Pick an account to move it to")
+        assertThat(row.canConfirm).isFalse()
+    }
 }

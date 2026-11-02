@@ -148,4 +148,62 @@ class EntryGuessTest {
         assertThat(prettyMerchant("  BRAVO   SUPERMARKET ")).isEqualTo("Bravo Supermarket")
     }
 
+    private val debit = Account(1, "Main", AccountType.DEBIT_CARD, "payments", 0, cardEnding = "1111")
+    private val credit = Account(2, "Credit", AccountType.CREDIT_CARD, "credit_card", 0, cardEnding = "2222")
+    private val wallet = Account(3, "Wallet", AccountType.CASH, "account_balance_wallet", 0)
+    private val accounts = listOf(debit, credit, wallet)
+
+    private fun withCard(card: String, merchant: String = "SOME SHOP", kind: TransactionKind = TransactionKind.EXPENSE) =
+        entry(merchant, kind = kind).copy(cardEnding = card)
+
+    private fun guessWithAccounts(entry: PendingEntry, accounts: List<Account> = this.accounts, merchants: List<Merchant> = emptyList(), aliases: Map<String, Long> = emptyMap()) =
+        guessFor(entry, aliases, merchants, categories, defaultAccountId = 1, accounts = accounts)
+
+    @Test fun `the card in the notification decides the account`() {
+        assertThat(guessWithAccounts(withCard("2222")).accountId).isEqualTo(credit.id)
+    }
+
+    @Test fun `the card beats the account a merchant was last paid from`() {
+        val bravo = Merchant(3, "Bravo", lastCategoryId = 1, lastAccountId = debit.id)
+        assertThat(guessWithAccounts(withCard("2222", "BRAVO"), merchants = listOf(bravo)).accountId).isEqualTo(credit.id)
+    }
+
+    @Test fun `a card no account has saved falls back as before`() {
+        val bravo = Merchant(3, "Bravo", lastCategoryId = 1, lastAccountId = credit.id)
+        assertThat(guessWithAccounts(withCard("9999", "BRAVO"), merchants = listOf(bravo)).accountId).isEqualTo(credit.id)
+        assertThat(guessWithAccounts(withCard("9999")).accountId).isEqualTo(1)
+    }
+
+    @Test fun `an archived account's card is ignored`() {
+        val closed = listOf(credit.copy(isArchived = true), debit, wallet)
+        assertThat(guessWithAccounts(withCard("2222"), closed).accountId).isEqualTo(1)
+    }
+
+    @Test fun `an entry with no card never matches an account with none saved`() {
+        val none = listOf(debit.copy(cardEnding = ""), credit.copy(id = 9, cardEnding = ""))
+        assertThat(guessFor(entry("SOME SHOP"), emptyMap(), emptyList(), categories, defaultAccountId = 7, accounts = none).accountId).isEqualTo(7)
+    }
+
+    @Test fun `cash taken out goes from the card to the cash account`() {
+        val result = guessWithAccounts(withCard("2222", "SOME MARKET 8 MKR", TransactionKind.TRANSFER))
+        assertThat(result.accountId).isEqualTo(credit.id)
+        assertThat(result.toAccountId).isEqualTo(wallet.id)
+    }
+
+    @Test fun `cash taken out at a shop you know is never spending there`() {
+        val market = Merchant(3, "Some Market", lastCategoryId = 1, lastAccountId = debit.id, lastPersonId = 4)
+        val result = guessWithAccounts(withCard("2222", "SOME MARKET", TransactionKind.TRANSFER), merchants = listOf(market), aliases = mapOf("some market" to 3L))
+        assertThat(result.categoryId).isNull()
+        assertThat(result.personId).isNull()
+        assertThat(result.merchantName).isEmpty()
+        assertThat(result.accountId).isEqualTo(credit.id)
+        assertThat(result.isKnown).isFalse()
+        assertThat(result.isSuggested).isFalse()
+    }
+
+    @Test fun `with no cash account a withdrawal has nowhere to go yet`() {
+        assertThat(guessWithAccounts(withCard("1111", kind = TransactionKind.TRANSFER), listOf(debit, credit)).toAccountId).isNull()
+        val archived = listOf(debit, wallet.copy(isArchived = true))
+        assertThat(guessWithAccounts(withCard("1111", kind = TransactionKind.TRANSFER), archived).toAccountId).isNull()
+    }
 }

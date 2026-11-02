@@ -33,8 +33,8 @@ internal fun Person.toEntity() = PersonEntity(id, name, color, avatarUri, sortOr
 internal fun CategoryEntity.toModel() = Category(id, name, CategoryType.valueOf(type), parentId, icon, color, defaultPersonId, sortOrder, isArchived)
 internal fun Category.toEntity() = CategoryEntity(id, name, type.name, parentId, icon, color, defaultPersonId, sortOrder, isArchived)
 
-internal fun AccountEntity.toModel() = Account(id, name, AccountType.valueOf(type), icon, color, includeInTotal, showOnWidget, sortOrder, isArchived)
-internal fun Account.toEntity() = AccountEntity(id, name, type.name, icon, color, includeInTotal, showOnWidget, sortOrder, isArchived)
+internal fun AccountEntity.toModel() = Account(id, name, AccountType.valueOf(type), icon, color, includeInTotal, showOnWidget, sortOrder, isArchived, cardEnding)
+internal fun Account.toEntity() = AccountEntity(id, name, type.name, icon, color, includeInTotal, showOnWidget, sortOrder, isArchived, cardEnding)
 
 internal fun MerchantEntity.toModel() = Merchant(id, name, lastCategoryId, lastAccountId, lastPersonId, useCount)
 
@@ -114,4 +114,5 @@ internal fun PendingEntryEntity.toModel() = PendingEntry(
     postedAt = Instant.ofEpochMilli(postedAt),
     status = PendingStatus.valueOf(status),
     title = title,
+    cardEnding = cardEnding,
 )

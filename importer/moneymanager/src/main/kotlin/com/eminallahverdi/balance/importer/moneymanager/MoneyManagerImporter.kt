@@ -56,13 +56,16 @@ class MoneyManagerImporter @Inject constructor(
     suspend fun import(plan: ImportPlan) = withContext(io) {
         val defaultAccount = db.withTransaction {
             val maintenance = db.maintenanceDao()
+            val cardEndings = db.accountDao().getAll().associate { it.name to it.cardEnding }
             maintenance.clearTransactions()
             maintenance.clearDebts()
             maintenance.clearRecurring()
             maintenance.clearPending()
             maintenance.clearMerchants()
             maintenance.clearAccounts()
-            val accounts = plan.accounts.mapIndexed { order, account -> account.source.uid to db.accountDao().upsert(account.toEntity(order)) }.toMap()
+            val accounts = plan.accounts.mapIndexed { order, account ->
+                account.source.uid to db.accountDao().upsert(account.toEntity(order).copy(cardEnding = cardEndings[account.name].orEmpty()))
+            }.toMap()
             val people = addPeople(plan)
             val categories = Categories(db.categoryDao(), people, plan.categories)
             categories.applyDefaultPeople()

@@ -30,20 +30,27 @@ data class ConfirmRow(
     val parent: Category?,
     val person: Person?,
     val account: Account?,
+    val toAccount: Account? = null,
 ) {
+    val isTransfer: Boolean get() = item.entry.kind == TransactionKind.TRANSFER
     val isWaiting: Boolean get() = item.entry.status == PendingStatus.WAITING
-    val canConfirm: Boolean get() = category != null && account != null
+    val canConfirm: Boolean get() = account != null && (if (isTransfer) toAccount != null else category != null)
 
     /** "Groceries · Bravo", "Subscriptions · Apps · Spotify", or just the merchant until it has a category. */
     val title: String
         get() {
+            if (isTransfer) return "Cash withdrawal"
             val merchant = item.guess.merchantName.ifBlank { null }
             val fallback = if (item.entry.kind == TransactionKind.INCOME) "Money received" else "Bank payment"
             return listOfNotNull(parent?.name, category?.name, merchant).distinct().joinToString(" · ").ifBlank { fallback }
         }
 
     val caption: String
-        get() = if (category == null) "Pick a category" else listOfNotNull("Suggested".takeIf { item.guess.isSuggested }, person?.name, account?.name).joinToString(" · ")
+        get() = when {
+            isTransfer -> if (toAccount == null) "Pick an account to move it to" else "${account?.name} → ${toAccount.name}"
+            category == null -> "Pick a category"
+            else -> listOfNotNull("Suggested".takeIf { item.guess.isSuggested }, person?.name, account?.name).joinToString(" · ")
+        }
 }
 
 data class ConfirmUiState(
@@ -52,6 +59,7 @@ data class ConfirmUiState(
     val listening: Boolean = false,
     val autoConfirm: Boolean = false,
     val askingAutoConfirm: Boolean = false,
+    val hideAmounts: Boolean = false,
 ) {
     val waiting: Int get() = rows.count { it.isWaiting }
 }
@@ -82,11 +90,13 @@ class ConfirmViewModel @Inject constructor(
                     parent = categories.firstOrNull { it.id == category?.parentId },
                     person = people.firstOrNull { it.id == item.guess.personId },
                     account = accounts.firstOrNull { it.id == item.guess.accountId },
+                    toAccount = accounts.firstOrNull { it.id == item.guess.toAccountId },
                 )
             },
             listening = settings.bankNotificationsEnabled,
             autoConfirm = settings.autoConfirmKnownMerchants,
             askingAutoConfirm = askingNow,
+            hideAmounts = settings.hideAmountsInApp,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ConfirmUiState())
 

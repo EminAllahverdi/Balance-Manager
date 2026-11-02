@@ -165,6 +165,7 @@ class QuickAddViewModel @Inject constructor(
                 pending = entry,
                 amountText = entry.amount.toInputText(),
                 accountId = guess.accountId,
+                toAccountId = guess.toAccountId,
                 categoryId = category?.parentId ?: category?.id,
                 subCategoryId = category?.id?.takeIf { category.parentId != null },
                 merchant = guess.merchantName,

@@ -3,7 +3,7 @@ package com.eminallahverdi.balance.core.model
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-/** The wordings here are invented to cover the shapes banks use. None is a real notification. */
+/** The shops, cards and sums here are invented to cover the shapes banks use. None is a real notification. */
 class BankAlertTest {
     private fun parse(text: String, title: String = "Bank", appName: String = "") = parseBankNotification(title, text, appName)
 
@@ -120,5 +120,57 @@ class BankAlertTest {
 
     @Test fun `no sum at all, no entry`() {
         assertThat(parse("Ödəniş uğurla tamamlandı")).isNull()
+    }
+
+    @Test fun `the sum can be in the title with the shop, card and balance on lines under it`() {
+        val alert = parse("SOME SHOP\nKart: **1234\nBalans: 2,000.50₼", title = "💸 Ödəniş: -5.20₼")!!
+        assertThat(alert.amount).isEqualTo(Money(5_20))
+        assertThat(alert.kind).isEqualTo(TransactionKind.EXPENSE)
+        assertThat(alert.merchant).isEqualTo("SOME SHOP")
+        assertThat(alert.cardEnding).isEqualTo("1234")
+    }
+
+    @Test fun `a foreign payment in the title uses its manat figure`() {
+        val alert = parse("ZETAFLIX\nKart: **1234\nBalans: 900.00₼", title = "💸 Ödəniş: -9.49\$ (-16.31₼)")!!
+        assertThat(alert.amount).isEqualTo(Money(16_31))
+        assertThat(alert.merchant).isEqualTo("ZETAFLIX")
+    }
+
+    @Test fun `taking cash out is a transfer, whichever shop's machine it came from`() {
+        val alert = parse("SOME MARKET 8 MKR\nKart: **1234\nBalans: 279.36₼", title = "💸 Nağdlaşdırma: -70.00₼")!!
+        assertThat(alert.amount).isEqualTo(Money(70_00))
+        assertThat(alert.kind).isEqualTo(TransactionKind.TRANSFER)
+        assertThat(alert.cardEnding).isEqualTo("1234")
+        assertThat(parse("NƏĞDLƏŞDIRMƏ 20.00 AZN, Kart *1234")!!.kind).isEqualTo(TransactionKind.TRANSFER)
+        assertThat(parse("Bankomatdan 20.00 AZN çıxarıldı")!!.kind).isEqualTo(TransactionKind.TRANSFER)
+        assertThat(parse("ATM 20.00 AZN, Card *1234")!!.kind).isEqualTo(TransactionKind.TRANSFER)
+        assertThat(parse("Снятие наличных 20.00 AZN")!!.kind).isEqualTo(TransactionKind.TRANSFER)
+    }
+
+    @Test fun `a shop with atm inside a word is still a payment`() {
+        assertThat(parse("Ödəniş: 3.00 AZN, BATMAN STORE")!!.kind).isEqualTo(TransactionKind.EXPENSE)
+    }
+
+    @Test fun `a plus sign means money came in`() {
+        assertThat(parse("SOMEONE\nKart: **1234", title = "Köçürmə: +50.00₼")!!.kind).isEqualTo(TransactionKind.INCOME)
+        assertThat(parse("Köçürmə: + 50.00 AZN, Kart *1234")!!.kind).isEqualTo(TransactionKind.INCOME)
+        assertThat(parse("Köçürmə: -50.00₼, Kart *1234")!!.kind).isEqualTo(TransactionKind.EXPENSE)
+    }
+
+    @Test fun `what a card statement adds isn't part of the shop's name`() {
+        assertThat(parse("ACME* CLOUDY SUB\nKart: **1234", title = "Ödəniş: -5.00₼")!!.merchant).isEqualTo("CLOUDY")
+        assertThat(parse("PAYPAL *SOME SHOP\nKart: **1234", title = "Ödəniş: -5.00₼")!!.merchant).isEqualTo("SOME SHOP")
+        assertThat(parse("Zetaflix Q37B8DA2CE\nKart: **1234", title = "Ödəniş: -5.00₼")!!.merchant).isEqualTo("Zetaflix")
+    }
+
+    @Test fun `numbers that belong to a shop's name stay`() {
+        assertThat(parse("24SAAT MARKET 8\nKart: **1234", title = "Ödəniş: -5.00₼")!!.merchant).isEqualTo("24SAAT MARKET 8")
+        assertThat(parse("7ELEVEN\nKart: **1234", title = "Ödəniş: -5.00₼")!!.merchant).isEqualTo("7ELEVEN")
+    }
+
+    @Test fun `the card is read from any mask, and may not be there`() {
+        assertThat(parse("Ödəniş 5.00 AZN, Kart: *1234")!!.cardEnding).isEqualTo("1234")
+        assertThat(parse("Ödəniş 5.00 AZN, Kart: 4169 73** **** 1234")!!.cardEnding).isEqualTo("1234")
+        assertThat(parse("Ödəniş 5.00 AZN, SOME SHOP")!!.cardEnding).isEmpty()
     }
 }

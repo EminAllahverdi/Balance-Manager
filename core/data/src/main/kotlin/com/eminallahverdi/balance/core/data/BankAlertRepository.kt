@@ -16,6 +16,7 @@ import com.eminallahverdi.balance.core.model.PendingEntry
 import com.eminallahverdi.balance.core.model.PendingStatus
 import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.Transaction
+import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.guessFor
 import com.eminallahverdi.balance.core.model.parseBankNotification
 import java.security.MessageDigest
@@ -61,7 +62,7 @@ class BankAlertRepository @Inject constructor(
         }
         return combine(dao.observe(since.toEpochMilli()), known, catalog.accounts, preferences.preferences) { entries, k, accounts, settings ->
             val defaultAccount = defaultAccountId(settings, accounts)
-            entries.map { it.toModel() }.map { PendingItem(it, guessFor(it, k.aliases, k.merchants, k.categories, defaultAccount, k.payments)) }
+            entries.map { it.toModel() }.map { PendingItem(it, guessFor(it, k.aliases, k.merchants, k.categories, defaultAccount, k.payments, accounts)) }
         }
     }
 
@@ -69,8 +70,9 @@ class BankAlertRepository @Inject constructor(
 
     suspend fun guess(entry: PendingEntry): EntryGuess {
         val aliases = dao.observeAliases().first().associate { it.raw to it.merchantId }
-        val defaultAccount = defaultAccountId(preferences.current(), catalog.accounts.first())
-        return guessFor(entry, aliases, catalog.merchants.first(), catalog.categories.first(), defaultAccount, recurring.payments.first())
+        val accounts = catalog.accounts.first()
+        val defaultAccount = defaultAccountId(preferences.current(), accounts)
+        return guessFor(entry, aliases, catalog.merchants.first(), catalog.categories.first(), defaultAccount, recurring.payments.first(), accounts)
     }
 
     /** Remembers which apps send notifications, so bank apps can be picked from them. Only their names. */
@@ -96,6 +98,7 @@ class BankAlertRepository @Inject constructor(
                 title = title.takeUnless { it.equals(source, ignoreCase = true) }.orEmpty(),
                 postedAt = postedAt.toEpochMilli(),
                 status = PendingStatus.WAITING.name,
+                cardEnding = alert.cardEnding,
             ),
         )
         if (id == -1L) return
@@ -108,6 +111,7 @@ class BankAlertRepository @Inject constructor(
     suspend fun confirm(id: Long) {
         val entry = entry(id)?.takeIf { it.status == PendingStatus.WAITING } ?: return
         val guess = guess(entry)
+        if (entry.kind == TransactionKind.TRANSFER) return confirmTransfer(entry, guess)
         val categoryId = guess.categoryId ?: return
         val accountId = guess.accountId ?: return
         val personId = guess.personId ?: catalog.people.first().firstOrNull { !it.isArchived }?.id
@@ -126,6 +130,27 @@ class BankAlertRepository @Inject constructor(
                 externalId = entry.externalId,
             )
             markAdded(entry, guess.merchantName)
+        }
+    }
+
+    /** Money between two accounts: no category, no person, and nothing to teach, because the place it happened isn't a merchant. */
+    private suspend fun confirmTransfer(entry: PendingEntry, guess: EntryGuess) {
+        val accountId = guess.accountId ?: return
+        val toAccountId = guess.toAccountId ?: return
+        db.withTransaction {
+            transactions.save(
+                Transaction(
+                    id = 0,
+                    kind = entry.kind,
+                    amount = entry.amount,
+                    date = entry.postedAt.atZone(ZoneId.systemDefault()).toLocalDate(),
+                    accountId = accountId,
+                    toAccountId = toAccountId,
+                ),
+                merchantName = null,
+                externalId = entry.externalId,
+            )
+            dao.setStatus(entry.id, PendingStatus.ADDED.name)
         }
     }
 

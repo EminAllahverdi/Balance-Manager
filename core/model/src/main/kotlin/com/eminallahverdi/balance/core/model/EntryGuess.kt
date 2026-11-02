@@ -11,6 +11,7 @@ private const val SHORTEST_WORD_TO_MATCH = 4
 /**
  * What a pending entry would be saved as. [isKnown] means the user confirmed this merchant themselves, the only case
  * auto-confirm acts on. [isSuggested] means the category was worked out, not remembered, so the card says so.
+ * [toAccountId] is only set on a transfer, which has neither a merchant nor a category.
  */
 data class EntryGuess(
     val merchantName: String,
@@ -19,12 +20,16 @@ data class EntryGuess(
     val accountId: Long?,
     val isKnown: Boolean,
     val isSuggested: Boolean = false,
+    val toAccountId: Long? = null,
 )
 
 /**
  * Works out a pending entry, trying what's most likely first: a merchant the user confirmed, one they've used by another
  * spelling, a recurring payment or loan by name or by amount, then the words themselves. None of it depends on which bank
- * sent the notification.
+ * sent the notification. The card named in the notification beats every guess at the account.
+ *
+ * Cash taken out goes from the card to the cash account, whichever shop's machine it came from, so it's never spending
+ * and auto-confirm never acts on it.
  */
 fun guessFor(
     entry: PendingEntry,
@@ -33,7 +38,15 @@ fun guessFor(
     categories: List<Category>,
     defaultAccountId: Long?,
     recurring: List<RecurringPayment> = emptyList(),
+    accounts: List<Account> = emptyList(),
 ): EntryGuess {
+    val active = accounts.filterNot { it.isArchived }
+    val cardAccountId = active.firstOrNull { entry.cardEnding.isNotEmpty() && it.cardEnding == entry.cardEnding }?.id
+    if (entry.kind == TransactionKind.TRANSFER) {
+        val from = cardAccountId ?: defaultAccountId
+        val cash = active.firstOrNull { it.type == AccountType.CASH && it.id != from }?.id
+        return EntryGuess("", categoryId = null, personId = null, accountId = from, isKnown = false, toAccountId = cash)
+    }
     val words = wordsIn("${entry.merchant} ${entry.title}")
     val confirmed = aliases[entry.merchant.lowercase(Locale.ROOT)]?.let { id -> merchants.firstOrNull { it.id == id } }
     val merchant = confirmed
@@ -49,7 +62,7 @@ fun guessFor(
         merchantName = merchant?.name ?: payment?.name ?: prettyMerchant(entry.merchant),
         categoryId = category?.id,
         personId = merchant?.lastPersonId ?: payment?.personId ?: category?.defaultPersonId ?: categories.firstOrNull { it.id == category?.parentId }?.defaultPersonId,
-        accountId = merchant?.lastAccountId ?: payment?.accountId ?: defaultAccountId,
+        accountId = cardAccountId ?: merchant?.lastAccountId ?: payment?.accountId ?: defaultAccountId,
         isKnown = confirmed != null && remembered != null,
         isSuggested = category != null && !(confirmed != null && remembered != null),
     )
