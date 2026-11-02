@@ -18,4 +18,10 @@
 
     <color name="ink">#0B0D10</color>
     <color name="lime">#C8F169</color>
+
+    <!-- The launcher icon's fabric. Dev overrides these. -->
+    <color name="icon_ground">#C8F169</color>
+    <color name="icon_bulge_light">#F6FFD4</color>
+    <color name="icon_bulge_mid">#DEF897</color>
+    <color name="icon_bulge_shade">#C0EA5F</color>
 </resources>

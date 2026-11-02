@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72" width="512" height="512">
+  <!-- The themed icon, Android 13 and up. The app's copy is app/src/main/res/drawable/ic_launcher_monochrome.xml. -->
+  <defs>
+    <clipPath id="above"><path d="M38,31 C38,52 56,70 77,70 L112,70 L112,-4 L38,-4Z"/></clipPath>
+  </defs>
+  <g clip-path="url(#above)" fill="none" stroke="#0B0D10" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M25.95,49.14 L63.27,25.81 L68.4,34.06"/>
+    <g transform="translate(56 50) rotate(-12)">
+      <path stroke-linecap="butt" d="M-20.2,-13 H20.2 A1.8,1.8 0 0 1 22,-11.2 V11.2 A1.8,1.8 0 0 1 20.2,13 H-20.2 A1.8,1.8 0 0 1 -22,11.2 V-11.2 A1.8,1.8 0 0 1 -20.2,-13 Z"/>
+      <path transform="translate(10 -.5) scale(1.3)" stroke-width="1.7" d="M-4,4.25 L-4,1.25 A4,4 0 0 1 4,1.25 L4,4.25 M0,-4.25 L0,4.25"/>
+    </g>
+  </g>
+  <path fill="#0B0D10" stroke="#0B0D10" stroke-width="1.8" stroke-linejoin="round" d="M38,31 C38,52 56,70 77,70 C62,64 44,48 38,31Z"/>
+</svg>

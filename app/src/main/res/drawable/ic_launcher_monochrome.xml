@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The themed icon: one colour, so the notes are outlines and only the smile is solid. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+
+    <!-- Only what's above the pocket's front shows. -->
+    <group>
+        <clip-path android:pathData="M38,31 C38,52 56,70 77,70 L112,70 L112,-4 L38,-4 Z" />
+        <!-- The back note, stopping where the front note starts. -->
+        <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2.2"
+            android:strokeLineCap="round" android:strokeLineJoin="round"
+            android:pathData="M25.95,49.14 L63.27,25.81 L68.4,34.06" />
+        <group android:translateX="56" android:translateY="50" android:rotation="-12">
+            <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2.2"
+                android:strokeLineJoin="round"
+                android:pathData="M-20.2,-13 H20.2 A1.8,1.8 0 0 1 22,-11.2 V11.2 A1.8,1.8 0 0 1 20.2,13 H-20.2 A1.8,1.8 0 0 1 -22,11.2 V-11.2 A1.8,1.8 0 0 1 -20.2,-13 Z" />
+            <group android:translateX="10" android:translateY="-0.5" android:scaleX="1.3" android:scaleY="1.3">
+                <path android:strokeColor="#FFFFFFFF" android:strokeWidth="1.7"
+                    android:strokeLineCap="round" android:strokeLineJoin="round"
+                    android:pathData="M-4,4.25 L-4,1.25 A4,4 0 0 1 4,1.25 L4,4.25 M0,-4.25 L0,4.25" />
+            </group>
+        </group>
+    </group>
+
+    <path android:fillColor="#FFFFFFFF" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.8"
+        android:strokeLineJoin="round"
+        android:pathData="M38,31 C38,52 56,70 77,70 C62,64 44,48 38,31 Z" />
+</vector>

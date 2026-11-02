@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72" width="512" height="512">
+  <!-- Cibim's icon, as the launcher shows it: the middle 72 of Android's 108 adaptive canvas.
+       The app's copy is app/src/main/res/drawable/ic_launcher_foreground.xml, with the same numbers. -->
+  <defs>
+    <clipPath id="front"><path d="M38,-4 L38,31 C38,52 56,70 77,70 L112,70 L112,112 L-4,112 L-4,-4Z"/></clipPath>
+    <radialGradient id="bulge" cx="0" cy="-8" r="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F6FFD4"/>
+      <stop offset=".42" stop-color="#DEF897"/>
+      <stop offset=".72" stop-color="#C8F169"/>
+      <stop offset=".87" stop-color="#C0EA5F"/>
+      <stop offset="1" stop-color="#C8F169"/>
+    </radialGradient>
+    <path id="paper" d="M-20.2,-13 H20.2 A1.8,1.8 0 0 1 22,-11.2 V11.2 A1.8,1.8 0 0 1 20.2,13 H-20.2 A1.8,1.8 0 0 1 -22,11.2 V-11.2 A1.8,1.8 0 0 1 -20.2,-13 Z"/>
+    <path id="frame" d="M-18.8,-10.6 H18.8 A.8,.8 0 0 1 19.6,-9.8 V9.8 A.8,.8 0 0 1 18.8,10.6 H-18.8 A.8,.8 0 0 1 -19.6,9.8 V-9.8 A.8,.8 0 0 1 -18.8,-10.6 Z"/>
+  </defs>
+  <rect width="108" height="108" fill="#C8F169"/>
+  <g transform="translate(51.5 48.5) rotate(-32)">
+    <use href="#paper" fill="#0E6E4C" stroke="#C8F169" stroke-width="1"/>
+    <use href="#frame" fill="none" stroke="#C8F169" stroke-opacity=".55" stroke-width=".7"/>
+  </g>
+  <g transform="translate(56 50) rotate(-12)">
+    <use href="#paper" fill="#11845B" stroke="#C8F169" stroke-width="1"/>
+    <use href="#frame" fill="none" stroke="#C8F169" stroke-opacity=".55" stroke-width=".7"/>
+    <path transform="translate(10 -.5) scale(1.3)" fill="none" stroke="#C8F169" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
+      d="M-4,4.25 L-4,1.25 A4,4 0 0 1 4,1.25 L4,4.25 M0,-4.25 L0,4.25"/>
+  </g>
+  <g clip-path="url(#front)">
+    <rect x="-4" y="-4" width="116" height="116" fill="#C8F169"/>
+    <path transform="translate(45 63) rotate(45) scale(1.3 1)" fill="url(#bulge)" d="M-26,-8 A26,26 0 1 1 26,-8 A26,26 0 1 1 -26,-8 Z"/>
+  </g>
+  <path fill="#0B0D10" stroke="#0B0D10" stroke-width="1.8" stroke-linejoin="round" d="M38,31 C38,52 56,70 77,70 C62,64 44,48 38,31Z"/>
+</svg>

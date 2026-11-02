@@ -39,6 +39,16 @@ Body text uses **Manrope** and amounts use **Space Grotesk**, both from Google F
 
 Use **Material Symbols Rounded**, weight 400 and outlined, at 22 px in rows and the bar and 16–20 px in chips. These are the same glyphs Android ships, so Compose uses `Icons.Rounded.*` or the variable font directly. No emoji, and no filled icons except the active bottom-bar tab.
 
+## App icon
+
+Cibim means "my pocket", so the icon is a pocket with cash in it: a tapered curve like a smile, running from top left to bottom right, on `accent-fill`, with two notes tucked behind it. The fabric below the curve swells as if a hand were inside. It's the one place shading is allowed, because a launcher icon has to hold its own on a wallpaper.
+
+- **Files:** `app-icon.svg` is the master and `app-icon-512.png` the same picture for stores. In the app it's an adaptive icon on Android's 108 canvas, of which a launcher shows the middle 72, so the curve and notes stay well inside the edge in every mask.
+- **The smile:** `accent-on`, with rounded tips, stopping short of the edges.
+- **The notes:** landscape, almost level, the front one tilted 12° and the back one 32°. They use the darker greens of `money-income`, `#11845B` and `#0E6E4C`, with a lime edge and a thin printed frame. The ₼ is drawn symmetrically, sits on the front note only, and tilts with it. There's no number, bank name or emblem: they suggest cash without copying a real note.
+- **Themed icon:** `app-icon-monochrome.svg`. Android tints one colour, so the notes become outlines and only the smile stays solid.
+- **Cibim Dev:** the same drawing on violet, so it can't be mistaken for the real app.
+
 ## Components (Compose names)
 
 - `BalanceCard`: the total balance, account chips, and spent/income for the month. Past months show only spent and income, because balances are always today's.

@@ -1,0 +1,7 @@
+<resources>
+    <!-- Dev's icon, so it can't be mistaken for the real app on the home screen. -->
+    <color name="icon_ground">#4B2F9E</color>
+    <color name="icon_bulge_light">#8E73E0</color>
+    <color name="icon_bulge_mid">#6A4CC4</color>
+    <color name="icon_bulge_shade">#432A8E</color>
+</resources>

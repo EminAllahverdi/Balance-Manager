@@ -1,12 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Lime tile with three split bars: the app's "who was it for" motif. -->
+<!-- Cibim means "my pocket": cash in a pocket, the fabric swelling as if a hand were inside.
+     Master copy with the same numbers: docs/design/app-icon.svg. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#C8F169" android:pathData="M38,30h32a8,8 0,0 1,8 8v32a8,8 0,0 1,-8 8h-32a8,8 0,0 1,-8 -8v-32a8,8 0,0 1,8 -8z" />
-    <path android:fillColor="#0B0D10" android:pathData="M38,42h18a3,3 0,0 1,0 6h-18a3,3 0,0 1,0 -6z" />
-    <path android:fillColor="#0B0D10" android:pathData="M60,42h10a3,3 0,0 1,0 6h-10a3,3 0,0 1,0 -6z" />
-    <path android:fillColor="#0B0D10" android:pathData="M38,52h8a3,3 0,0 1,0 6h-8a3,3 0,0 1,0 -6z" />
-    <path android:fillColor="#0B0D10" android:pathData="M50,52h20a3,3 0,0 1,0 6h-20a3,3 0,0 1,0 -6z" />
-    <path android:fillColor="#0B0D10" android:pathData="M38,62h24a3,3 0,0 1,0 6h-24a3,3 0,0 1,0 -6z" />
+
+    <!-- Back note. -->
+    <group android:translateX="51.5" android:translateY="48.5" android:rotation="-32">
+        <path android:fillColor="#0E6E4C" android:strokeColor="#C8F169" android:strokeWidth="1"
+            android:pathData="M-20.2,-13 H20.2 A1.8,1.8 0 0 1 22,-11.2 V11.2 A1.8,1.8 0 0 1 20.2,13 H-20.2 A1.8,1.8 0 0 1 -22,11.2 V-11.2 A1.8,1.8 0 0 1 -20.2,-13 Z" />
+        <path android:strokeColor="#C8F169" android:strokeAlpha="0.55" android:strokeWidth="0.7"
+            android:pathData="M-18.8,-10.6 H18.8 A0.8,0.8 0 0 1 19.6,-9.8 V9.8 A0.8,0.8 0 0 1 18.8,10.6 H-18.8 A0.8,0.8 0 0 1 -19.6,9.8 V-9.8 A0.8,0.8 0 0 1 -18.8,-10.6 Z" />
+    </group>
+
+    <!-- Front note, with the manat sign running along it. -->
+    <group android:translateX="56" android:translateY="50" android:rotation="-12">
+        <path android:fillColor="#11845B" android:strokeColor="#C8F169" android:strokeWidth="1"
+            android:pathData="M-20.2,-13 H20.2 A1.8,1.8 0 0 1 22,-11.2 V11.2 A1.8,1.8 0 0 1 20.2,13 H-20.2 A1.8,1.8 0 0 1 -22,11.2 V-11.2 A1.8,1.8 0 0 1 -20.2,-13 Z" />
+        <path android:strokeColor="#C8F169" android:strokeAlpha="0.55" android:strokeWidth="0.7"
+            android:pathData="M-18.8,-10.6 H18.8 A0.8,0.8 0 0 1 19.6,-9.8 V9.8 A0.8,0.8 0 0 1 18.8,10.6 H-18.8 A0.8,0.8 0 0 1 -19.6,9.8 V-9.8 A0.8,0.8 0 0 1 -18.8,-10.6 Z" />
+        <group android:translateX="10" android:translateY="-0.5" android:scaleX="1.3" android:scaleY="1.3">
+            <path android:strokeColor="#C8F169" android:strokeWidth="1.7"
+                android:strokeLineCap="round" android:strokeLineJoin="round"
+                android:pathData="M-4,4.25 L-4,1.25 A4,4 0 0 1 4,1.25 L4,4.25 M0,-4.25 L0,4.25" />
+        </group>
+    </group>
+
+    <!-- The pocket's front, hiding the notes below the curve, and its bulge. -->
+    <group>
+        <clip-path android:pathData="M38,-4 L38,31 C38,52 56,70 77,70 L112,70 L112,112 L-4,112 L-4,-4 Z" />
+        <path android:fillColor="@color/icon_ground" android:pathData="M-4,-4 H112 V112 H-4 Z" />
+        <group android:translateX="45" android:translateY="63" android:rotation="45" android:scaleX="1.3">
+            <path android:pathData="M-26,-8 A26,26 0 1 1 26,-8 A26,26 0 1 1 -26,-8 Z">
+                <aapt:attr name="android:fillColor">
+                    <gradient android:type="radial" android:centerX="0" android:centerY="-8" android:gradientRadius="26">
+                        <item android:offset="0" android:color="@color/icon_bulge_light" />
+                        <item android:offset="0.42" android:color="@color/icon_bulge_mid" />
+                        <item android:offset="0.72" android:color="@color/icon_ground" />
+                        <item android:offset="0.87" android:color="@color/icon_bulge_shade" />
+                        <item android:offset="1" android:color="@color/icon_ground" />
+                    </gradient>
+                </aapt:attr>
+            </path>
+        </group>
+    </group>
+
+    <!-- The pocket's mouth, the smile. -->
+    <path android:fillColor="#0B0D10" android:strokeColor="#0B0D10" android:strokeWidth="1.8"
+        android:strokeLineJoin="round"
+        android:pathData="M38,31 C38,52 56,70 77,70 C62,64 44,48 38,31 Z" />
 </vector>
