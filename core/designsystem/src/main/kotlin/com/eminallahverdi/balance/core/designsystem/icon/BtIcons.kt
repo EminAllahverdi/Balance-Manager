@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Flight
 import androidx.compose.material.icons.rounded.Handshake
 import androidx.compose.material.icons.rounded.Hotel
+import androidx.compose.material.icons.rounded.Inventory2
 import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material.icons.rounded.LocalGasStation
 import androidx.compose.material.icons.rounded.LocalParking
@@ -81,6 +82,7 @@ object BtIcons {
         "credit_card" to Icons.Rounded.CreditCard,
         "savings" to Icons.Rounded.Savings,
         "handshake" to Icons.Rounded.Handshake,
+        "inventory_2" to Icons.Rounded.Inventory2,
         "swap_horiz" to Icons.Rounded.SwapHoriz,
         "more_horiz" to Icons.Rounded.MoreHoriz,
     )

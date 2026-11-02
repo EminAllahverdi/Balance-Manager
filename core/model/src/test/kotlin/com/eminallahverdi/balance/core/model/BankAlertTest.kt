@@ -130,6 +130,14 @@ class BankAlertTest {
         assertThat(alert.cardEnding).isEqualTo("1234")
     }
 
+    @Test fun `a shop's name can hold underscores and a branch number`() {
+        val alert = parse("BOL ZETOIL_27I_SAYLI P3\nKart: **1234\nBalans: 2,744.29₼", title = "💸 Ödəniş: -73.76₼")!!
+        assertThat(alert.amount).isEqualTo(Money(73_76))
+        assertThat(alert.kind).isEqualTo(TransactionKind.EXPENSE)
+        assertThat(alert.merchant).isEqualTo("BOL ZETOIL_27I_SAYLI P3")
+        assertThat(alert.cardEnding).isEqualTo("1234")
+    }
+
     @Test fun `a foreign payment in the title uses its manat figure`() {
         val alert = parse("ZETAFLIX\nKart: **1234\nBalans: 900.00₼", title = "💸 Ödəniş: -9.49\$ (-16.31₼)")!!
         assertThat(alert.amount).isEqualTo(Money(16_31))

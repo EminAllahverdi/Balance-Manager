@@ -20,6 +20,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.feature.accounts.AccountsRoute
+import com.eminallahverdi.balance.feature.accounts.DeleteAccountRoute
 import com.eminallahverdi.balance.feature.catalog.CatalogRoute
 import com.eminallahverdi.balance.feature.confirm.ConfirmRoute
 import com.eminallahverdi.balance.feature.history.HistoryRoute
@@ -42,6 +43,9 @@ import kotlinx.serialization.Serializable
 
 /** History narrowed to what was tapped on Home. The names match the ARG_ keys in HistoryViewModel. */
 @Serializable data class TransactionsDestination(val categoryId: Long?, val personId: Long?, val month: String)
+
+/** The name matches ARG_ACCOUNT in DeleteAccountViewModel. */
+@Serializable data class DeleteAccountDestination(val accountId: Long)
 
 /**
  * The main shell: the tab content above the bottom bar. [onAdd] opens quick add, [onTransfer] the same sheet on Transfer,
@@ -104,8 +108,10 @@ fun BalanceApp(
                     onTransfer = onTransfer,
                     onOpenTransaction = onOpenTransaction,
                     onOpenLoans = { nav.navigate(LoansDestination) { launchSingleTop = true } },
+                    onDeleteArchived = { id -> nav.navigate(DeleteAccountDestination(id)) { launchSingleTop = true } },
                 )
             }
+            composable<DeleteAccountDestination> { DeleteAccountRoute(onBack = { nav.popBackStack() }, onOpen = onOpenTransaction) }
             composable<LoansDestination> { LoansRoute(onBack = { nav.popBackStack() }) }
             composable<ConfirmDestination> { ConfirmRoute(onBack = { nav.popBackStack() }, onEdit = onEditPending) }
             composable<SettingsDestination> {

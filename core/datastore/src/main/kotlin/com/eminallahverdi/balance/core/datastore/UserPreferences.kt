@@ -114,7 +114,14 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
 
     suspend fun current(): UserPreferences = preferences.first()
 
-    suspend fun setOnboardingDone(ownerName: String) { store.edit { it[K.onboarding] = true; it[K.owner] = ownerName } }
+    /** [ownerName] is left as it is when null, for an install from before onboarding that never went through it. */
+    suspend fun setOnboardingDone(ownerName: String? = null) {
+        store.edit {
+            it[K.onboarding] = true
+            if (ownerName != null) it[K.owner] = ownerName
+        }
+    }
+
     suspend fun setTheme(theme: ThemePreference) { store.edit { it[K.theme] = theme.name } }
     suspend fun setDefaultExpenseAccount(id: Long) { store.edit { it[K.defaultAccount] = id } }
     suspend fun setWidgetBalanceMode(mode: WidgetBalanceMode) { store.edit { it[K.widgetMode] = mode.name } }

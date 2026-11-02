@@ -42,5 +42,5 @@ private fun field(text: String?): String {
     return if (value.any { it in NEEDS_QUOTES }) "\"${value.replace("\"", "\"\"")}\"" else value
 }
 
-private val FORMULA_STARTS = setOf('=', '+', '-', '@', '\t', '\r')
+internal val FORMULA_STARTS = setOf('=', '+', '-', '@', '\t', '\r')
 private val NEEDS_QUOTES = setOf(',', '"', '\n', '\r')

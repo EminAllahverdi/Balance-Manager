@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "com.eminallahverdi.balance.feature.accounts"
 }
+
+dependencies {
+    implementation(project(":feature:history"))
+}

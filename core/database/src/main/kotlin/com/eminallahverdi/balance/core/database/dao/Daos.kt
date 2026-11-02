@@ -88,6 +88,9 @@ interface MerchantDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insert(merchant: MerchantEntity): Long
     @Update suspend fun update(merchant: MerchantEntity)
+
+    @Query("UPDATE merchant SET last_account_id = :to WHERE last_account_id = :from")
+    suspend fun replaceLastAccount(from: Long, to: Long?)
 }
 
 /** Per-account sum of every movement, in minor units. */
@@ -103,6 +106,9 @@ interface TransactionDao {
 
     @Query("SELECT * FROM txn WHERE kind = 'TRANSFER' ORDER BY date DESC, created_at DESC LIMIT :limit")
     fun observeTransfers(limit: Int): Flow<List<TransactionEntity>>
+
+    @Query("SELECT * FROM txn WHERE account_id = :accountId OR to_account_id = :accountId ORDER BY date DESC, created_at DESC")
+    fun observeForAccount(accountId: Long): Flow<List<TransactionEntity>>
 
     @Query("SELECT * FROM txn WHERE id = :id") suspend fun get(id: Long): TransactionEntity?
 
@@ -137,6 +143,23 @@ interface TransactionDao {
     fun observeDebtEntries(): Flow<List<TransactionEntity>>
 
     @Query("DELETE FROM txn WHERE debt_id = :debtId") suspend fun deleteForDebt(debtId: Long)
+
+    @Query("DELETE FROM txn WHERE account_id = :accountId OR to_account_id = :accountId")
+    suspend fun deleteForAccount(accountId: Long)
+
+    @Query(
+        """
+        DELETE FROM txn WHERE kind = 'TRANSFER'
+            AND ((account_id = :a AND to_account_id = :b) OR (account_id = :b AND to_account_id = :a))
+        """,
+    )
+    suspend fun deleteTransfersBetween(a: Long, b: Long)
+
+    @Query("UPDATE txn SET account_id = :to, updated_at = :now WHERE account_id = :from")
+    suspend fun moveAccount(from: Long, to: Long, now: Long)
+
+    @Query("UPDATE txn SET to_account_id = :to, updated_at = :now WHERE to_account_id = :from")
+    suspend fun moveToAccount(from: Long, to: Long, now: Long)
 }
 
 @Dao
@@ -160,6 +183,8 @@ interface RecurringPaymentDao {
 
     @Upsert suspend fun upsert(payment: RecurringPaymentEntity): Long
     @Query("DELETE FROM recurring_payment WHERE id = :id") suspend fun delete(id: Long)
+    @Query("DELETE FROM recurring_payment WHERE account_id = :accountId") suspend fun deleteForAccount(accountId: Long)
+    @Query("UPDATE recurring_payment SET account_id = :to WHERE account_id = :from") suspend fun moveAccount(from: Long, to: Long)
 }
 
 @Dao
@@ -187,6 +212,15 @@ interface PendingEntryDao {
 
 @Dao
 interface MaintenanceDao {
+    /** Archived rows count: an install that has ever been used is never a fresh one. */
+    @Query(
+        """
+        SELECT EXISTS(SELECT 1 FROM account) OR EXISTS(SELECT 1 FROM person)
+            OR EXISTS(SELECT 1 FROM category) OR EXISTS(SELECT 1 FROM txn)
+        """,
+    )
+    suspend fun hasData(): Boolean
+
     @Query("DELETE FROM txn") suspend fun clearTransactions()
     @Query("DELETE FROM debt") suspend fun clearDebts()
     @Query("DELETE FROM recurring_payment") suspend fun clearRecurring()

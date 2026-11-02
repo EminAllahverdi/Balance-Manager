@@ -93,6 +93,7 @@ dependencies {
     implementation(project(":feature:recurring"))
     implementation(project(":feature:loans"))
     implementation(project(":feature:confirm"))
+    implementation(project(":feature:onboarding"))
     implementation(project(":widget"))
 
     implementation(libs.androidx.core.ktx)

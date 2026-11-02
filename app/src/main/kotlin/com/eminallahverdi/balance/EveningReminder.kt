@@ -84,7 +84,8 @@ class EveningReminderWorker(context: Context, params: WorkerParameters) : Corout
         val minute = settings.eveningReminderMinute
         val now = LocalDateTime.now()
         val today = now.toLocalDate()
-        if (isReminderTimeReached(now, minute) && app.transactions().observeDetails(DateRange(today, today)).first().isEmpty()) {
+        // Still booking tomorrow's run: someone who hasn't finished onboarding has nothing to be reminded about yet.
+        if (settings.onboardingDone && isReminderTimeReached(now, minute) && app.transactions().observeDetails(DateRange(today, today)).first().isEmpty()) {
             showReminder(applicationContext)
         }
         applicationContext.bookDailyWork<EveningReminderWorker>(DAILY_WORK, minute, ExistingPeriodicWorkPolicy.UPDATE)

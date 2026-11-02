@@ -54,7 +54,7 @@ private fun MatchResult.isSideFigure(message: String): Boolean {
     return SIDE_FIGURE_WORDS.containsMatchIn(before.split(',', ';', '\n').last()) || EXCHANGE_RATE.containsMatchIn(before)
 }
 
-private fun parseAmount(text: String): Money? {
+internal fun parseAmount(text: String): Money? {
     val digits = text.replace(" ", "").replace(" ", "")
     val lastSeparator = digits.indexOfLast { it == '.' || it == ',' }
     val hasDecimals = lastSeparator >= 0 && digits.length - lastSeparator - 1 in 1..2

@@ -57,6 +57,10 @@ internal fun List<TransactionDetails>.headlineTotal(): Money {
     return rows.map { it.transaction.amount }.sum()
 }
 
+/** Rows grouped by day, keeping their order, each with its headline figure. */
+fun List<TransactionDetails>.byDay(): List<HistoryDay> =
+    groupBy { it.transaction.date }.map { (date, day) -> HistoryDay(date, day.headlineTotal(), day.hasSpending(), day) }
+
 /** Whether [headlineTotal] is spending, which the eye leaves visible, rather than income, which it hides. */
 internal fun List<TransactionDetails>.hasSpending(): Boolean = any { it.transaction.kind == TransactionKind.EXPENSE }
 

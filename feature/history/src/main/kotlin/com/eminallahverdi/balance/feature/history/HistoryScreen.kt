@@ -80,24 +80,8 @@ fun HistoryRoute(onOpen: (Long) -> Unit, onBack: (() -> Unit)? = null, viewModel
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Held here, not read back from the filter: results arrive off the main thread, and typing must not wait for them.
     var query by rememberSaveable { mutableStateOf("") }
-    var removing by remember { mutableStateOf<TransactionDetails?>(null) }
     var sheet by rememberSaveable { mutableStateOf<FilterSheet?>(null) }
-    val onTap = { row: TransactionDetails ->
-        when {
-            row.isEditable -> onOpen(row.transaction.id)
-            row.isRemovable -> removing = row
-        }
-    }
-    removing?.let { row ->
-        val isDebt = row.transaction.kind == TransactionKind.DEBT
-        AlertDialog(
-            onDismissRequest = { removing = null },
-            title = { Text(if (isDebt) "Remove this payment?" else "Remove this adjustment?") },
-            text = { Text(if (isDebt) "The debt and the account's balance change back by this amount. This can't be undone." else "The account's balance changes back by this amount. This can't be undone.") },
-            confirmButton = { TextButton(onClick = { removing = null; viewModel.delete(row.transaction.id) }) { Text("Remove") } },
-            dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } },
-        )
-    }
+    val onTap = rememberRowTap(onOpen, viewModel::delete)
     sheet?.let { HistoryFilterSheet(it, state, viewModel, onClose = { sheet = null }) }
     // Without the bottom bar, the list runs under the system navigation.
     val bottomInset = if (onBack != null) WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() else 0.dp
@@ -121,6 +105,31 @@ fun HistoryRoute(onOpen: (Long) -> Unit, onBack: (() -> Unit)? = null, viewModel
                 item(key = "summary") { Summary(state) }
                 items(state.days, key = { it.date.toEpochDay() }) { DayGroup(it, state.hideAmounts, onTap) }
             }
+        }
+    }
+}
+
+/**
+ * What tapping a row does, wherever these rows are listed: [onOpen] for one quick add can edit, and a question first for one
+ * that can only be taken back with [onRemove]. Anything else, like an imported internal move, stays as it is.
+ */
+@Composable
+fun rememberRowTap(onOpen: (Long) -> Unit, onRemove: (Long) -> Unit): (TransactionDetails) -> Unit {
+    var removing by remember { mutableStateOf<TransactionDetails?>(null) }
+    removing?.let { row ->
+        val isDebt = row.transaction.kind == TransactionKind.DEBT
+        AlertDialog(
+            onDismissRequest = { removing = null },
+            title = { Text(if (isDebt) "Remove this payment?" else "Remove this adjustment?") },
+            text = { Text(if (isDebt) "The debt and the account's balance change back by this amount. This can't be undone." else "The account's balance changes back by this amount. This can't be undone.") },
+            confirmButton = { TextButton(onClick = { removing = null; onRemove(row.transaction.id) }) { Text("Remove") } },
+            dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } },
+        )
+    }
+    return { row ->
+        when {
+            row.isEditable -> onOpen(row.transaction.id)
+            row.isRemovable -> removing = row
         }
     }
 }
@@ -247,8 +256,9 @@ private fun Summary(state: HistoryUiState) {
 
 private fun amount(money: Money, hidden: Boolean) = if (hidden) MoneyFormat.HIDDEN else MoneyFormat.format(money)
 
+/** One day's transactions under its date and total, as History lists them. */
 @Composable
-private fun DayGroup(day: HistoryDay, hideAmounts: Boolean, onTap: (TransactionDetails) -> Unit) {
+fun DayGroup(day: HistoryDay, hideAmounts: Boolean, onTap: (TransactionDetails) -> Unit) {
     val c = BtTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {

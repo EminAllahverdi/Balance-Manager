@@ -44,17 +44,7 @@ private val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Local
 internal fun BackupSection(viewModel: BackupViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var confirming by remember { mutableStateOf<DriveBackup?>(null) }
-    val context = LocalContext.current
-    val consent = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) viewModel.onConsent(result.data) else viewModel.consentCancelled()
-    }
-    LaunchedEffect(state.consent) {
-        state.consent?.let {
-            viewModel.consentShown()
-            consent.launch(IntentSenderRequest.Builder(it).build())
-        }
-    }
-    LaunchedEffect(state.restartNeeded) { if (state.restartNeeded) context.restartApp() }
+    DriveRestoreEffects(state, viewModel)
 
     Section("Backup") {
         SettingRow(icon = Icons.Rounded.Backup, title = "Google Drive backup", caption = state.status()) {
@@ -79,19 +69,7 @@ internal fun BackupSection(viewModel: BackupViewModel = hiltViewModel()) {
         ) { Chevron() }
     }
 
-    state.backups?.let { backups ->
-        ChoiceSheet("Restore from Google Drive", onClose = viewModel::closeRestore) { choose ->
-            if (backups.isEmpty()) Text("No backups in this Google account yet", style = BtTheme.type.body, color = BtTheme.colors.textMuted)
-            backups.forEach { backup ->
-                OptionRow(
-                    text = backupTime(backup.createdAt.toEpochMilli()).replaceFirstChar { it.uppercase() },
-                    selected = false,
-                    onClick = { choose { confirming = backup } },
-                    caption = backupCaption(backup, viewModel.showsBackupSource),
-                )
-            }
-        }
-    }
+    DriveRestoreSheet(state, viewModel, onChoose = { confirming = it })
     confirming?.let { backup ->
         AlertDialog(
             onDismissRequest = { confirming = null },
@@ -105,6 +83,39 @@ internal fun BackupSection(viewModel: BackupViewModel = hiltViewModel()) {
             },
             dismissButton = { TextButton(onClick = { confirming = null }) { Text("Cancel") } },
         )
+    }
+}
+
+/** Google's consent screen when one is waiting, and the restart that lets a staged restore take over. */
+@Composable
+fun DriveRestoreEffects(state: BackupUiState, viewModel: BackupViewModel) {
+    val context = LocalContext.current
+    val consent = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) viewModel.onConsent(result.data) else viewModel.consentCancelled()
+    }
+    LaunchedEffect(state.consent) {
+        state.consent?.let {
+            viewModel.consentShown()
+            consent.launch(IntentSenderRequest.Builder(it).build())
+        }
+    }
+    LaunchedEffect(state.restartNeeded) { if (state.restartNeeded) context.restartApp() }
+}
+
+/** What can be restored, while [BackupUiState.backups] holds it. [onChoose] decides whether a choice needs confirming. */
+@Composable
+fun DriveRestoreSheet(state: BackupUiState, viewModel: BackupViewModel, onChoose: (DriveBackup) -> Unit) {
+    val backups = state.backups ?: return
+    ChoiceSheet("Restore from Google Drive", onClose = viewModel::closeRestore) { choose ->
+        if (backups.isEmpty()) Text("No backups in this Google account yet", style = BtTheme.type.body, color = BtTheme.colors.textMuted)
+        backups.forEach { backup ->
+            OptionRow(
+                text = backupTime(backup.createdAt.toEpochMilli()).replaceFirstChar { it.uppercase() },
+                selected = false,
+                onClick = { choose { onChoose(backup) } },
+                caption = backupCaption(backup, viewModel.showsBackupSource),
+            )
+        }
     }
 }
 

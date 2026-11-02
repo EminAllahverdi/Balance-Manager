@@ -137,7 +137,7 @@ class QuickAddViewModel @Inject constructor(
                             loading = false,
                             step = if (s.loading) startStep(startKind, s.categoryId ?: requested?.id) else s.step,
                             kind = if (s.loading) startKind else s.kind,
-                            accounts = active,
+                            accounts = pickableAccounts(accounts, s.editing),
                             accountId = accountId,
                             toAccountId = s.toAccountId ?: active.firstOrNull { it.id != accountId }?.id,
                             allCategories = categories,
@@ -398,6 +398,10 @@ internal fun merchantMatches(merchants: List<Merchant>, typed: String): List<Str
         .map { it.name }
         .take(MERCHANT_MATCHES)
 }
+
+/** An entry on an archived account still shows it, so nothing reads blank and the entry can be moved off it. Nothing new can use one. */
+internal fun pickableAccounts(accounts: List<Account>, editing: Transaction?): List<Account> =
+    accounts.filter { !it.isArchived || it.id == editing?.accountId || it.id == editing?.toAccountId }
 
 /** Picking the account on the other side of a transfer swaps them, so Save never dims for no visible reason. */
 internal fun QuickAddUiState.withAccount(id: Long): QuickAddUiState =

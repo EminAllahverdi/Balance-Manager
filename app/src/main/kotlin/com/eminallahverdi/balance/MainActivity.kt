@@ -33,26 +33,29 @@ class MainActivity : FragmentActivity() {
         openConfirm = savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_CONFIRM, false)
         setContent {
             PreferredTheme(prefs) {
+                // Inside the lock: a restored backup can have it on, and the question after one comes once it's open.
                 AppLockGate(prefs, appLock) {
-                    BalanceApp(
-                        onAdd = { startActivity(Intent(this, QuickAddActivity::class.java)) },
-                        onTransfer = {
-                            startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_KIND, TransactionKind.TRANSFER.name))
-                        },
-                        onOpenTransaction = { id ->
-                            startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_TRANSACTION, id))
-                        },
-                        onAddPayment = { id ->
-                            startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_PAYMENT, id))
-                        },
-                        onEditPending = { id ->
-                            startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_PENDING, id))
-                        },
-                        openRecurring = openRecurring,
-                        onRecurringOpened = { openRecurring = false },
-                        openConfirm = openConfirm,
-                        onConfirmOpened = { openConfirm = false },
-                    )
+                    StartGate {
+                        BalanceApp(
+                            onAdd = { startActivity(Intent(this, QuickAddActivity::class.java)) },
+                            onTransfer = {
+                                startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_KIND, TransactionKind.TRANSFER.name))
+                            },
+                            onOpenTransaction = { id ->
+                                startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_TRANSACTION, id))
+                            },
+                            onAddPayment = { id ->
+                                startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_PAYMENT, id))
+                            },
+                            onEditPending = { id ->
+                                startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_PENDING, id))
+                            },
+                            openRecurring = openRecurring,
+                            onRecurringOpened = { openRecurring = false },
+                            openConfirm = openConfirm,
+                            onConfirmOpened = { openConfirm = false },
+                        )
+                    }
                 }
             }
         }

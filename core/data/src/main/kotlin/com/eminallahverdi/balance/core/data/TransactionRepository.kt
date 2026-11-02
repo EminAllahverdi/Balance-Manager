@@ -48,6 +48,9 @@ class TransactionRepository @Inject constructor(
     fun observeTransfers(limit: Int): Flow<List<TransactionDetails>> =
         joinDetails(dao.observeTransfers(limit).map { r -> r.map { it.toModel() } })
 
+    fun observeForAccount(accountId: Long): Flow<List<TransactionDetails>> =
+        joinDetails(dao.observeForAccount(accountId).map { r -> r.map { it.toModel() } })
+
     val balances: Flow<List<AccountBalance>> = combine(catalog.accounts, dao.observeAccountSums()) { accounts, sums ->
         val byAccount = sums.groupBy { it.accountId }.mapValues { (_, v) -> v.sumOf { it.total } }
         accounts.filterNot { it.isArchived }.map { AccountBalance(it, Money(byAccount[it.id] ?: 0)) }

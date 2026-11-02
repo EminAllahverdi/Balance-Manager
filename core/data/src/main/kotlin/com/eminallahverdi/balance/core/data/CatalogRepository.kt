@@ -6,10 +6,13 @@ import com.eminallahverdi.balance.core.database.dao.AccountDao
 import com.eminallahverdi.balance.core.database.dao.CategoryDao
 import com.eminallahverdi.balance.core.database.dao.MerchantDao
 import com.eminallahverdi.balance.core.database.dao.PersonDao
+import com.eminallahverdi.balance.core.database.dao.RecurringPaymentDao
+import com.eminallahverdi.balance.core.database.dao.TransactionDao
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.Merchant
 import com.eminallahverdi.balance.core.model.Person
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +26,8 @@ class CatalogRepository @Inject constructor(
     private val categoryDao: CategoryDao,
     private val accountDao: AccountDao,
     private val merchantDao: MerchantDao,
+    private val transactionDao: TransactionDao,
+    private val recurringDao: RecurringPaymentDao,
 ) {
     val people: Flow<List<Person>> = personDao.observeAll().map { list -> list.map { it.toModel() } }
     val categories: Flow<List<Category>> = categoryDao.observeAll().map { list -> list.map { it.toModel() } }
@@ -73,6 +78,24 @@ class CatalogRepository @Inject constructor(
         } else {
             accountDao.delete(account.id); RemoveResult.DELETED
         }
+
+    /** Moves everything that uses [from] to [to]. A transfer between the two would go from an account to itself, so those go. */
+    suspend fun moveAccountEntries(from: Long, to: Long) = db.withTransaction {
+        val now = Instant.now().toEpochMilli()
+        transactionDao.deleteTransfersBetween(from, to)
+        transactionDao.moveAccount(from, to, now)
+        transactionDao.moveToAccount(from, to, now)
+        recurringDao.moveAccount(from, to)
+        merchantDao.replaceLastAccount(from, to)
+    }
+
+    /** Deletes an account for good, with every entry and recurring payment on it. Past months change, so the user is told first. */
+    suspend fun deleteAccount(id: Long) = db.withTransaction {
+        transactionDao.deleteForAccount(id)
+        recurringDao.deleteForAccount(id)
+        merchantDao.replaceLastAccount(id, null)
+        accountDao.delete(id)
+    }
 
     suspend fun isEmpty(): Boolean = accountDao.getAll().isEmpty()
 

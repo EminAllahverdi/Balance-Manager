@@ -64,7 +64,7 @@ class HistoryViewModel @Inject constructor(
         val matching = all.filter(f::matches)
         HistoryUiState(
             filter = f,
-            days = matching.groupBy { it.transaction.date }.map { (date, day) -> HistoryDay(date, day.headlineTotal(), day.hasSpending(), day) },
+            days = matching.byDay(),
             count = matching.size,
             total = matching.headlineTotal(),
             totalIsSpending = matching.hasSpending(),

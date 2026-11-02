@@ -41,11 +41,37 @@ data class StarterTemplate(
         )
     }
 
+    /** Every category name, sub-categories included. */
+    val categoryNames: List<String> get() = categories.flatMap { parent -> listOf(parent.name) + parent.children.map { it.name } }
+
+    /** The owner, then [others]. A category that was theirs and has nobody left goes to the owner. */
+    fun withPeople(others: List<TemplatePerson>): StarterTemplate {
+        val owner = people.first()
+        val everyone = listOf(owner) + others
+        fun TemplateCategory.reassigned(): TemplateCategory = copy(
+            defaultPerson = defaultPerson?.takeIf { key -> everyone.any { it.key == key } } ?: owner.key.takeIf { defaultPerson != null },
+            children = children.map { it.reassigned() },
+        )
+        return copy(people = everyone, categories = categories.map { it.reassigned() })
+    }
+
+    fun without(dropped: Set<String>): StarterTemplate = copy(categories = categories.filterNot { it.name in dropped })
+
     companion object {
         private val E = CategoryType.EXPENSE
         private val I = CategoryType.INCOME
+        private val SIMPLE = setOf(
+            "Groceries", "Cafe & Restaurants", "Transport", "Health", "Utilities", "Shopping", "Entertainment", "Other",
+            "Paycheck", "Other income",
+        )
+
         private fun sub(name: String, icon: String? = null, person: String? = null) =
             TemplateCategory(name, E, icon = icon, defaultPerson = person)
+
+        /** Eight spending categories with nothing under them, for someone who'd rather start small. */
+        fun simple(ownerName: String = "Me"): StarterTemplate = household(ownerName).let { full ->
+            full.copy(categories = full.categories.filter { it.name in SIMPLE }.map { it.copy(children = emptyList()) })
+        }
 
         /** The household template designed with Emin; a sensible start for anyone. */
         fun household(ownerName: String = "Me") = StarterTemplate(

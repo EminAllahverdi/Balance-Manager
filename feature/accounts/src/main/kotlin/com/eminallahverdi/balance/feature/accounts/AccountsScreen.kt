@@ -22,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.StarOutline
 import androidx.compose.material.icons.rounded.SwapHoriz
@@ -31,10 +33,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -78,11 +84,34 @@ internal val AccountType.label: String
         AccountType.SAVINGS -> "Savings"
     }
 
-/** Every account and what's in it. [onTransfer] opens quick add on Transfer, [onOpenTransaction] one transfer to edit. */
 @Composable
-fun AccountsRoute(onTransfer: () -> Unit, onOpenTransaction: (Long) -> Unit, onOpenLoans: () -> Unit, viewModel: AccountsViewModel = hiltViewModel()) {
+private fun ArchivedHeader(count: Int, open: Boolean, onToggle: () -> Unit) {
+    val c = BtTheme.colors
+    BtCard(Modifier.clip(BtShapes.md).clickable(onClick = onToggle)) {
+        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            CategoryTile("inventory_2", TRANSFER_TILE)
+            Text("Archived", style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
+            Text("$count", style = BtTheme.type.caption, color = c.textSecondary)
+            Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, if (open) "Hide archived accounts" else "Show archived accounts", tint = c.textSecondary)
+        }
+    }
+}
+
+/**
+ * Every account and what's in it. [onTransfer] opens quick add on Transfer, [onOpenTransaction] one transfer to edit,
+ * and [onDeleteArchived] the page that says what deleting an archived account would take with it.
+ */
+@Composable
+fun AccountsRoute(
+    onTransfer: () -> Unit,
+    onOpenTransaction: (Long) -> Unit,
+    onOpenLoans: () -> Unit,
+    onDeleteArchived: (Long) -> Unit,
+    viewModel: AccountsViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val c = BtTheme.colors
+    var archivedOpen by rememberSaveable { mutableStateOf(false) }
     fun money(m: Money) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m, signed = true)
 
     LazyColumn(
@@ -114,8 +143,8 @@ fun AccountsRoute(onTransfer: () -> Unit, onOpenTransaction: (Long) -> Unit, onO
         }
         item(key = "loans") { LoansRow(onOpenLoans) }
         if (state.archived.isNotEmpty()) {
-            item(key = "archived") { Overline("Archived", Modifier.padding(top = 8.dp, start = 4.dp)) }
-            items(state.archived, key = { "a${it.id}" }) { account -> ArchivedRow(account, viewModel) }
+            item(key = "archived") { ArchivedHeader(state.archived.size, archivedOpen) { archivedOpen = !archivedOpen } }
+            if (archivedOpen) items(state.archived, key = { "a${it.id}" }) { account -> ArchivedRow(account, viewModel, onDeleteArchived) }
         }
         if (state.transfers.isNotEmpty()) {
             item(key = "transfers") {
@@ -233,16 +262,23 @@ private fun SwitchChip(text: String, icon: ImageVector, on: Boolean, onClick: ()
 }
 
 @Composable
-private fun ArchivedRow(account: Account, vm: AccountsViewModel) {
+private fun ArchivedRow(account: Account, vm: AccountsViewModel, onDelete: (Long) -> Unit) {
+    val c = BtTheme.colors
     BtCard {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(account.name, style = BtTheme.type.body, color = BtTheme.colors.textSecondary, modifier = Modifier.weight(1f))
-            Box(
-                Modifier.height(44.dp).clip(BtShapes.sm).clickable(role = Role.Button) { vm.restore(account) }.padding(horizontal = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) { Text("Restore", style = BtTheme.type.label, color = BtTheme.colors.accentText) }
+            Text(account.name, style = BtTheme.type.body, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            ArchivedAction("Restore", c.accentText) { vm.restore(account) }
+            ArchivedAction("Delete", c.moneyExpense) { onDelete(account.id) }
         }
     }
+}
+
+@Composable
+private fun ArchivedAction(text: String, color: Color, onClick: () -> Unit) {
+    Box(
+        Modifier.height(44.dp).clip(BtShapes.sm).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) { Text(text, style = BtTheme.type.label, color = color) }
 }
 
 @Composable
