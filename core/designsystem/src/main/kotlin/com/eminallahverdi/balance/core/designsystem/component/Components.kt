@@ -39,6 +39,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -97,6 +98,7 @@ fun SplitBar(parts: List<Pair<Long, Long>>, modifier: Modifier = Modifier, heigh
     }
 }
 
+/** [outlined] shows selected as a lime outline, for pages where a lime fill would compete with the one action, like Save. */
 @Composable
 fun BtChip(
     text: String,
@@ -105,21 +107,29 @@ fun BtChip(
     modifier: Modifier = Modifier,
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    outlined: Boolean = false,
 ) {
     val c = BtTheme.colors
+    val filled = selected && !outlined
     Row(
         modifier = modifier
             .height(36.dp)
             .clip(BtShapes.full)
-            .background(if (selected) c.accentFill else c.bgSurfaceRaised)
+            .background(if (filled) c.accentFill else if (selected) c.bgSurfaceHigh else c.bgSurfaceRaised)
             .border(1.dp, if (selected) c.accentFill else c.borderDefault, BtShapes.full)
             .clickable(role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
     ) {
         leading?.invoke()
-        Text(text, style = BtTheme.type.label, color = if (selected) c.accentOn else c.textPrimary)
+        Text(
+            text,
+            style = BtTheme.type.label,
+            color = if (filled) c.accentOn else c.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         trailing?.invoke()
     }
 }

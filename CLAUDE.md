@@ -31,7 +31,7 @@ core:datastore           UserPreferences (theme, default expense account, widget
 core:data                CatalogRepository, TransactionRepository (merchant memory + suggestions), BankAlertRepository (bank notifications into pending entries), StarterTemplate
 core:backup              Nightly backup to Drive and restore: BackupArchive (zip of a checked database copy, settings and photos), DriveAuthorization (Google Identity), DriveFiles (Drive REST), NightlyBackup (WorkManager). A restore is staged, then swapped in by applyPendingRestore at the next start, before Hilt opens anything
 feature:home             Swipeable month summary, by category / by person, split bars. Rows open that month's transactions. The month name sits on the page and opens a month sheet. The card's icon swaps the balance for a pie chart of expenses or income, and stays as left (UserPreferences)
-feature:transaction      Quick add: step 1 amount + category + keypad, step 2 details (sub-category, merchant, for whom, 7-day date strip + calendar, note)
+feature:transaction      Quick add, category first: a grid of every category with the three most used merchants above it, then one page with the amount, sub-category, merchant, for whom, date, note and keypad. An entry that arrives with a category (edit, widget, reminder, bank notification) skips the grid, and so does a transfer. Typing a merchant or note swaps the keypad for the phone's keyboard, with a text bar and Save above it
 feature:catalog          Categories, sub-categories and people: add, edit, drag to reorder, archive and restore, photo avatars (AvatarStore in core:data)
 feature:history          Search, month/person/category/account filters in bottom sheets, day groups. Tapping a row opens quick add to edit or delete it. The History tab, and from Home the same screen pre-filtered with a back button (TransactionsDestination)
 feature:insights         Week/month/year: stacked bars by person (tap a bar to select it), daily average, saved, biggest category changes. Numbers come from InsightsCalculator in core:model. A period is always compared with the whole previous one, even while it's still running: the owner's choice
@@ -90,6 +90,4 @@ Next, in order:
 3. First-run onboarding, which also asks for the notification permission and offers a Drive restore: the evening reminder is on by default, so nothing else asks on a fresh install.
 4. Wear OS, very last.
 
-Leave quick add's input screen alone: the owner is planning to change it, and merchant chips stay as they are until then.
-
-Not seen on a real device yet: the widget picker previews, which need Android 12, and the Home backup notice, which only shows with Drive working.
+Not seen on a real device yet: the widget picker previews, which need Android 12, the Home backup notice, which only shows with Drive working, and the category-first quick add, which was checked on the emulator.

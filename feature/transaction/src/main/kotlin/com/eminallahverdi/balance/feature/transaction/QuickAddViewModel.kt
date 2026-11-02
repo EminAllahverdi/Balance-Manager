@@ -6,11 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.RecurringRepository
+import com.eminallahverdi.balance.core.data.Suggestion
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
+import com.eminallahverdi.balance.core.model.Merchant
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
 import com.eminallahverdi.balance.core.model.PendingEntry
@@ -30,11 +32,22 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class QuickAddStep { AMOUNT, DETAILS }
+internal const val FREQUENT_MERCHANTS = 3
+private const val MERCHANT_CHIPS = 4
+private const val MERCHANT_MATCHES = 3
+
+/** Category first: [CATEGORY] is the grid, [ENTRY] the one page with the amount and every detail. */
+enum class QuickAddStep { CATEGORY, ENTRY }
+
+/** What the phone's keyboard is open for, in place of the number pad. */
+enum class QuickAddText { MERCHANT, NOTE }
+
+/** A shop used often, and the category it was last filed under. */
+data class FrequentMerchant(val merchant: Merchant, val category: Category)
 
 data class QuickAddUiState(
     val loading: Boolean = true,
-    val step: QuickAddStep = QuickAddStep.AMOUNT,
+    val step: QuickAddStep = QuickAddStep.CATEGORY,
     val kind: TransactionKind = TransactionKind.EXPENSE,
     val amountText: String = "",
     val accounts: List<Account> = emptyList(),
@@ -46,6 +59,10 @@ data class QuickAddUiState(
     val subCategoryId: Long? = null,
     val merchant: String = "",
     val recentMerchants: List<String> = emptyList(),
+    val merchants: List<Merchant> = emptyList(),
+    val typing: QuickAddText? = null,
+    /** Set when the category was picked on the grid, so Back returns to it. */
+    val pickedFromGrid: Boolean = false,
     val people: List<Person> = emptyList(),
     val personId: Long? = null,
     val date: LocalDate = LocalDate.now(),
@@ -68,6 +85,18 @@ data class QuickAddUiState(
         TransactionKind.TRANSFER -> toAccountId != null && toAccountId != accountId
         else -> categoryId != null
     }
+    val frequent: List<FrequentMerchant>
+        get() = if (kind == TransactionKind.TRANSFER) emptyList() else frequentMerchants(merchants, allCategories, categoryType(kind))
+
+    /** The category's usual merchants, with a typed one in front until it becomes one of them. */
+    val merchantChips: List<String>
+        get() {
+            val typed = merchant.trim()
+            val isUsual = typed.isEmpty() || recentMerchants.any { it.equals(typed, ignoreCase = true) }
+            return (if (isUsual) recentMerchants else listOf(typed) + recentMerchants).take(MERCHANT_CHIPS)
+        }
+    val merchantMatches: List<String> get() = merchantMatches(merchants, merchant)
+    val isNewMerchant: Boolean get() = merchant.isNotBlank() && merchants.none { it.name.equals(merchant.trim(), ignoreCase = true) }
 }
 
 @HiltViewModel
@@ -97,28 +126,43 @@ class QuickAddViewModel @Inject constructor(
             pending?.let { loadFromPending(it) }
             val startKind = editing?.kind ?: pending?.kind ?: requestedKind
             val defaultAccount = prefs.current().defaultExpenseAccountId
-            combine(catalog.accounts, catalog.categories, catalog.people) { a, c, p -> Triple(a, c, p) }
-                .collect { (accounts, categories, people) ->
+            combine(catalog.accounts, catalog.categories, catalog.people, catalog.merchants) { a, c, p, m -> Catalog(a, c, p, m) }
+                .collect { (accounts, categories, people, merchants) ->
                     val active = accounts.filterNot { it.isArchived }
                     val firstLoad = _state.value.loading
+                    val requested = topLevel(categories, startKind).firstOrNull { it.id == requestedCategory }.takeIf { firstLoad }
                     _state.update { s ->
                         val accountId = s.accountId ?: active.firstOrNull { it.id == defaultAccount }?.id ?: active.firstOrNull()?.id
                         s.copy(
                             loading = false,
+                            step = if (s.loading) startStep(startKind, s.categoryId ?: requested?.id) else s.step,
                             kind = if (s.loading) startKind else s.kind,
                             accounts = active,
                             accountId = accountId,
                             toAccountId = s.toAccountId ?: active.firstOrNull { it.id != accountId }?.id,
                             allCategories = categories,
                             categories = topLevel(categories, if (s.loading) startKind else s.kind),
+                            merchants = merchants,
                             people = people.filterNot { it.isArchived },
                             personId = s.personId ?: people.firstOrNull()?.id,
                         )
                     }
-                    if (firstLoad) _state.value.categories.firstOrNull { it.id == requestedCategory }?.let(::selectCategory)
+                    if (firstLoad) {
+                        if (requested != null) pick(requested, fromGrid = false) else _state.value.category?.let { loadUsualMerchants(it) }
+                    }
                 }
         }
     }
+
+    private data class Catalog(val accounts: List<Account>, val categories: List<Category>, val people: List<Person>, val merchants: List<Merchant>)
+
+    /** An entry that arrives filled in keeps its details, and only needs its category's merchants for the chips. */
+    private suspend fun loadUsualMerchants(category: Category) {
+        val usual = transactions.suggestFor(category, subCategoriesOf(category)).recentMerchants
+        _state.update { it.copy(recentMerchants = usual) }
+    }
+
+    private fun subCategoriesOf(category: Category) = _state.value.allCategories.filter { it.parentId == category.id && !it.isArchived }
 
     private suspend fun loadForEditing(t: Transaction) {
         val category = catalog.categories.first().firstOrNull { it.id == t.categoryId }
@@ -175,13 +219,19 @@ class QuickAddViewModel @Inject constructor(
         }
     }
 
-    private fun topLevel(all: List<Category>, kind: TransactionKind): List<Category> {
-        val type = if (kind == TransactionKind.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
-        return all.filter { it.parentId == null && it.type == type && !it.isArchived }
-    }
+    private fun topLevel(all: List<Category>, kind: TransactionKind): List<Category> =
+        all.filter { it.parentId == null && it.type == categoryType(kind) && !it.isArchived }
 
     fun setKind(kind: TransactionKind) = _state.update {
-        it.withDistinctAccounts().copy(kind = kind, categories = topLevel(it.allCategories, kind), categoryId = null, subCategoryId = null, step = QuickAddStep.AMOUNT)
+        if (kind == it.kind) return@update it
+        it.withDistinctAccounts().copy(
+            kind = kind,
+            categories = topLevel(it.allCategories, kind),
+            categoryId = null,
+            subCategoryId = null,
+            step = startStep(kind, categoryId = null),
+            pickedFromGrid = false,
+        )
     }
 
     fun key(k: Char) = _state.update { s ->
@@ -200,21 +250,33 @@ class QuickAddViewModel @Inject constructor(
     fun backspace() = _state.update { it.copy(amountText = it.amountText.dropLast(1)) }
     fun clear() = _state.update { it.copy(amountText = "") }
 
+    /** Tapping the category that's already picked goes back to the entry as it was. */
     fun selectCategory(category: Category) {
-        _state.update { it.copy(categoryId = category.id, subCategoryId = null) }
-        viewModelScope.launch {
-            val subs = _state.value.allCategories.filter { it.parentId == category.id && !it.isArchived }
-            val s = transactions.suggestFor(category, subs)
-            _state.update { st ->
-                st.copy(
-                    subCategoryId = s.subCategoryId,
-                    merchant = if (st.pending != null) st.merchant else s.merchantName.orEmpty(),
-                    recentMerchants = s.recentMerchants,
-                    personId = s.personId?.takeIf { id -> st.people.any { it.id == id } } ?: st.people.firstOrNull()?.id,
-                    accountId = s.accountId?.takeIf { id -> st.pending == null && st.accounts.any { it.id == id } } ?: st.accountId,
-                )
-            }
+        if (category.id == _state.value.categoryId) _state.update { it.copy(step = QuickAddStep.ENTRY) } else pick(category, fromGrid = true)
+    }
+
+    /** A frequent merchant fills in what it was filed under last time, so only the amount is left. */
+    fun selectFrequent(item: FrequentMerchant) {
+        val top = _state.value.allCategories.firstOrNull { it.id == item.category.parentId } ?: item.category
+        pick(top, fromGrid = true, frequent = item.merchant)
+    }
+
+    private fun pick(category: Category, fromGrid: Boolean, frequent: Merchant? = null) {
+        _state.update {
+            it.copy(categoryId = category.id, subCategoryId = null, merchant = frequent?.name ?: it.merchant, step = QuickAddStep.ENTRY, pickedFromGrid = fromGrid)
         }
+        viewModelScope.launch {
+            val suggestion = transactions.suggestFor(category, subCategoriesOf(category))
+            _state.update { it.withSuggestion(suggestion, frequent) }
+        }
+    }
+
+    fun showCategories() = _state.update { it.copy(step = QuickAddStep.CATEGORY, pickedFromGrid = true, typing = null) }
+
+    /** Back closes the keyboard first, then returns to the grid. False means there's nowhere left, so the sheet closes. */
+    fun back(): Boolean {
+        _state.value = _state.value.afterBack() ?: return false
+        return true
     }
 
     fun selectSubCategory(id: Long?) = _state.update { s ->
@@ -226,10 +288,14 @@ class QuickAddViewModel @Inject constructor(
     fun selectAccount(id: Long) = _state.update { it.withAccount(id) }
     fun selectToAccount(id: Long) = _state.update { it.copy(toAccountId = id) }
     fun setMerchant(text: String) = _state.update { it.copy(merchant = text) }
+
+    /** A merchant stays optional, so tapping the selected one clears it. */
+    fun toggleMerchant(name: String) = _state.update { it.copy(merchant = if (it.merchant.trim().equals(name, ignoreCase = true)) "" else name) }
+    fun pickMerchant(name: String) = _state.update { it.copy(merchant = name, typing = null) }
     fun setNote(text: String) = _state.update { it.copy(note = text) }
     fun setDate(date: LocalDate) = _state.update { it.copy(date = date) }
-    fun showDetails() = _state.update { it.copy(step = QuickAddStep.DETAILS) }
-    fun showAmount() = _state.update { it.copy(step = QuickAddStep.AMOUNT) }
+    fun startTyping(text: QuickAddText) = _state.update { it.copy(typing = text) }
+    fun stopTyping() = _state.update { it.copy(typing = null) }
 
     fun save() {
         val s = _state.value
@@ -285,6 +351,52 @@ class QuickAddViewModel @Inject constructor(
         /** Set to start filled in from a bank notification on To confirm. */
         const val ARG_PENDING = "pendingId"
     }
+}
+
+private fun categoryType(kind: TransactionKind) = if (kind == TransactionKind.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
+
+/** A transfer has no category, and an entry that arrives with one goes straight to its page. Everything else starts on the grid. */
+internal fun startStep(kind: TransactionKind, categoryId: Long?): QuickAddStep =
+    if (kind == TransactionKind.TRANSFER || categoryId != null) QuickAddStep.ENTRY else QuickAddStep.CATEGORY
+
+internal fun QuickAddUiState.afterBack(): QuickAddUiState? = when {
+    typing != null -> copy(typing = null)
+    step == QuickAddStep.ENTRY && pickedFromGrid -> copy(step = QuickAddStep.CATEGORY)
+    else -> null
+}
+
+/** The category's last entry, or a frequent merchant's own last use. A bank notification keeps its merchant and account. */
+internal fun QuickAddUiState.withSuggestion(suggestion: Suggestion, frequent: Merchant? = null): QuickAddUiState {
+    val person = frequent?.lastPersonId ?: suggestion.personId
+    val account = frequent?.lastAccountId ?: suggestion.accountId
+    return copy(
+        subCategoryId = if (frequent == null) suggestion.subCategoryId else frequent.lastCategoryId?.takeIf { id -> subCategories.any { it.id == id } },
+        merchant = frequent?.name ?: if (pending != null) merchant else suggestion.merchantName.orEmpty(),
+        recentMerchants = suggestion.recentMerchants,
+        personId = person?.takeIf { id -> people.any { it.id == id } } ?: people.firstOrNull()?.id,
+        accountId = account?.takeIf { id -> pending == null && accounts.any { it.id == id } } ?: accountId,
+    )
+}
+
+/** The shops used most, skipping any whose category was archived. */
+internal fun frequentMerchants(merchants: List<Merchant>, categories: List<Category>, type: CategoryType): List<FrequentMerchant> {
+    val active = categories.filterNot { it.isArchived }.associateBy(Category::id)
+    return merchants.sortedByDescending { it.useCount }
+        .mapNotNull { merchant ->
+            val category = active[merchant.lastCategoryId]?.takeIf { it.type == type && (it.parentId == null || it.parentId in active) }
+            category?.let { FrequentMerchant(merchant, it) }
+        }
+        .take(FREQUENT_MERCHANTS)
+}
+
+/** Merchants from every category that match what's typed, so a new spelling doesn't start a second one. */
+internal fun merchantMatches(merchants: List<Merchant>, typed: String): List<String> {
+    val text = typed.trim()
+    if (text.isEmpty()) return emptyList()
+    return merchants.filter { it.name.contains(text, ignoreCase = true) && !it.name.equals(text, ignoreCase = true) }
+        .sortedWith(compareByDescending<Merchant> { it.name.startsWith(text, ignoreCase = true) }.thenByDescending { it.useCount })
+        .map { it.name }
+        .take(MERCHANT_MATCHES)
 }
 
 /** Picking the account on the other side of a transfer swaps them, so Save never dims for no visible reason. */
