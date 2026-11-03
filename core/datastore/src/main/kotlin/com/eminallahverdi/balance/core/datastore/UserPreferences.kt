@@ -44,6 +44,8 @@ data class UserPreferences(
     val bankNotificationsEnabled: Boolean = false,
     /** Off until the user accepts it: the one thing that adds an entry without being asked. */
     val autoConfirmKnownMerchants: Boolean = false,
+    /** The language entries are spoken in, as a BCP 47 tag the recogniser takes, like en-US or az-AZ. */
+    val voiceLanguage: String = "en-US",
     /** Packages whose notifications are read. */
     val bankApps: Set<String> = emptySet(),
     /** Packages seen sending notifications, to pick [bankApps] from. Only the names, and only while bank notifications are on. */
@@ -77,6 +79,7 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
         val eveningMinute = intPreferencesKey("evening_reminder_minute")
         val bank = booleanPreferencesKey("bank_notifications")
         val autoConfirm = booleanPreferencesKey("auto_confirm_known_merchants")
+        val voiceLanguage = stringPreferencesKey("voice_language")
         val bankApps = stringSetPreferencesKey("bank_apps")
         val seenApps = stringSetPreferencesKey("seen_apps")
         val homeChart = booleanPreferencesKey("home_chart")
@@ -101,6 +104,7 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
             eveningReminderMinute = p[K.eveningMinute] ?: (21 * 60),
             bankNotificationsEnabled = p[K.bank] ?: false,
             autoConfirmKnownMerchants = p[K.autoConfirm] ?: false,
+            voiceLanguage = p[K.voiceLanguage] ?: "en-US",
             bankApps = p[K.bankApps].orEmpty(),
             seenApps = p[K.seenApps].orEmpty(),
             homeChart = p[K.homeChart] ?: false,
@@ -127,6 +131,7 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
     suspend fun setWidgetBalanceMode(mode: WidgetBalanceMode) { store.edit { it[K.widgetMode] = mode.name } }
     suspend fun setAppLock(enabled: Boolean) { store.edit { it[K.appLock] = enabled } }
     suspend fun setHideAmounts(enabled: Boolean) { store.edit { it[K.hideAmounts] = enabled } }
+    suspend fun setVoiceLanguage(tag: String) { store.edit { it[K.voiceLanguage] = tag } }
     suspend fun setEveningReminder(enabled: Boolean) { store.edit { it[K.evening] = enabled } }
     suspend fun setEveningReminderMinute(minute: Int) { store.edit { it[K.eveningMinute] = minute } }
     suspend fun setBankNotifications(enabled: Boolean) { store.edit { it[K.bank] = enabled } }

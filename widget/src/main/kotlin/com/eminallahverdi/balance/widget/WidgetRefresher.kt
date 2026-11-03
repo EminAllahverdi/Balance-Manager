@@ -51,6 +51,7 @@ class WidgetRefresher @Inject constructor(
                 .debounce(300.milliseconds)
                 .collect {
                     BalanceWidget().updateAll(context)
+                    BalanceVoiceWidget().updateAll(context)
                     QuickActionsWidget().updateAll(context)
                     TodayWidget().updateAll(context)
                 }

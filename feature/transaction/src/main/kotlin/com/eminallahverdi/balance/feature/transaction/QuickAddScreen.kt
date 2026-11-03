@@ -42,6 +42,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Storefront
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
@@ -83,6 +84,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.designsystem.component.BtChip
+import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
 import com.eminallahverdi.balance.core.designsystem.component.OptionRow
@@ -105,10 +107,10 @@ import kotlinx.coroutines.launch
 private const val GRID_COLUMNS = 4
 private const val SHORT_SCREEN_DP = 800
 
-/** The quick-add sheet. [onClose] is called after saving or when the user dismisses it. */
+/** The quick-add sheet. [onClose] is called after saving or when the user dismisses it. [onVoice] swaps it for listening. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuickAddRoute(onClose: () -> Unit, viewModel: QuickAddViewModel = hiltViewModel()) {
+fun QuickAddRoute(onClose: () -> Unit, onVoice: (() -> Unit)? = null, viewModel: QuickAddViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Nothing shows until the data is in, so the sheet rises at its final height instead of growing once it's up.
     if (state.loading) return
@@ -142,8 +144,9 @@ fun QuickAddRoute(onClose: () -> Unit, viewModel: QuickAddViewModel = hiltViewMo
         }
         Column(Modifier.fillMaxWidth().animateContentSize().navigationBarsPadding().imePadding()) {
             if (state.editing != null) EditHeader(onDelete = { confirmDelete = true })
+            state.heard?.let { HeardLine(it) }
             when (state.step) {
-                QuickAddStep.CATEGORY -> CategoryStep(state, viewModel, Modifier.weight(1f, fill = false))
+                QuickAddStep.CATEGORY -> CategoryStep(state, viewModel, onVoice.takeIf { state.editing == null && state.pending == null && state.payment == null }, Modifier.weight(1f, fill = false))
                 QuickAddStep.ENTRY -> EntryStep(state, viewModel, onOpenCalendar = { showCalendar = true }, Modifier.weight(1f, fill = false))
             }
         }
@@ -188,6 +191,20 @@ private fun EditHeader(onDelete: () -> Unit) {
     }
 }
 
+/** The sentence a spoken entry came from, so a wrong guess is easy to see and put right. */
+@Composable
+private fun HeardLine(text: String) {
+    val c = BtTheme.colors
+    Row(
+        Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp).fillMaxWidth().clip(BtShapes.md).background(c.bgSurfaceRaised).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(Icons.Rounded.Mic, null, tint = c.accentText, modifier = Modifier.size(16.dp))
+        Text("“$text”", style = BtTheme.type.caption, color = c.textSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    }
+}
+
 @Composable
 private fun KindToggle(state: QuickAddUiState, vm: QuickAddViewModel) {
     val kinds = listOf(TransactionKind.EXPENSE, TransactionKind.INCOME, TransactionKind.TRANSFER)
@@ -203,9 +220,12 @@ private fun KindToggle(state: QuickAddUiState, vm: QuickAddViewModel) {
 // ---------------------------------------------------------------- the grid
 
 @Composable
-private fun CategoryStep(state: QuickAddUiState, vm: QuickAddViewModel, modifier: Modifier) {
+private fun CategoryStep(state: QuickAddUiState, vm: QuickAddViewModel, onVoice: (() -> Unit)?, modifier: Modifier) {
     Column(modifier.verticalScroll(rememberScrollState())) {
-        KindToggle(state, vm)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Box(Modifier.weight(1f)) { KindToggle(state, vm) }
+            onVoice?.let { BtIconButton(Icons.Rounded.Mic, "Add by voice", it, Modifier.padding(end = 16.dp)) }
+        }
         val frequent = state.frequent
         if (frequent.isNotEmpty()) {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {

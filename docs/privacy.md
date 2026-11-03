@@ -19,6 +19,10 @@ This is off until you turn it on. When it's on, the app saves a copy of your dat
 
 This is off until you turn it on and give the permission in Android's settings. The app then reads notifications only from the apps you pick, on your phone, to offer ready-made entries. For other apps it keeps only their package name, so you can pick them. Notifications are never sent anywhere. Entries you confirm are saved like any others, so they're included in your backup.
 
+## Adding by voice
+
+The microphone is used only while you add an entry by voice, after you've allowed it. Android's own speech recognition, the one your phone's keyboard uses, turns what you say into text. Depending on the phone and the language, that happens on the phone or with Google's recognition service. The app keeps only the text, to fill in the entry you then check and save. No recording is kept.
+
 ## Files you choose
 
 Export CSV saves a file where you tell it to. Importing a backup from another app reads the file you pick, on your phone.

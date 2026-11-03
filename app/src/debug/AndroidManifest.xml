@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only: lets adb hand voice entry a sentence, so its way to quick add can be tried without a microphone. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <activity
+            android:name="com.eminallahverdi.balance.VoiceEntryActivity"
+            android:exported="true"
+            tools:replace="android:exported" />
+    </application>
+</manifest>
