@@ -13,19 +13,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -97,16 +92,3 @@ fun IconPicker(color: Long, selected: String, onSelect: (String) -> Unit, keys: 
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun ColourPicker(palette: List<Long>, selected: Long, onSelect: (Long) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        palette.forEach { color ->
-            Box(Modifier.size(44.dp).clip(CircleShape).clickable(role = Role.RadioButton) { onSelect(color) }, contentAlignment = Alignment.Center) {
-                Box(Modifier.size(32.dp).clip(CircleShape).background(color.toColor()), contentAlignment = Alignment.Center) {
-                    if (color == selected) Icon(Icons.Rounded.Check, "Selected", tint = Color(0xFF0B0D10), modifier = Modifier.size(20.dp))
-                }
-            }
-        }
-    }
-}

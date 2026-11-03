@@ -110,17 +110,19 @@ private fun contrast(a: Color, b: Color): Float {
     return (lighter + 0.05f) / (darker + 0.05f)
 }
 
-/** Default colours offered when creating a person. Users can pick any of these. */
+/** Default colours offered for a person, in the order a new one gets the first nobody has. Any other colour can be picked too. */
 val PersonPalette = listOf(
-    0xFF5B9DFF, 0xFFFF7AB6, 0xFFFFB547, 0xFFA78BFA, 0xFF8A94A3,
-    0xFF4ADE9B, 0xFFFF7A66, 0xFF6FC7D9, 0xFFF7A072, 0xFFC79BF2,
+    0xFF5B9DFF, 0xFFFF7AB6, 0xFFFFB547, 0xFFA78BFA, 0xFF8A94A3, 0xFF4ADE9B, 0xFFFF7A66,
+    0xFF6FC7D9, 0xFFF7A072, 0xFFC79BF2, 0xFFFFD166, 0xFF5DCAA5, 0xFFF49AC2,
 )
 
-/** Default hues offered for categories (icon tile = hue at 16 % behind the glyph in full hue). */
+/**
+ * Default hues offered for categories and accounts, around the colour wheel (icon tile = hue at 16 % behind the glyph in
+ * full hue). Thirteen, so they fill two rows with the place for a colour of one's own.
+ */
 val CategoryPalette = listOf(
-    0xFF5DCAA5, 0xFFFF7A66, 0xFF8AB4F8, 0xFFB39DFF, 0xFFF5B544, 0xFFFFD166,
-    0xFFFF9F6E, 0xFF7FD1F7, 0xFFFFB547, 0xFF9AD0A8, 0xFFF49AC2, 0xFFC79BF2,
-    0xFF6FC7D9, 0xFFF7A072, 0xFFB8C0CC, 0xFF8A94A3,
+    0xFFFF7A66, 0xFFFF9F6E, 0xFFF5B544, 0xFFFFD166, 0xFF9AD0A8, 0xFF4ADE9B, 0xFF5DCAA5,
+    0xFF6FC7D9, 0xFF8AB4F8, 0xFFB39DFF, 0xFFC79BF2, 0xFFF49AC2, 0xFF8A94A3,
 )
 
 internal val LocalBtColors = staticCompositionLocalOf { DarkBtColors }

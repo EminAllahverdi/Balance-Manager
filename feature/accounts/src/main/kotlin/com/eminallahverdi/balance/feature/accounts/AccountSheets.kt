@@ -102,7 +102,7 @@ internal fun AccountEditorSheet(editor: AccountsSheet.Editor, state: AccountsUiS
             IconPicker(account.color, account.icon, { vm.update(account.copy(icon = it)) }, keys = ACCOUNT_ICONS)
         }
         EditorField("Colour") {
-            ColourPicker(CategoryPalette, account.color) { vm.update(account.copy(color = it)) }
+            ColourPicker(CategoryPalette, account.color, icon = account.icon) { vm.update(account.copy(color = it)) }
         }
         PrimaryButton("Save", vm::saveEditor, enabled = account.name.isNotBlank())
     }
