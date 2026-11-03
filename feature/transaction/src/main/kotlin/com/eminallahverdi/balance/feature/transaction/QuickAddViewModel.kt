@@ -118,12 +118,14 @@ class QuickAddViewModel @Inject constructor(
         val requestedCategory = savedState.get<Long>(ARG_CATEGORY)
         val paymentId = savedState.get<Long>(ARG_PAYMENT)
         val pendingId = savedState.get<Long>(ARG_PENDING)
+        val receiptTotal = savedState.get<Long>(ARG_RECEIPT_TOTAL)
         viewModelScope.launch {
             val editing = editingId?.let { transactions.get(it) }
             if (editing != null) loadForEditing(editing)
             paymentId?.let { recurring.get(it) }?.let { loadFromPayment(it) }
             val pending = pendingId?.let { bankAlerts.entry(it) }
             pending?.let { loadFromPending(it) }
+            if (receiptTotal != null) loadFromReceipt(Money(receiptTotal), savedState.get<String>(ARG_RECEIPT_STORE).orEmpty(), savedState.get<Long>(ARG_RECEIPT_DATE), savedState.get<Long>(ARG_RECEIPT_CATEGORY))
             val startKind = editing?.kind ?: pending?.kind ?: requestedKind
             val defaultAccount = prefs.current().defaultExpenseAccountId
             combine(catalog.accounts, catalog.categories, catalog.people, catalog.merchants) { a, c, p, m -> Catalog(a, c, p, m) }
@@ -215,6 +217,20 @@ class QuickAddViewModel @Inject constructor(
                 merchant = guess.merchantName,
                 personId = guess.personId,
                 date = entry.postedAt.atZone(ZoneId.systemDefault()).toLocalDate(),
+            )
+        }
+    }
+
+    /** A scanned receipt: its total, shop and day, in the groceries category. Nothing is saved until the user presses Save. */
+    private suspend fun loadFromReceipt(total: Money, store: String, epochDay: Long?, categoryId: Long?) {
+        val category = catalog.categories.first().firstOrNull { it.id == categoryId }
+        _state.update {
+            it.copy(
+                amountText = total.toInputText(),
+                categoryId = category?.id,
+                personId = category?.defaultPersonId,
+                merchant = store,
+                date = epochDay?.let(LocalDate::ofEpochDay) ?: it.date,
             )
         }
     }
@@ -347,6 +363,12 @@ class QuickAddViewModel @Inject constructor(
 
         /** Set to start filled in from a recurring payment's reminder. */
         const val ARG_PAYMENT = "paymentId"
+
+        /** Set to start filled in from a scanned receipt: its total, shop, day (epochDay) and the groceries category. */
+        const val ARG_RECEIPT_TOTAL = "receiptTotal"
+        const val ARG_RECEIPT_STORE = "receiptStore"
+        const val ARG_RECEIPT_DATE = "receiptDate"
+        const val ARG_RECEIPT_CATEGORY = "receiptCategory"
 
         /** Set to start filled in from a bank notification on To confirm. */
         const val ARG_PENDING = "pendingId"

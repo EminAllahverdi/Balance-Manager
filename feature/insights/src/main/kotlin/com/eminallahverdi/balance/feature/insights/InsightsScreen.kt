@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.NorthEast
 import androidx.compose.material.icons.rounded.SouthEast
 import androidx.compose.material3.Icon
@@ -73,7 +74,7 @@ private const val TOP_CHANGES = 3
 
 /** How the money moved: period by period, who it was for, and what changed most. */
 @Composable
-fun InsightsRoute(viewModel: InsightsViewModel = hiltViewModel()) {
+fun InsightsRoute(onOpenGroceries: () -> Unit, viewModel: InsightsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val c = BtTheme.colors
     var showAll by rememberSaveable { mutableStateOf(false) }
@@ -92,6 +93,7 @@ fun InsightsRoute(viewModel: InsightsViewModel = hiltViewModel()) {
         val overview = state.overview ?: return@LazyColumn
         item { ChartCard(state.period, overview, viewModel) }
         item { Stats(state, overview) }
+        item { GroceriesRow(onOpenGroceries) }
         if (overview.changes.isNotEmpty()) {
             item {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -267,6 +269,26 @@ private fun ChangeRow(item: CategoryChange, previous: String) {
                 Icon(if (item.change.minor > 0) Icons.Rounded.NorthEast else Icons.Rounded.SouthEast, null, tint = tint, modifier = Modifier.size(14.dp))
                 Text("${signedChange(item.change)} vs $previous", style = BtTheme.type.caption, color = tint)
             }
+        }
+    }
+}
+
+/** The way into the groceries report, which reads the receipts the user adds. */
+@Composable
+private fun GroceriesRow(onClick: () -> Unit) {
+    val c = BtTheme.colors
+    BtCard {
+        Row(
+            Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CategoryTile("shopping_cart", 0xFF5DCAA5)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("Groceries", style = BtTheme.type.bodyStrong, color = c.textPrimary)
+                Text("What it went on, from your receipts", style = BtTheme.type.caption, color = c.textSecondary)
+            }
+            Icon(Icons.Rounded.ChevronRight, null, tint = c.textSecondary)
         }
     }
 }

@@ -92,6 +92,7 @@ dependencies {
     implementation(project(":feature:insights"))
     implementation(project(":feature:recurring"))
     implementation(project(":feature:loans"))
+    implementation(project(":feature:receipts"))
     implementation(project(":feature:confirm"))
     implementation(project(":feature:onboarding"))
     implementation(project(":widget"))

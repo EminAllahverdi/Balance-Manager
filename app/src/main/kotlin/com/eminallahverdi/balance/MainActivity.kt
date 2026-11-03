@@ -50,6 +50,14 @@ class MainActivity : FragmentActivity() {
                             onEditPending = { id ->
                                 startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_PENDING, id))
                             },
+                            onAddReceipt = { entry ->
+                                val intent = Intent(this, QuickAddActivity::class.java)
+                                    .putExtra(QuickAddViewModel.ARG_RECEIPT_TOTAL, entry.total.minor)
+                                    .putExtra(QuickAddViewModel.ARG_RECEIPT_STORE, entry.store)
+                                    .putExtra(QuickAddViewModel.ARG_RECEIPT_DATE, entry.date.toEpochDay())
+                                entry.categoryId?.let { intent.putExtra(QuickAddViewModel.ARG_RECEIPT_CATEGORY, it) }
+                                startActivity(intent)
+                            },
                             openRecurring = openRecurring,
                             onRecurringOpened = { openRecurring = false },
                             openConfirm = openConfirm,
