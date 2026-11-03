@@ -109,6 +109,10 @@ data class DebtEntity(
     val note: String = "",
     /** LocalDate.toEpochDay(). */
     val date: Long,
+    /** Paid back before it was added, for one already running then. */
+    @ColumnInfo(name = "paid_before_minor", defaultValue = "0") val paidBeforeMinor: Long = 0,
+    /** The payment agreed for each month, when it's paid back in parts. */
+    @ColumnInfo(name = "monthly_minor") val monthlyMinor: Long? = null,
 )
 
 @Entity(
@@ -136,6 +140,10 @@ data class RecurringPaymentEntity(
     @ColumnInfo(name = "payments_made") val paymentsMade: Int? = null,
     @ColumnInfo(name = "payments_left") val paymentsLeft: Int? = null,
     @ColumnInfo(name = "last_amount_minor") val lastAmountMinor: Long? = null,
+    /** What the loan contract says, when it was typed in: what was borrowed, the yearly rate in hundredths of a percent, and the bank's fee. */
+    @ColumnInfo(name = "principal_minor") val principalMinor: Long? = null,
+    @ColumnInfo(name = "rate_bp") val rateBp: Int? = null,
+    @ColumnInfo(name = "commission_minor") val commissionMinor: Long? = null,
 )
 
 /** A ready-made entry read from a bank's notification. Finished ones stay a while, so a repeated notification isn't offered twice. */

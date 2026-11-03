@@ -24,6 +24,10 @@ import com.eminallahverdi.balance.core.model.RecurringFrequency
 import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
+import com.eminallahverdi.balance.core.model.annuityPayment
+import com.eminallahverdi.balance.core.model.formatRate
+import com.eminallahverdi.balance.core.model.monthlyFor
+import com.eminallahverdi.balance.core.model.parseRate
 import com.eminallahverdi.balance.core.model.sum
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -42,14 +46,20 @@ internal fun positiveAmount(text: String): Money? = Money.parse(text)?.takeIf { 
 /** What a typed field starts with: 16.31, and 1184.00 without the separator. */
 internal fun Money.toFieldText(): String = MoneyFormat.format(this).removePrefix(MoneyFormat.SYMBOL).replace(",", "")
 
-/** A bank loan is a recurring payment with a fixed number of payments, so it reminds the same way. */
+/**
+ * A bank loan is a recurring payment with a fixed number of payments, so it reminds the same way. What the contract says
+ * (what was borrowed, the rate, the commission) is optional, and splits what's left into what was borrowed and interest.
+ */
 data class LoanDraft(
     val id: Long = 0,
     val name: String = "",
     val amountText: String = "",
-    val paymentsLeftText: String = "",
+    val termText: String = "",
     val paymentsMadeText: String = "",
     val lastAmountText: String = "",
+    val principalText: String = "",
+    val rateText: String = "",
+    val commissionText: String = "",
     val categoryId: Long? = null,
     val subCategoryId: Long? = null,
     val personId: Long? = null,
@@ -59,30 +69,56 @@ data class LoanDraft(
 ) {
     val isNew: Boolean get() = id == 0L
     val amount: Money? get() = positiveAmount(amountText)
-    val paymentsLeft: Int? get() = paymentsLeftText.toIntOrNull()?.takeIf { it >= 0 }
+    private val term: Int? get() = termText.toIntOrNull()?.takeIf { it > 0 }
 
     /** An empty optional field is fine. One that's filled in has to make sense. */
     private val paymentsMade: Int? get() = if (paymentsMadeText.isBlank()) 0 else paymentsMadeText.toIntOrNull()?.takeIf { it >= 0 }
-    private val lastAmountIsValid: Boolean get() = lastAmountText.isBlank() || positiveAmount(lastAmountText) != null
+    private val principal: Money? get() = positiveAmount(principalText)
+    private val rateBp: Int? get() = parseRate(rateText)
+    private val commission: Money? get() = positiveAmount(commissionText)
+    private val optionalsAreValid: Boolean
+        get() = (lastAmountText.isBlank() || positiveAmount(lastAmountText) != null) &&
+            (principalText.isBlank() || principal != null) &&
+            (rateText.isBlank() || rateBp != null) &&
+            (commissionText.isBlank() || commission != null)
+
+    /** The term, less the payments already made. */
+    val paymentsLeft: Int?
+        get() {
+            val made = paymentsMade ?: return null
+            return term?.minus(made)?.takeIf { it >= 0 }
+        }
+
+    /** The monthly payment the amount, rate and term work out to, offered when it isn't what's typed. */
+    val suggestedAmount: Money?
+        get() {
+            val principal = principal ?: return null
+            val rate = rateBp ?: return null
+            return annuityPayment(principal, rate, term ?: return null)?.takeIf { it != amount }
+        }
 
     val canSave: Boolean
-        get() = name.isNotBlank() && amount != null && paymentsLeft != null && paymentsMade != null && lastAmountIsValid && categoryId != null && accountId != null
+        get() = name.isNotBlank() && amount != null && paymentsLeft != null && optionalsAreValid && categoryId != null && accountId != null
 
-    fun toPayment(): RecurringPayment? {
-        if (!canSave) return null
-        return RecurringPayment(
-            id = id,
-            name = name.trim(),
-            amount = amount ?: return null,
-            accountId = accountId ?: return null,
-            categoryId = subCategoryId ?: categoryId ?: return null,
-            personId = personId,
-            frequency = RecurringFrequency.MONTHLY,
-            nextDate = nextDate,
-            anchorDay = anchorDay,
-            loan = LoanTerms(paymentsMade ?: return null, paymentsLeft ?: return null, positiveAmount(lastAmountText)),
-        )
-    }
+    /** The loan as typed so far, for the sums under the form, before a category or account is picked. */
+    val preview: RecurringPayment?
+        get() {
+            if (!optionalsAreValid) return null
+            return RecurringPayment(
+                id = id,
+                name = name.trim(),
+                amount = amount ?: return null,
+                accountId = accountId ?: 0,
+                categoryId = subCategoryId ?: categoryId ?: 0,
+                personId = personId,
+                frequency = RecurringFrequency.MONTHLY,
+                nextDate = nextDate,
+                anchorDay = anchorDay,
+                loan = LoanTerms(paymentsMade ?: return null, paymentsLeft ?: return null, positiveAmount(lastAmountText), principal, rateBp, commission),
+            )
+        }
+
+    fun toPayment(): RecurringPayment? = preview?.takeIf { canSave }
 }
 
 internal fun RecurringPayment.toLoanDraft(categories: List<Category>): LoanDraft {
@@ -91,9 +127,12 @@ internal fun RecurringPayment.toLoanDraft(categories: List<Category>): LoanDraft
         id = id,
         name = name,
         amountText = amount.toFieldText(),
-        paymentsLeftText = loan?.paymentsLeft?.toString().orEmpty(),
+        termText = loan?.term?.toString().orEmpty(),
         paymentsMadeText = loan?.paymentsMade?.toString().orEmpty(),
         lastAmountText = loan?.lastPayment?.toFieldText().orEmpty(),
+        principalText = loan?.principal?.toFieldText().orEmpty(),
+        rateText = loan?.annualRateBp?.let(::formatRate).orEmpty(),
+        commissionText = loan?.commission?.toFieldText().orEmpty(),
         categoryId = category?.parentId ?: categoryId,
         subCategoryId = categoryId.takeIf { category?.parentId != null },
         personId = personId,
@@ -118,10 +157,39 @@ data class DebtDraft(
     val subCategoryId: Long? = null,
     val accountId: Long? = null,
     val date: LocalDate,
+    /** A loan that was already running: its money moved before, so nothing moves now. */
+    val running: Boolean = false,
+    val paidBeforeText: String = "",
+    val paymentsLeftText: String = "",
 ) {
     val amount: Money? get() = positiveAmount(amountText)
+
+    /** Only a plain loan can be running or paid back in parts. A share of lunch is paid back at once. */
+    val isLoan: Boolean get() = kind != DebtKind.PAID_FOR_ME
+    val isRunning: Boolean get() = isLoan && running
+
+    private val paidBefore: Money?
+        get() = if (!isRunning || paidBeforeText.isBlank()) Money.ZERO else Money.parse(paidBeforeText)?.takeIf { !it.isNegative }
+
+    /** What's still owed, once what was paid before is taken off. */
+    val left: Money?
+        get() {
+            val total = amount ?: return null
+            return paidBefore?.let { total - it }?.takeIf { it.minor > 0 }
+        }
+
+    private val paymentsLeft: Int? get() = paymentsLeftText.toIntOrNull()?.takeIf { it > 0 }
+
+    /** The monthly payment that settles what's left over the payments typed. */
+    val monthly: Money? get() = if (isLoan) left?.let { l -> paymentsLeft?.let { monthlyFor(l, it) } } else null
+
     val canSave: Boolean
-        get() = counterparty.isNotBlank() && amount != null && if (kind == DebtKind.PAID_FOR_ME) categoryId != null else accountId != null
+        get() = counterparty.isNotBlank() && left != null && (!isLoan || paymentsLeftText.isBlank() || paymentsLeft != null) &&
+            when {
+                !isLoan -> categoryId != null
+                isRunning -> true
+                else -> accountId != null
+            }
 
     fun toDebt(): Debt? {
         if (!canSave) return null
@@ -133,11 +201,13 @@ data class DebtDraft(
             categoryId = if (kind == DebtKind.PAID_FOR_ME) subCategoryId ?: categoryId else null,
             note = note.trim(),
             date = date,
+            paidBefore = paidBefore ?: return null,
+            monthly = monthly,
         )
     }
 
-    /** Only plain loans move money when they're made. */
-    val openingAccount: Long? get() = accountId.takeUnless { kind == DebtKind.PAID_FOR_ME }
+    /** Only plain loans move money when they're made, and a running one already did. */
+    val openingAccount: Long? get() = accountId.takeUnless { !isLoan || isRunning }
 }
 
 /** Paying one debt can be for part of it. Paying several settles each in full, as its own entry. */
@@ -303,7 +373,7 @@ class LoansViewModel @Inject constructor(
     }
 
     fun openPay(debts: List<DebtBalance>) {
-        val amount = debts.singleOrNull()?.left?.toFieldText().orEmpty()
+        val amount = debts.singleOrNull()?.nextPayment?.toFieldText().orEmpty()
         sheet.update { LoansSheet.Pay(PayDraft(debts, amount, state.value.defaultAccountId, LocalDate.now())) }
     }
 

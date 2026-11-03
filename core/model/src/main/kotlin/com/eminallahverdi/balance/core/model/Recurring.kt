@@ -4,13 +4,25 @@ import java.time.LocalDate
 
 enum class RecurringFrequency { WEEKLY, MONTHLY, YEARLY }
 
-/** What makes a recurring payment a bank loan: a fixed run of payments, the last of which can differ. */
+/**
+ * What makes a recurring payment a bank loan: a fixed run of payments, the last of which can differ. The rest is what the
+ * contract says, when the user typed it in, so the interest can be told apart from what was borrowed.
+ */
 data class LoanTerms(
     val paymentsMade: Int,
     val paymentsLeft: Int,
     val lastPayment: Money? = null,
+    /** What was borrowed. */
+    val principal: Money? = null,
+    /** The yearly interest rate in hundredths of a percent, so 18.5% is 1850. */
+    val annualRateBp: Int? = null,
+    /** A one-off fee the bank took for the loan. */
+    val commission: Money? = null,
 ) {
-    val progress: Float get() = (paymentsMade + paymentsLeft).let { total -> if (total == 0) 1f else paymentsMade.toFloat() / total }
+    val progress: Float get() = term.let { total -> if (total == 0) 1f else paymentsMade.toFloat() / total }
+
+    /** Every payment, made and to come. */
+    val term: Int get() = paymentsMade + paymentsLeft
 }
 
 /**

@@ -20,7 +20,7 @@ import org.junit.Test
 
 class LoanDraftsTest {
     private val today = LocalDate.of(2026, 11, 1)
-    private val loan = LoanDraft(name = " Car loan ", amountText = "250.50", paymentsLeftText = "30", paymentsMadeText = "3", categoryId = 1, accountId = 7, nextDate = today)
+    private val loan = LoanDraft(name = " Car loan ", amountText = "250.50", termText = "33", paymentsMadeText = "3", categoryId = 1, accountId = 7, nextDate = today)
     private val owed = Debt(1, "Sam", DebtDirection.I_OWE, Money(10_00), categoryId = 4, date = today)
     private val gift = Debt(2, "sam", DebtDirection.I_OWE, Money(20_00), categoryId = 5, date = today)
     private val lent = Debt(3, "Sam", DebtDirection.OWED_TO_ME, Money(40_00), date = today)
@@ -34,14 +34,17 @@ class LoanDraftsTest {
     }
 
     @Test fun `the optional fields can stay empty`() {
-        assertThat(loan.copy(paymentsMadeText = "", lastAmountText = "").toPayment()!!.loan).isEqualTo(LoanTerms(0, 30))
+        assertThat(loan.copy(paymentsMadeText = "", lastAmountText = "").toPayment()!!.loan).isEqualTo(LoanTerms(0, 33))
     }
 
     @Test fun `a loan needs its details and sensible numbers`() {
         assertThat(loan.canSave).isTrue()
         assertThat(loan.copy(name = " ").canSave).isFalse()
         assertThat(loan.copy(amountText = "0").canSave).isFalse()
-        assertThat(loan.copy(paymentsLeftText = "").canSave).isFalse()
+        assertThat(loan.copy(termText = "").canSave).isFalse()
+        assertThat(loan.copy(termText = "2").canSave).isFalse()
+        assertThat(loan.copy(rateText = "x").canSave).isFalse()
+        assertThat(loan.copy(principalText = "0").canSave).isFalse()
         assertThat(loan.copy(paymentsMadeText = "x").canSave).isFalse()
         assertThat(loan.copy(lastAmountText = "x").canSave).isFalse()
         assertThat(loan.copy(categoryId = null).canSave).isFalse()
@@ -61,6 +64,54 @@ class LoanDraftsTest {
             loan = LoanTerms(2, 5, Money(40_00)),
         )
         assertThat(saved.toLoanDraft(emptyList()).toPayment()).isEqualTo(saved)
+    }
+
+    @Test fun `the contract offers the monthly payment and splits off the interest`() {
+        val contract = loan.copy(amountText = "", principalText = "10000", rateText = "12", termText = "12", paymentsMadeText = "", commissionText = "100")
+        assertThat(contract.suggestedAmount).isEqualTo(Money(888_49))
+        val typed = contract.copy(amountText = "888.49")
+        assertThat(typed.suggestedAmount).isNull()
+        val saved = typed.toPayment()!!
+        assertThat(saved.loan).isEqualTo(LoanTerms(0, 12, principal = Money(10_000_00), annualRateBp = 1200, commission = Money(100_00)))
+        assertThat(saved.toLoanDraft(emptyList()).toPayment()).isEqualTo(saved)
+    }
+
+    @Test fun `a running loan from someone moves no money and counts what was paid`() {
+        val uncle = DebtDraft(kind = DebtKind.BORROWED, counterparty = "Uncle", amountText = "11500", running = true, paidBeforeText = "6000", paymentsLeftText = "5", accountId = 7, date = today)
+        assertThat(uncle.canSave).isTrue()
+        assertThat(uncle.openingAccount).isNull()
+        assertThat(uncle.left).isEqualTo(Money(5_500_00))
+        val debt = uncle.toDebt()!!
+        assertThat(debt.paidBefore).isEqualTo(Money(6_000_00))
+        assertThat(debt.monthly).isEqualTo(Money(1_100_00))
+        val balance = DebtBalance(debt, debt.paidBack(emptyList()))
+        assertThat(balance.left).isEqualTo(Money(5_500_00))
+        assertThat(balance.paymentsLeft).isEqualTo(5)
+        assertThat(balance.nextPayment).isEqualTo(Money(1_100_00))
+        assertThat(balance.hasRepayments).isFalse()
+    }
+
+    @Test fun `a running loan can't be paid off already, and needs no account`() {
+        val uncle = DebtDraft(kind = DebtKind.BORROWED, counterparty = "Uncle", amountText = "11500", running = true, paidBeforeText = "11500", date = today)
+        assertThat(uncle.canSave).isFalse()
+        assertThat(uncle.copy(paidBeforeText = "").canSave).isTrue()
+        assertThat(uncle.copy(paymentsLeftText = "0").canSave).isFalse()
+        // Turned off again, it's a new loan that needs an account for the money to go into.
+        assertThat(uncle.copy(running = false, paidBeforeText = "").canSave).isFalse()
+    }
+
+    @Test fun `a share of lunch is never running or paid in parts`() {
+        val lunch = DebtDraft(kind = DebtKind.PAID_FOR_ME, counterparty = "Sam", amountText = "10", categoryId = 1, running = true, paidBeforeText = "5", paymentsLeftText = "3", date = today)
+        assertThat(lunch.left).isEqualTo(Money(10_00))
+        assertThat(lunch.toDebt()!!.monthly).isNull()
+    }
+
+    @Test fun `paying a planned loan starts at its monthly payment`() {
+        val debt = Debt(4, "Uncle", DebtDirection.I_OWE, Money(11_500_00), date = today, paidBefore = Money(6_000_00), monthly = Money(1_100_00))
+        val paidOnce = DebtBalance(debt, Money(7_100_00))
+        assertThat(paidOnce.paymentsLeft).isEqualTo(4)
+        assertThat(paidOnce.hasRepayments).isTrue()
+        assertThat(DebtBalance(debt, Money(11_000_00)).nextPayment).isEqualTo(Money(500_00))
     }
 
     @Test fun `someone paying for you needs a category and moves no money`() {
