@@ -48,7 +48,7 @@ internal fun RecurringPaymentEntity.toModel() = RecurringPayment(
     frequency = RecurringFrequency.valueOf(frequency),
     nextDate = LocalDate.ofEpochDay(nextDate),
     anchorDay = anchorDay,
-    loan = paymentsLeft?.let { LoanTerms(paymentsMade ?: 0, it, lastAmountMinor?.let(::Money)) },
+    loan = paymentsLeft?.let { LoanTerms(paymentsMade ?: 0, it, lastAmountMinor?.let(::Money), principalMinor?.let(::Money), rateBp, commissionMinor?.let(::Money)) },
 )
 
 internal fun RecurringPayment.toEntity() = RecurringPaymentEntity(
@@ -64,6 +64,9 @@ internal fun RecurringPayment.toEntity() = RecurringPaymentEntity(
     paymentsMade = loan?.paymentsMade,
     paymentsLeft = loan?.paymentsLeft,
     lastAmountMinor = loan?.lastPayment?.minor,
+    principalMinor = loan?.principal?.minor,
+    rateBp = loan?.annualRateBp,
+    commissionMinor = loan?.commission?.minor,
 )
 
 internal fun TransactionEntity.toModel() = Transaction(
@@ -101,8 +104,8 @@ internal fun Transaction.toEntity(externalId: String? = null) = TransactionEntit
     updatedAt = updatedAt.toEpochMilli(),
 )
 
-internal fun DebtEntity.toModel() = Debt(id, counterparty, DebtDirection.valueOf(direction), Money(amountMinor), categoryId, note, LocalDate.ofEpochDay(date))
-internal fun Debt.toEntity() = DebtEntity(id, counterparty, direction.name, amount.minor, categoryId, note, date.toEpochDay())
+internal fun DebtEntity.toModel() = Debt(id, counterparty, DebtDirection.valueOf(direction), Money(amountMinor), categoryId, note, LocalDate.ofEpochDay(date), Money(paidBeforeMinor), monthlyMinor?.let(::Money))
+internal fun Debt.toEntity() = DebtEntity(id, counterparty, direction.name, amount.minor, categoryId, note, date.toEpochDay(), paidBefore.minor, monthly?.minor)
 
 internal fun PendingEntryEntity.toModel() = PendingEntry(
     id = id,

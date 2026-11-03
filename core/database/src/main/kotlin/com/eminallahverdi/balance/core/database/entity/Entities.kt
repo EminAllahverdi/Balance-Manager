@@ -1,10 +1,12 @@
 package com.eminallahverdi.balance.core.database.entity
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.room.Relation
 
 @Entity(tableName = "person")
 data class PersonEntity(
@@ -109,6 +111,10 @@ data class DebtEntity(
     val note: String = "",
     /** LocalDate.toEpochDay(). */
     val date: Long,
+    /** Paid back before it was added, for one already running then. */
+    @ColumnInfo(name = "paid_before_minor", defaultValue = "0") val paidBeforeMinor: Long = 0,
+    /** The payment agreed for each month, when it's paid back in parts. */
+    @ColumnInfo(name = "monthly_minor") val monthlyMinor: Long? = null,
 )
 
 @Entity(
@@ -136,6 +142,10 @@ data class RecurringPaymentEntity(
     @ColumnInfo(name = "payments_made") val paymentsMade: Int? = null,
     @ColumnInfo(name = "payments_left") val paymentsLeft: Int? = null,
     @ColumnInfo(name = "last_amount_minor") val lastAmountMinor: Long? = null,
+    /** What the loan contract says, when it was typed in: what was borrowed, the yearly rate in hundredths of a percent, and the bank's fee. */
+    @ColumnInfo(name = "principal_minor") val principalMinor: Long? = null,
+    @ColumnInfo(name = "rate_bp") val rateBp: Int? = null,
+    @ColumnInfo(name = "commission_minor") val commissionMinor: Long? = null,
 )
 
 /** A ready-made entry read from a bank's notification. Finished ones stay a while, so a repeated notification isn't offered twice. */
@@ -164,4 +174,40 @@ data class PendingEntryEntity(
 data class MerchantAliasEntity(
     @PrimaryKey val raw: String,
     @ColumnInfo(name = "merchant_id") val merchantId: Long,
+)
+
+/** A shop's receipt, read from e-kassa or a photo. [fiscalId] is unique, so the same receipt can't be added twice. */
+@Entity(tableName = "receipt", indices = [Index(value = ["fiscal_id"], unique = true), Index("date")])
+data class ReceiptEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val store: String,
+    /** LocalDate.toEpochDay(). */
+    val date: Long,
+    @ColumnInfo(name = "total_minor") val totalMinor: Long,
+    @ColumnInfo(name = "fiscal_id") val fiscalId: String? = null,
+    @ColumnInfo(name = "created_at") val createdAt: Long,
+)
+
+/** One line of a receipt. [quantityMilli] is thousandths, so 0.756 kg is 756. [group] is an ItemGroup name. */
+@Entity(
+    tableName = "receipt_item",
+    foreignKeys = [ForeignKey(entity = ReceiptEntity::class, parentColumns = ["id"], childColumns = ["receipt_id"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("receipt_id"), Index("item_key")],
+)
+data class ReceiptItemEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "receipt_id") val receiptId: Long,
+    val name: String,
+    @ColumnInfo(name = "item_key") val itemKey: String,
+    @ColumnInfo(name = "quantity_milli") val quantityMilli: Long,
+    @ColumnInfo(name = "price_minor") val priceMinor: Long,
+    @ColumnInfo(name = "total_minor") val totalMinor: Long,
+    val group: String,
+    val position: Int,
+)
+
+/** A receipt with its lines, in the order they were printed. */
+data class ReceiptWithItems(
+    @Embedded val receipt: ReceiptEntity,
+    @Relation(parentColumn = "id", entityColumn = "receipt_id") val items: List<ReceiptItemEntity>,
 )

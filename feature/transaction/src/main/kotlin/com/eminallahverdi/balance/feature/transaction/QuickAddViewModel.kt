@@ -128,6 +128,7 @@ class QuickAddViewModel @Inject constructor(
         val pendingId = savedState.get<Long>(ARG_PENDING)
         val spokenText = savedState.get<String>(ARG_SPOKEN)?.takeIf { it.isNotBlank() }
         val spokenLanguage = savedState.get<String>(ARG_SPOKEN_LANGUAGE).let { tag -> SpokenLanguage.entries.firstOrNull { it.tag == tag } } ?: SpokenLanguage.ENGLISH
+        val receiptTotal = savedState.get<Long>(ARG_RECEIPT_TOTAL)
         viewModelScope.launch {
             val editing = editingId?.let { transactions.get(it) }
             if (editing != null) loadForEditing(editing)
@@ -135,6 +136,7 @@ class QuickAddViewModel @Inject constructor(
             val pending = pendingId?.let { bankAlerts.entry(it) }
             pending?.let { loadFromPending(it) }
             val spoken = spokenText?.let { loadFromSpeech(it, spokenLanguage) }
+            if (receiptTotal != null) loadFromReceipt(Money(receiptTotal), savedState.get<String>(ARG_RECEIPT_STORE).orEmpty(), savedState.get<Long>(ARG_RECEIPT_DATE), savedState.get<Long>(ARG_RECEIPT_CATEGORY))
             val startKind = editing?.kind ?: pending?.kind ?: spoken?.kind ?: requestedKind
             val defaultAccount = prefs.current().defaultExpenseAccountId
             combine(catalog.accounts, catalog.categories, catalog.people, catalog.merchants) { a, c, p, m -> Catalog(a, c, p, m) }
@@ -250,6 +252,20 @@ class QuickAddViewModel @Inject constructor(
             )
         }
         return spoken
+    }
+
+    /** A scanned receipt: its total, shop and day, in the groceries category. Nothing is saved until the user presses Save. */
+    private suspend fun loadFromReceipt(total: Money, store: String, epochDay: Long?, categoryId: Long?) {
+        val category = catalog.categories.first().firstOrNull { it.id == categoryId }
+        _state.update {
+            it.copy(
+                amountText = total.toInputText(),
+                categoryId = category?.id,
+                personId = category?.defaultPersonId,
+                merchant = store,
+                date = epochDay?.let(LocalDate::ofEpochDay) ?: it.date,
+            )
+        }
     }
 
     private fun topLevel(all: List<Category>, kind: TransactionKind): List<Category> =
@@ -384,6 +400,12 @@ class QuickAddViewModel @Inject constructor(
         /** Set to start filled in from what the user said, in the language [ARG_SPOKEN_LANGUAGE] names. */
         const val ARG_SPOKEN = "spoken"
         const val ARG_SPOKEN_LANGUAGE = "spokenLanguage"
+
+        /** Set to start filled in from a scanned receipt: its total, shop, day (epochDay) and the groceries category. */
+        const val ARG_RECEIPT_TOTAL = "receiptTotal"
+        const val ARG_RECEIPT_STORE = "receiptStore"
+        const val ARG_RECEIPT_DATE = "receiptDate"
+        const val ARG_RECEIPT_CATEGORY = "receiptCategory"
 
         /** Set to start filled in from a bank notification on To confirm. */
         const val ARG_PENDING = "pendingId"

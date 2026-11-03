@@ -45,6 +45,7 @@ import com.eminallahverdi.balance.core.model.DebtBalance
 import com.eminallahverdi.balance.core.model.DebtDirection
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.RecurringPayment
+import com.eminallahverdi.balance.core.model.interestLeft
 
 private const val LOAN_COLOR = 0xFFF5B544
 private const val DUE_SOON_DAYS = 7L
@@ -161,6 +162,9 @@ private fun LoanCard(loan: RecurringPayment, state: LoansUiState, onClick: () ->
                     Icon(Icons.Rounded.Schedule, null, tint = tint, modifier = Modifier.size(14.dp))
                     Text(" ${DateLabels.relative(loan.nextDate, state.today)}", style = BtTheme.type.caption, color = tint)
                 }
+                loan.interestLeft?.let { interest ->
+                    Text("About ${MoneyFormat.format(interest)} of that is interest", style = BtTheme.type.caption, color = c.textMuted)
+                }
             }
         }
     }
@@ -219,7 +223,11 @@ private fun DebtRow(balance: DebtBalance, state: LoansUiState, iOwe: Boolean, on
     val title = debt.note.ifBlank { state.category(debt.categoryId)?.name ?: if (iOwe) "Borrowed" else "Lent" }
     // With no note the title already is the category, so only what's above it is left to say.
     val where = if (debt.note.isBlank()) state.category(state.category(debt.categoryId)?.parentId)?.name else state.categoryPath(debt.categoryId)
-    val details = listOfNotNull(where, DateLabels.relative(debt.date, state.today)).joinToString(" · ")
+    val plan = balance.paymentsLeft?.takeIf { it > 0 }?.let { n ->
+        val count = if (n == 1) "1 payment" else "$n payments"
+        if (state.hideAmounts && debt.isPlainLoan) "$count left" else "$count of ${MoneyFormat.format(balance.nextPayment)}"
+    }
+    val details = listOfNotNull(where, plan, DateLabels.relative(debt.date, state.today)).joinToString(" · ")
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onPay).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
 import com.eminallahverdi.balance.core.database.entity.AccountEntity
@@ -13,6 +14,9 @@ import com.eminallahverdi.balance.core.database.entity.MerchantAliasEntity
 import com.eminallahverdi.balance.core.database.entity.MerchantEntity
 import com.eminallahverdi.balance.core.database.entity.PendingEntryEntity
 import com.eminallahverdi.balance.core.database.entity.PersonEntity
+import com.eminallahverdi.balance.core.database.entity.ReceiptEntity
+import com.eminallahverdi.balance.core.database.entity.ReceiptItemEntity
+import com.eminallahverdi.balance.core.database.entity.ReceiptWithItems
 import com.eminallahverdi.balance.core.database.entity.RecurringPaymentEntity
 import com.eminallahverdi.balance.core.database.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
@@ -227,4 +231,16 @@ interface MaintenanceDao {
     @Query("DELETE FROM pending_entry") suspend fun clearPending()
     @Query("DELETE FROM merchant") suspend fun clearMerchants()
     @Query("DELETE FROM account") suspend fun clearAccounts()
+}
+
+@Dao
+interface ReceiptDao {
+    @Transaction
+    @Query("SELECT * FROM receipt ORDER BY date DESC, id DESC")
+    fun observeAll(): Flow<List<ReceiptWithItems>>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM receipt WHERE fiscal_id = :fiscalId)") suspend fun exists(fiscalId: String): Boolean
+    @Insert suspend fun insert(receipt: ReceiptEntity): Long
+    @Insert suspend fun insertItems(items: List<ReceiptItemEntity>)
+    @Query("DELETE FROM receipt WHERE id = :id") suspend fun delete(id: Long)
 }

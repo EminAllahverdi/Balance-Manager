@@ -27,6 +27,8 @@ import com.eminallahverdi.balance.feature.history.HistoryRoute
 import com.eminallahverdi.balance.feature.home.HomeRoute
 import com.eminallahverdi.balance.feature.insights.InsightsRoute
 import com.eminallahverdi.balance.feature.loans.LoansRoute
+import com.eminallahverdi.balance.feature.receipts.GroceriesRoute
+import com.eminallahverdi.balance.feature.receipts.ReceiptEntry
 import com.eminallahverdi.balance.feature.recurring.RecurringRoute
 import com.eminallahverdi.balance.feature.settings.SettingsRoute
 import kotlinx.serialization.Serializable
@@ -40,6 +42,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object RecurringDestination
 @Serializable data object LoansDestination
 @Serializable data object ConfirmDestination
+@Serializable data object GroceriesDestination
 
 /** History narrowed to what was tapped on Home. The names match the ARG_ keys in HistoryViewModel. */
 @Serializable data class TransactionsDestination(val categoryId: Long?, val personId: Long?, val month: String)
@@ -49,7 +52,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * The main shell: the tab content above the bottom bar. [onAdd] opens quick add, [onTransfer] the same sheet on Transfer,
- * [onOpenTransaction] it to edit and [onAddPayment] it filled in from a reminder. [openRecurring] goes to the reminders, when one is tapped.
+ * [onOpenTransaction] it to edit, [onAddPayment] it filled in from a reminder and [onAddReceipt] from a scanned receipt.
+ * [openRecurring] goes to the reminders, when one is tapped.
  */
 @Composable
 fun BalanceApp(
@@ -58,6 +62,7 @@ fun BalanceApp(
     onOpenTransaction: (Long) -> Unit,
     onAddPayment: (Long) -> Unit,
     onEditPending: (Long) -> Unit,
+    onAddReceipt: (ReceiptEntry) -> Unit,
     openRecurring: Boolean,
     onRecurringOpened: () -> Unit,
     openConfirm: Boolean,
@@ -102,7 +107,8 @@ fun BalanceApp(
             }
             composable<HistoryDestination> { HistoryRoute(onOpen = onOpenTransaction) }
             composable<TransactionsDestination> { HistoryRoute(onOpen = onOpenTransaction, onBack = { nav.popBackStack() }) }
-            composable<InsightsDestination> { InsightsRoute() }
+            composable<InsightsDestination> { InsightsRoute(onOpenGroceries = { nav.navigate(GroceriesDestination) { launchSingleTop = true } }) }
+            composable<GroceriesDestination> { GroceriesRoute(onBack = { nav.popBackStack() }, onAddExpense = onAddReceipt) }
             composable<AccountsDestination> {
                 AccountsRoute(
                     onTransfer = onTransfer,
