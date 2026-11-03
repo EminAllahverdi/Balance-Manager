@@ -1,6 +1,8 @@
 <resources>
     <string name="widget_balance">Balance</string>
     <string name="widget_balance_description">Your balance, shown the way you chose in Settings, and a + to add an expense</string>
+    <string name="widget_balance_voice">Balance and voice</string>
+    <string name="widget_balance_voice_description">Your balance, a mic to add by voice, and a + to add by hand</string>
     <string name="widget_quick_actions">Quick actions</string>
     <string name="widget_quick_actions_description">Add an expense, income or transfer</string>
     <string name="widget_today">Today</string>

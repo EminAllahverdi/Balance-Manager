@@ -31,16 +31,16 @@ class BalanceRevealReceiver : BroadcastReceiver() {
                 result.finish()
                 return@launch
             }
-            val widget = BalanceWidget()
+            val widgets = listOf(BalanceWidget(), BalanceVoiceWidget())
             try {
                 for (left in seconds downTo 1) {
                     BalanceReveal.secondsLeft.value = left
-                    widget.updateAll(context)
+                    widgets.forEach { it.updateAll(context) }
                     delay(1.seconds)
                 }
             } finally {
                 BalanceReveal.secondsLeft.value = 0
-                withContext(NonCancellable) { widget.updateAll(context) }
+                withContext(NonCancellable) { widgets.forEach { it.updateAll(context) } }
                 result.finish()
             }
         }

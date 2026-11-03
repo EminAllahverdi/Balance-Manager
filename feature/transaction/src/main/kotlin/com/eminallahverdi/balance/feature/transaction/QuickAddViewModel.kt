@@ -17,8 +17,12 @@ import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
 import com.eminallahverdi.balance.core.model.PendingEntry
 import com.eminallahverdi.balance.core.model.RecurringPayment
+import com.eminallahverdi.balance.core.model.SpokenEntry
+import com.eminallahverdi.balance.core.model.SpokenLanguage
+import com.eminallahverdi.balance.core.model.SpokenNames
 import com.eminallahverdi.balance.core.model.Transaction
 import com.eminallahverdi.balance.core.model.TransactionKind
+import com.eminallahverdi.balance.core.model.parseSpokenEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import java.time.LocalDate
@@ -73,6 +77,10 @@ data class QuickAddUiState(
     val payment: RecurringPayment? = null,
     /** Set when this is a bank notification being edited. It keeps the bank's merchant and account when the category changes. */
     val pending: PendingEntry? = null,
+    /** What a spoken sentence named, kept so picking a category afterwards doesn't overwrite it. */
+    val spoken: SpokenEntry? = null,
+    /** The sentence as it was heard, shown so the user can see what was understood. */
+    val heard: String? = null,
     val saved: Boolean = false,
 ) {
     val amount: Money? get() = Money.parse(amountText)?.takeIf { it.minor > 0 }
@@ -118,13 +126,16 @@ class QuickAddViewModel @Inject constructor(
         val requestedCategory = savedState.get<Long>(ARG_CATEGORY)
         val paymentId = savedState.get<Long>(ARG_PAYMENT)
         val pendingId = savedState.get<Long>(ARG_PENDING)
+        val spokenText = savedState.get<String>(ARG_SPOKEN)?.takeIf { it.isNotBlank() }
+        val spokenLanguage = savedState.get<String>(ARG_SPOKEN_LANGUAGE).let { tag -> SpokenLanguage.entries.firstOrNull { it.tag == tag } } ?: SpokenLanguage.ENGLISH
         viewModelScope.launch {
             val editing = editingId?.let { transactions.get(it) }
             if (editing != null) loadForEditing(editing)
             paymentId?.let { recurring.get(it) }?.let { loadFromPayment(it) }
             val pending = pendingId?.let { bankAlerts.entry(it) }
             pending?.let { loadFromPending(it) }
-            val startKind = editing?.kind ?: pending?.kind ?: requestedKind
+            val spoken = spokenText?.let { loadFromSpeech(it, spokenLanguage) }
+            val startKind = editing?.kind ?: pending?.kind ?: spoken?.kind ?: requestedKind
             val defaultAccount = prefs.current().defaultExpenseAccountId
             combine(catalog.accounts, catalog.categories, catalog.people, catalog.merchants) { a, c, p, m -> Catalog(a, c, p, m) }
                 .collect { (accounts, categories, people, merchants) ->
@@ -217,6 +228,28 @@ class QuickAddViewModel @Inject constructor(
                 date = entry.postedAt.atZone(ZoneId.systemDefault()).toLocalDate(),
             )
         }
+    }
+
+    /** A sentence the user said. What it named is filled in, the rest as usual, and nothing is saved until they press Save. */
+    private suspend fun loadFromSpeech(text: String, language: SpokenLanguage): SpokenEntry {
+        val categories = catalog.categories.first()
+        val names = SpokenNames(categories, catalog.people.first(), catalog.accounts.first(), catalog.merchants.first())
+        val spoken = parseSpokenEntry(text, names, language)
+        val category = categories.firstOrNull { it.id == spoken.categoryId }
+        _state.update {
+            it.copy(
+                spoken = spoken,
+                heard = text,
+                amountText = spoken.amount?.toInputText().orEmpty(),
+                accountId = spoken.accountId ?: it.accountId,
+                categoryId = category?.parentId ?: category?.id,
+                subCategoryId = category?.id?.takeIf { category.parentId != null },
+                merchant = spoken.merchant.orEmpty(),
+                personId = spoken.personId,
+                date = spoken.daysAgo?.let { days -> LocalDate.now().minusDays(days.toLong()) } ?: it.date,
+            )
+        }
+        return spoken
     }
 
     private fun topLevel(all: List<Category>, kind: TransactionKind): List<Category> =
@@ -348,6 +381,10 @@ class QuickAddViewModel @Inject constructor(
         /** Set to start filled in from a recurring payment's reminder. */
         const val ARG_PAYMENT = "paymentId"
 
+        /** Set to start filled in from what the user said, in the language [ARG_SPOKEN_LANGUAGE] names. */
+        const val ARG_SPOKEN = "spoken"
+        const val ARG_SPOKEN_LANGUAGE = "spokenLanguage"
+
         /** Set to start filled in from a bank notification on To confirm. */
         const val ARG_PENDING = "pendingId"
     }
@@ -367,11 +404,12 @@ internal fun QuickAddUiState.afterBack(): QuickAddUiState? = when {
 
 /** The category's last entry, or a frequent merchant's own last use. A bank notification keeps its merchant and account. */
 internal fun QuickAddUiState.withSuggestion(suggestion: Suggestion, frequent: Merchant? = null): QuickAddUiState {
-    val person = frequent?.lastPersonId ?: suggestion.personId
-    val account = frequent?.lastAccountId ?: suggestion.accountId
+    // What the user said outranks what's usual for the category.
+    val person = spoken?.personId ?: frequent?.lastPersonId ?: suggestion.personId
+    val account = spoken?.accountId ?: frequent?.lastAccountId ?: suggestion.accountId
     return copy(
         subCategoryId = if (frequent == null) suggestion.subCategoryId else frequent.lastCategoryId?.takeIf { id -> subCategories.any { it.id == id } },
-        merchant = frequent?.name ?: if (pending != null) merchant else suggestion.merchantName.orEmpty(),
+        merchant = frequent?.name ?: if (pending != null || spoken?.merchant != null) merchant else suggestion.merchantName.orEmpty(),
         recentMerchants = suggestion.recentMerchants,
         personId = person?.takeIf { id -> people.any { it.id == id } } ?: people.firstOrNull()?.id,
         accountId = account?.takeIf { id -> pending == null && accounts.any { it.id == id } } ?: accountId,

@@ -30,7 +30,13 @@ class QuickAddActivity : ComponentActivity() {
             } else {
                 setContent {
                     PreferredTheme(prefs) {
-                        QuickAddRoute(onClose = ::finish)
+                        QuickAddRoute(
+                            onClose = ::finish,
+                            onVoice = {
+                                startActivity(Intent(this@QuickAddActivity, VoiceEntryActivity::class.java))
+                                finish()
+                            },
+                        )
                     }
                 }
             }

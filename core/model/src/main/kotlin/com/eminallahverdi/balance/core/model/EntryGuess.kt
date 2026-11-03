@@ -81,7 +81,7 @@ private fun paymentFor(entry: PendingEntry, words: Set<String>, recurring: List<
 }
 
 /** The user's own category names first, sub-categories before their parents, then the words any shopper would recognise. */
-private fun categoryFromWords(words: Set<String>, categories: List<Category>): Category? {
+internal fun categoryFromWords(words: Set<String>, categories: List<Category>): Category? {
     val spendable = categories.filter { it.type == CategoryType.EXPENSE && !it.isArchived && !it.name.equals("Other", ignoreCase = true) }
     spendable.sortedByDescending { it.parentId != null }.firstOrNull { nameIsIn(it.name, words) }?.let { return it }
     val hint = CATEGORY_HINTS.firstOrNull { hint -> hint.words.any { word -> words.any { it.matches(word) } } } ?: return null
@@ -113,7 +113,7 @@ private val CATEGORY_HINTS = listOf(
     CategoryHint("local_cafe", listOf("Coffee shop"), listOf("coffee", "kofe", "kafe", "cafe", "starbucks", "espresso", "кофе")),
     CategoryHint("restaurant", listOf("Delivery"), listOf("wolt", "yemeksepeti", "foody")),
     CategoryHint("restaurant", listOf("Restaurant", "Cafe & Restaurants"), listOf("restoran", "restaurant", "pizza", "burger", "kfc", "mcdonald", "dominos", "ресторан")),
-    CategoryHint("local_pharmacy", listOf("Pharmacy", "Health"), listOf("aptek", "pharmacy", "zeytun", "аптек")),
+    CategoryHint("local_pharmacy", listOf("Pharmacy", "Health"), listOf("aptek", "pharmacy", "zeytun", "derman", "аптек")),
     CategoryHint("smartphone", listOf("Mobile top-up"), listOf("azercell", "azerfon", "bakcell", "nar")),
     CategoryHint("apps", listOf("Apps", "Subscriptions"), listOf("spotify", "netflix", "youtube", "icloud", "apple", "google", "adobe", "openai", "chatgpt", "anthropic", "claude")),
     CategoryHint("bolt", listOf("Electricity", "Utilities"), listOf("azerishiq", "azərişıq")),
@@ -123,5 +123,5 @@ private val CATEGORY_HINTS = listOf(
     CategoryHint("flight", listOf("Travel"), listOf("azal", "airline", "flight", "turkish")),
     CategoryHint("sports_esports", listOf("Cinema", "Entertainment"), listOf("cinema", "kino", "кино")),
     CategoryHint("shopping_bag", listOf("Shopping"), listOf("trendyol", "amazon", "temu", "aliexpress", "zara", "lcwaikiki", "mango")),
-    CategoryHint("shopping_cart", listOf("Groceries"), listOf("supermarket", "market", "bravo", "araz", "neptun", "bazarstore", "oba", "grocery", "супермаркет", "продукт")),
+    CategoryHint("shopping_cart", listOf("Groceries"), listOf("supermarket", "market", "bravo", "araz", "neptun", "bazarstore", "oba", "grocery", "erzaq", "супермаркет", "продукт")),
 )

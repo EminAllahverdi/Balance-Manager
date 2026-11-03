@@ -168,7 +168,7 @@ private fun AddExpenseButton(c: BtColors) {
 }
 
 @Composable
-private fun StatusIcon(state: BalanceWidgetState) {
+internal fun StatusIcon(state: BalanceWidgetState) {
     val c = state.colors
     when (state.mode) {
         WidgetBalanceMode.ALWAYS_SHOW, WidgetBalanceMode.TAP_TO_SHOW -> WidgetIcon(Icons.Rounded.Visibility, c.textMuted, 14.dp)
@@ -177,7 +177,7 @@ private fun StatusIcon(state: BalanceWidgetState) {
     }
 }
 
-private fun BalanceWidgetState.onTap(context: Context): Action = when {
+internal fun BalanceWidgetState.onTap(context: Context): Action = when {
     revealed || mode == WidgetBalanceMode.ALWAYS_HIDE -> openAppAction(context)
     mode == WidgetBalanceMode.TAP_TO_SHOW -> actionSendBroadcast<BalanceRevealReceiver>()
     else -> actionStartActivity<WidgetUnlockActivity>()

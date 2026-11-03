@@ -57,6 +57,7 @@ import kotlinx.coroutines.CoroutineScope
 // The activities live in :app, which this module can't see, so they're reached by name.
 private const val MAIN_ACTIVITY = "com.eminallahverdi.balance.MainActivity"
 private const val QUICK_ADD_ACTIVITY = "com.eminallahverdi.balance.QuickAddActivity"
+private const val VOICE_ACTIVITY = "com.eminallahverdi.balance.VoiceEntryActivity"
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
@@ -88,6 +89,9 @@ internal fun quickAddAction(context: Context, kind: TransactionKind, categoryId:
     if (categoryId != null) intent.putExtra(QuickAddViewModel.ARG_CATEGORY, categoryId)
     return actionStartActivity(intent)
 }
+
+/** Listening, then quick add filled in with what was said. */
+internal fun voiceAction(context: Context): Action = actionStartActivity(Intent().setClassName(context.packageName, VOICE_ACTIVITY))
 
 /** Brings the running app forward instead of stacking a second copy on top of it. */
 internal fun openAppAction(context: Context): Action = actionStartActivity(
