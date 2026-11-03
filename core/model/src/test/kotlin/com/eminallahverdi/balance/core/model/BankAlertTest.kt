@@ -204,6 +204,21 @@ class BankAlertTest {
         assertThat(parse("7ELEVEN\nKart: **1234", title = "Ödəniş: -5.00₼")!!.merchant).isEqualTo("7ELEVEN")
     }
 
+    // A top-up from that bank, with invented numbers: the operator and the phone number share a line.
+    @Test fun `a top-up is paid to the operator, not to the phone number`() {
+        val alert = parse("Nar 77:1234567\nKart: **1234\nBalans: ${mark}1,234.56${mark}₼${mark}", title = "💸 Ödəniş: -${mark}10.00${mark}₼")!!
+        assertThat(alert.amount).isEqualTo(Money(10_00))
+        assertThat(alert.kind).isEqualTo(TransactionKind.EXPENSE)
+        assertThat(alert.merchant).isEqualTo("Nar")
+        assertThat(alert.cardEnding).isEqualTo("1234")
+        assertThat(parse("Azercell +994 50 123 45 67\nKart: **1234", title = "Ödəniş: -5.00₼")!!.merchant).isEqualTo("Azercell")
+        assertThat(parse("Bakcell 0551234567\nKart: **1234", title = "Ödəniş: -5.00₼")!!.merchant).isEqualTo("Bakcell")
+    }
+
+    @Test fun `a reference number still keeps its line out of shop names`() {
+        assertThat(parse("Ref 1234567\nKart: **1234", title = "Ödəniş: -5.00₼")!!.merchant).isEmpty()
+    }
+
     @Test fun `the card is read from any mask, and may not be there`() {
         assertThat(parse("Ödəniş 5.00 AZN, Kart: *1234")!!.cardEnding).isEqualTo("1234")
         assertThat(parse("Ödəniş 5.00 AZN, Kart: 4169 73** **** 1234")!!.cardEnding).isEqualTo("1234")

@@ -70,7 +70,7 @@ internal fun parseAmount(text: String): Money? {
 private fun merchantIn(text: String, sum: String): String {
     MERCHANT_LABEL.find(text)?.let { return it.groupValues[1].trim() }
     return text.split(CLAUSE_END)
-        .map { clause -> clause.replace(sum, " ").replace(FOREIGN_SUM, " ").replace(LEADING_WORDS, " ").replace(PUNCTUATION, " ").trim().trim('.', '-').trim() }
+        .map { clause -> clause.replace(sum, " ").replace(FOREIGN_SUM, " ").replace(PHONE_NUMBER, " ").replace(LEADING_WORDS, " ").replace(PUNCTUATION, " ").trim().trim('.', '-').trim() }
         .firstOrNull { clause -> clause.any(Char::isLetter) && !NOT_A_MERCHANT.containsMatchIn(clause) }
         ?.let(::withoutCardNoise)
         .orEmpty()
@@ -111,6 +111,13 @@ private val AMOUNT = words(
 )
 private val FOREIGN_SUM = words("""(?:\d[\d.,]*\s*(?:$FOREIGN_CURRENCY))|(?:(?:$FOREIGN_CURRENCY)\s*\d[\d.,]*)""")
 private val EXCHANGE_RATE = words("""${START}1(?:[.,]0+)?\s*(?:$FOREIGN_CURRENCY)\s*=\s*$""")
+
+/**
+ * The number a top-up was for, as in Nar 77:1234567, which is a payment to Nar. Only a number written the way phone
+ * numbers are counts: with a country code, a leading 0 or a gap after the operator's code. A bare run of digits is a
+ * reference, and keeps its line out of shop names.
+ */
+private val PHONE_NUMBER = Regex("""(?<![\d*])(?:(?:\+?994|0)[\s-]*\(?\d{2}\)?[\s:-]*|\d{2}[\s:-]+)\d{3}[\s-]?\d{2}[\s-]?\d{2}(?!\d)""")
 private val CLAUSE_END = Regex("""[,;\n|]|\.\s""")
 private val PUNCTUATION = Regex("""[:()–—]""")
 private val WHITESPACE = Regex("""\s+""")

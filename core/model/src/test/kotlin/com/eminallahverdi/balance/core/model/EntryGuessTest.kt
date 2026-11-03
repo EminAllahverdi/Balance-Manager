@@ -122,6 +122,14 @@ class EntryGuessTest {
         assertThat(guess(entry("NEPTUN SUPERMARKET")).categoryId).isEqualTo(groceries.id)
     }
 
+    @Test fun `every operator's top-up is a mobile top-up`() {
+        val topUp = Category(9, "Mobile top-up", CategoryType.EXPENSE, icon = "smartphone", color = 0)
+        listOf("Nar", "AZERCELL", "AZERFON MMC", "Bakcell").forEach { merchant ->
+            val result = guessFor(entry(merchant), emptyMap(), emptyList(), categories + topUp, defaultAccountId = 7, emptyList())
+            assertThat(result.categoryId).isEqualTo(topUp.id)
+        }
+    }
+
     @Test fun `a word in the title counts too`() {
         val result = guess(entry("", title = "Taksi ödənişi"))
         assertThat(result.categoryId).isEqualTo(taxi.id)

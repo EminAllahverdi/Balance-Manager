@@ -114,7 +114,7 @@ private val CATEGORY_HINTS = listOf(
     CategoryHint("restaurant", listOf("Delivery"), listOf("wolt", "yemeksepeti", "foody")),
     CategoryHint("restaurant", listOf("Restaurant", "Cafe & Restaurants"), listOf("restoran", "restaurant", "pizza", "burger", "kfc", "mcdonald", "dominos", "ресторан")),
     CategoryHint("local_pharmacy", listOf("Pharmacy", "Health"), listOf("aptek", "pharmacy", "zeytun", "аптек")),
-    CategoryHint("smartphone", listOf("Mobile top-up"), listOf("azercell", "bakcell", "nar")),
+    CategoryHint("smartphone", listOf("Mobile top-up"), listOf("azercell", "azerfon", "bakcell", "nar")),
     CategoryHint("apps", listOf("Apps", "Subscriptions"), listOf("spotify", "netflix", "youtube", "icloud", "apple", "google", "adobe", "openai", "chatgpt", "anthropic", "claude")),
     CategoryHint("bolt", listOf("Electricity", "Utilities"), listOf("azerishiq", "azərişıq")),
     CategoryHint("bolt", listOf("Gas", "Utilities"), listOf("azerigaz", "azəriqaz")),
