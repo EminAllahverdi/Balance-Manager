@@ -34,9 +34,11 @@ data class BackupUiState(
     val backups: List<DriveBackup>? = null,
     /** A restore is staged, and takes over once the app restarts. */
     val restartNeeded: Boolean = false,
+    /** Connected for onboarding, which turns nothing on until its last tap: how many backups this account already has. */
+    val existingBackups: Int? = null,
 )
 
-private enum class DriveTask { TURN_ON, BACK_UP, LIST_BACKUPS }
+private enum class DriveTask { TURN_ON, BACK_UP, LIST_BACKUPS, CONNECT }
 
 @HiltViewModel
 class BackupViewModel @Inject constructor(
@@ -62,6 +64,10 @@ class BackupViewModel @Inject constructor(
     fun backUpNow() = start(DriveTask.BACK_UP)
     fun openRestore() = start(DriveTask.LIST_BACKUPS)
     fun closeRestore() = session.update { it.copy(backups = null) }
+
+    /** Asks Google for Drive and counts what's there, without turning backups on. */
+    fun connect() = start(DriveTask.CONNECT)
+    fun connectionUsed() = session.update { it.copy(existingBackups = null) }
     fun consentShown() = session.update { it.copy(consent = null) }
 
     fun onConsent(result: Intent?) {
@@ -117,6 +123,9 @@ class BackupViewModel @Inject constructor(
             DriveTask.BACK_UP -> sendBackup()
             DriveTask.LIST_BACKUPS -> runCatching { backups.list(access) }
                 .onSuccess { found -> session.update { it.copy(message = null, backups = found) } }
+                .onFailure { session.update { it.copy(message = "Couldn't reach Google Drive") } }
+            DriveTask.CONNECT -> runCatching { backups.list(access) }
+                .onSuccess { found -> session.update { it.copy(message = null, existingBackups = found.size) } }
                 .onFailure { session.update { it.copy(message = "Couldn't reach Google Drive") } }
         }
     }

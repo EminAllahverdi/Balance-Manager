@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.CloudDownload
+import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material3.Icon
@@ -72,6 +73,7 @@ fun OnboardingRoute(onDone: () -> Unit, viewModel: OnboardingViewModel = hiltVie
             OnboardingStep.WELCOME -> WelcomeStep(viewModel)
             OnboardingStep.PEOPLE -> PeopleStep(state, viewModel)
             OnboardingStep.CATEGORIES -> CategoriesStep(state, viewModel)
+            OnboardingStep.BACKUP -> BackupStep(state, viewModel)
             OnboardingStep.REMINDERS -> RemindersStep(state, viewModel)
             OnboardingStep.IMPORT -> ImportStep(state, viewModel)
         }
@@ -128,6 +130,55 @@ private fun WelcomeRow(icon: ImageVector, title: String, caption: String, onClic
             Text(caption, style = BtTheme.type.caption, color = c.textSecondary)
         }
         Icon(Icons.Rounded.ChevronRight, null, tint = c.textMuted, modifier = Modifier.size(20.dp))
+    }
+}
+
+/**
+ * Google is asked here, but backups only turn on at the last tap. An account that already has backups is offered them
+ * first: starting fresh beside them would push them out of Drive within a week.
+ */
+@Composable
+private fun BackupStep(state: OnboardingUiState, vm: OnboardingViewModel, backup: BackupViewModel = hiltViewModel()) {
+    val c = BtTheme.colors
+    val drive by backup.state.collectAsStateWithLifecycle()
+    DriveRestoreEffects(drive, backup)
+    DriveRestoreSheet(drive, backup, onChoose = backup::restore)
+    LaunchedEffect(drive.existingBackups) {
+        if (drive.existingBackups == 0) {
+            backup.connectionUsed()
+            vm.chooseBackup(true)
+        }
+    }
+    val hasBackups = (drive.existingBackups ?: 0) > 0
+    Column(Modifier.fillMaxSize()) {
+        StepHeader(state.progress, vm::back)
+        Centred {
+            Medallion(Icons.Rounded.CloudUpload)
+            Text("Back up to Google Drive", style = BtTheme.type.titleLarge, color = c.textPrimary)
+            Text(
+                "Every night Cibim saves a copy to a hidden folder in your Google Drive that only Cibim can open. If this phone is lost or replaced, everything comes back from there.",
+                style = BtTheme.type.body,
+                color = c.textSecondary,
+                textAlign = TextAlign.Center,
+            )
+            if (hasBackups) {
+                Text("This Google account already has backups. To carry on from one, restore it instead.", style = BtTheme.type.caption, color = c.statusWarning, textAlign = TextAlign.Center)
+            } else {
+                drive.message?.let { Text(it, style = BtTheme.type.caption, color = c.textSecondary, textAlign = TextAlign.Center) }
+            }
+        }
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (hasBackups) {
+                PrimaryButton("Restore a backup", backup::openRestore)
+                QuietButton("Start fresh and back up") {
+                    backup.connectionUsed()
+                    vm.chooseBackup(true)
+                }
+            } else {
+                PrimaryButton("Turn on backups", backup::connect)
+                QuietButton("Not now") { vm.chooseBackup(false) }
+            }
+        }
     }
 }
 

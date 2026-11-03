@@ -8,6 +8,7 @@ android {
 
 dependencies {
     implementation(project(":feature:settings"))
+    implementation(project(":core:backup"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
 }

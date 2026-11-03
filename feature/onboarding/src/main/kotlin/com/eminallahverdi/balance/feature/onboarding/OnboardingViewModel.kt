@@ -6,6 +6,8 @@ import android.os.Build
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.eminallahverdi.balance.core.backup.DriveBackups
+import com.eminallahverdi.balance.core.common.ApplicationScope
 import com.eminallahverdi.balance.core.common.IoDispatcher
 import com.eminallahverdi.balance.core.data.FirstRun
 import com.eminallahverdi.balance.core.data.StarterTemplate
@@ -20,6 +22,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,7 +33,7 @@ import kotlinx.coroutines.withContext
 private const val FAMILY_COLOUR = 0xFF8A94A3
 private const val OWNER_COLOUR = 0xFF5B9DFF
 
-enum class OnboardingStep { WELCOME, PEOPLE, CATEGORIES, REMINDERS, IMPORT }
+enum class OnboardingStep { WELCOME, PEOPLE, CATEGORIES, BACKUP, REMINDERS, IMPORT }
 
 enum class CategoryTemplate(val label: String, val caption: String) {
     HOUSEHOLD("Household", "16 categories with sub-categories, for a family"),
@@ -60,6 +63,8 @@ data class OnboardingUiState(
     val template: CategoryTemplate = CategoryTemplate.HOUSEHOLD,
     val dropped: Set<String> = emptySet(),
     val showingIncome: Boolean = false,
+    /** Google already said yes on the backup page. Backups themselves only turn on at the last tap. */
+    val backUp: Boolean = false,
     val import: CsvImport? = null,
     val preview: CsvPreview? = null,
     val message: String? = null,
@@ -71,6 +76,7 @@ data class OnboardingUiState(
         get() = listOfNotNull(
             OnboardingStep.PEOPLE,
             OnboardingStep.CATEGORIES,
+            OnboardingStep.BACKUP,
             OnboardingStep.REMINDERS.takeIf { asksNotifications },
             OnboardingStep.IMPORT.takeIf { importing },
         )
@@ -106,9 +112,11 @@ data class OnboardingUiState(
 class OnboardingViewModel @Inject constructor(
     private val firstRun: FirstRun,
     private val install: InstallPreferences,
+    private val backups: DriveBackups,
     prefs: UserPreferencesRepository,
     @ApplicationContext private val context: Context,
     @IoDispatcher private val io: CoroutineDispatcher,
+    @ApplicationScope private val appScope: CoroutineScope,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OnboardingUiState())
@@ -156,6 +164,11 @@ class OnboardingViewModel @Inject constructor(
     fun showIncome(income: Boolean) = _state.update { it.copy(showingIncome = income) }
     fun toggle(category: StarterTemplate.TemplateCategory) = _state.update { it.toggled(category) }
 
+    fun chooseBackup(on: Boolean) {
+        _state.update { it.copy(backUp = on) }
+        next()
+    }
+
     /** Answered either way counts: it asks once, and Settings can still turn the reminder off or on. */
     fun notificationsAnswered() {
         viewModelScope.launch {
@@ -189,8 +202,12 @@ class OnboardingViewModel @Inject constructor(
         if (s.saving) return
         _state.update { it.copy(saving = true, message = null) }
         viewModelScope.launch {
-            runCatching { firstRun.finish(s.finalTemplate(), s.ownerName.trim(), import) }
-                .onSuccess { _state.update { it.copy(finished = true) } }
+            runCatching { firstRun.finish(s.finalTemplate(), s.ownerName.trim(), import, backUp = s.backUp) }
+                .onSuccess {
+                    // The first one goes now, not at 03:00, or Home would say it's never been backed up. It outlives this screen.
+                    if (s.backUp) appScope.launch { backups.backUp() }
+                    _state.update { it.copy(finished = true) }
+                }
                 .onFailure { _state.update { it.copy(saving = false, message = "Couldn't finish setting up. Try again") } }
         }
     }

@@ -9,21 +9,28 @@ class OnboardingStateTest {
     private val people = OnboardingUiState(step = OnboardingStep.PEOPLE)
 
     @Test fun `the count only includes the steps this person will see`() {
-        assertThat(people.copy(asksNotifications = true).progress).isEqualTo("1 of 3")
-        assertThat(people.copy(asksNotifications = false).progress).isEqualTo("1 of 2")
-        assertThat(people.copy(asksNotifications = true, importing = true).progress).isEqualTo("1 of 4")
+        assertThat(people.copy(asksNotifications = true).progress).isEqualTo("1 of 4")
+        assertThat(people.copy(asksNotifications = false).progress).isEqualTo("1 of 3")
+        assertThat(people.copy(asksNotifications = true, importing = true).progress).isEqualTo("1 of 5")
     }
 
     @Test fun `importing comes last, after reminders, so everything is chosen before it's written`() {
         val state = people.copy(asksNotifications = true, importing = true)
-        assertThat(state.steps).containsExactly(OnboardingStep.PEOPLE, OnboardingStep.CATEGORIES, OnboardingStep.REMINDERS, OnboardingStep.IMPORT).inOrder()
+        assertThat(state.steps)
+            .containsExactly(OnboardingStep.PEOPLE, OnboardingStep.CATEGORIES, OnboardingStep.BACKUP, OnboardingStep.REMINDERS, OnboardingStep.IMPORT)
+            .inOrder()
+    }
+
+    @Test fun `everyone is asked about backups, after categories`() {
+        assertThat(OnboardingUiState(step = OnboardingStep.CATEGORIES).next).isEqualTo(OnboardingStep.BACKUP)
+        assertThat(OnboardingUiState(step = OnboardingStep.BACKUP).previous).isEqualTo(OnboardingStep.CATEGORIES)
     }
 
     @Test fun `the last step has nothing after it, which is what finishes`() {
         val reminders = OnboardingUiState(step = OnboardingStep.REMINDERS, asksNotifications = true)
         assertThat(reminders.next).isNull()
-        assertThat(OnboardingUiState(step = OnboardingStep.CATEGORIES).next).isNull()
-        assertThat(OnboardingUiState(step = OnboardingStep.CATEGORIES, asksNotifications = true).next).isEqualTo(OnboardingStep.REMINDERS)
+        assertThat(OnboardingUiState(step = OnboardingStep.BACKUP).next).isNull()
+        assertThat(OnboardingUiState(step = OnboardingStep.BACKUP, asksNotifications = true).next).isEqualTo(OnboardingStep.REMINDERS)
     }
 
     @Test fun `back from the first step is Welcome`() {

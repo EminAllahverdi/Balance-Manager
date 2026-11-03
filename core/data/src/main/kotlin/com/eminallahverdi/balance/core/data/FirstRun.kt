@@ -37,12 +37,16 @@ class FirstRun @Inject constructor(
         scope.launch { isNeeded() }
     }
 
-    /** All or nothing: a file that fails halfway leaves a fresh install, and the user can try again. */
-    suspend fun finish(template: StarterTemplate, ownerName: String, import: CsvImport?) {
+    /**
+     * All or nothing: a file that fails halfway leaves a fresh install, and the user can try again. Backups only turn on
+     * here, once there's something to back up, so leaving halfway never sends an empty app to Drive.
+     */
+    suspend fun finish(template: StarterTemplate, ownerName: String, import: CsvImport?, backUp: Boolean = false) {
         db.withTransaction {
             catalog.applyTemplate(template)
             import?.let { csv.write(it) }
         }
         preferences.setOnboardingDone(ownerName)
+        if (backUp) preferences.setDriveBackup(true)
     }
 }
