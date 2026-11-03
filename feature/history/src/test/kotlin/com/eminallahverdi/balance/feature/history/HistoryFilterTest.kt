@@ -155,6 +155,29 @@ class HistoryFilterTest {
         assertThat(debtRow(owed, 50_00).isEditable).isFalse()
     }
 
+    @Test fun `deleting asks about the entry by name, amount and day`() {
+        val today = LocalDate.of(2026, 10, 31)
+        val removal = row().removal(hideAmounts = false, today = today)
+        assertThat(removal.title).isEqualTo("Delete this transaction?")
+        assertThat(removal.named).isEqualTo("Bolt · −₼7.70 · Today")
+        assertThat(removal.action).isEqualTo("Delete")
+        assertThat(row().removal(hideAmounts = false, today = today.plusDays(5)).named).isEqualTo("Bolt · −₼7.70 · Sat 31 Oct")
+    }
+
+    @Test fun `the eye hides the amount in the question as it does on the row`() {
+        val today = LocalDate.of(2026, 10, 31)
+        assertThat(row().removal(hideAmounts = true, today = today).named).isEqualTo("Bolt · −₼7.70 · Today")
+        assertThat(row(50_00, TransactionKind.INCOME).removal(hideAmounts = true, today = today).named).isEqualTo("Bolt · Today")
+    }
+
+    @Test fun `a debt payment is removed, and says the debt changes back`() {
+        val removal = debtRow(owed, -15_00).removal(hideAmounts = false, today = LocalDate.of(2026, 10, 31))
+        assertThat(removal.title).isEqualTo("Remove this payment?")
+        assertThat(removal.named).isEqualTo("Paid back to Sam · −₼15.00 · Today")
+        assertThat(removal.consequence).startsWith("The debt and the account's balance")
+        assertThat(removal.action).isEqualTo("Remove")
+    }
+
     @Test fun `search finds who a debt is with`() {
         assertThat(HistoryFilter(query = "sam").matches(debtRow(owed, 50_00))).isTrue()
     }

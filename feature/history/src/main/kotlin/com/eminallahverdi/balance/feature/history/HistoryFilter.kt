@@ -1,11 +1,13 @@
 package com.eminallahverdi.balance.feature.history
 
+import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.sum
+import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Locale
 
@@ -111,3 +113,17 @@ internal val TransactionDetails.isRemovable: Boolean
 /** Quick add edits only what it can add; adjustments and imported internal moves aren't its kinds. */
 internal val TransactionDetails.isEditable: Boolean
     get() = transaction.kind == TransactionKind.EXPENSE || transaction.kind == TransactionKind.INCOME || transaction.kind == TransactionKind.TRANSFER
+
+/** The question before an entry goes: [named] says which one, as its row does, and [consequence] what changes. */
+internal data class Removal(val title: String, val named: String, val consequence: String, val action: String)
+
+/** The eye hides the amount here as it does on the row, so only spending is named with one. */
+internal fun TransactionDetails.removal(hideAmounts: Boolean, today: LocalDate = LocalDate.now()): Removal {
+    val amount = signedAmount().takeUnless { hideAmounts && isSensitive }
+    val named = listOfNotNull(title, amount, DateLabels.relative(transaction.date, today)).joinToString(" · ")
+    return when (transaction.kind) {
+        TransactionKind.DEBT -> Removal("Remove this payment?", named, "The debt and the account's balance change back by this amount. This can't be undone.", "Remove")
+        TransactionKind.ADJUSTMENT -> Removal("Remove this adjustment?", named, "The account's balance changes back by this amount. This can't be undone.", "Remove")
+        else -> Removal("Delete this transaction?", named, "It's removed from your history and balances. This can't be undone.", "Delete")
+    }
+}

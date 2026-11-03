@@ -28,23 +28,34 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -60,6 +71,7 @@ import com.eminallahverdi.balance.core.designsystem.component.PersonDot
 import com.eminallahverdi.balance.core.designsystem.component.SplitBar
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
+import com.eminallahverdi.balance.core.designsystem.theme.TILE_TINT
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
@@ -81,7 +93,7 @@ fun HistoryRoute(onOpen: (Long) -> Unit, onBack: (() -> Unit)? = null, viewModel
     // Held here, not read back from the filter: results arrive off the main thread, and typing must not wait for them.
     var query by rememberSaveable { mutableStateOf("") }
     var sheet by rememberSaveable { mutableStateOf<FilterSheet?>(null) }
-    val onTap = rememberRowTap(onOpen, viewModel::delete)
+    val actions = rememberRowActions(onOpen, viewModel::delete, state.hideAmounts)
     sheet?.let { HistoryFilterSheet(it, state, viewModel, onClose = { sheet = null }) }
     // Without the bottom bar, the list runs under the system navigation.
     val bottomInset = if (onBack != null) WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() else 0.dp
@@ -103,34 +115,49 @@ fun HistoryRoute(onOpen: (Long) -> Unit, onBack: (() -> Unit)? = null, viewModel
                 }
             } else {
                 item(key = "summary") { Summary(state) }
-                items(state.days, key = { it.date.toEpochDay() }) { DayGroup(it, state.hideAmounts, onTap) }
+                items(state.days, key = { it.date.toEpochDay() }) { DayGroup(it, state.hideAmounts, actions) }
             }
         }
     }
 }
 
+/** What a row does when it's tapped and when it's swiped away. Made by [rememberRowActions]. */
+class RowActions internal constructor(internal val tap: (TransactionDetails) -> Unit, internal val remove: (TransactionDetails) -> Unit)
+
 /**
- * What tapping a row does, wherever these rows are listed: [onOpen] for one quick add can edit, and a question first for one
- * that can only be taken back with [onRemove]. Anything else, like an imported internal move, stays as it is.
+ * What rows do, wherever they're listed: a tap opens one quick add can edit with [onOpen]. Swiping one away, or tapping one
+ * quick add can't open but that can be taken back, asks first, then [onRemove]. Anything else, like an imported internal
+ * move, stays as it is.
  */
 @Composable
-fun rememberRowTap(onOpen: (Long) -> Unit, onRemove: (Long) -> Unit): (TransactionDetails) -> Unit {
+fun rememberRowActions(onOpen: (Long) -> Unit, onRemove: (Long) -> Unit, hideAmounts: Boolean): RowActions {
     var removing by remember { mutableStateOf<TransactionDetails?>(null) }
     removing?.let { row ->
-        val isDebt = row.transaction.kind == TransactionKind.DEBT
+        val removal = row.removal(hideAmounts)
         AlertDialog(
             onDismissRequest = { removing = null },
-            title = { Text(if (isDebt) "Remove this payment?" else "Remove this adjustment?") },
-            text = { Text(if (isDebt) "The debt and the account's balance change back by this amount. This can't be undone." else "The account's balance changes back by this amount. This can't be undone.") },
-            confirmButton = { TextButton(onClick = { removing = null; onRemove(row.transaction.id) }) { Text("Remove") } },
+            title = { Text(removal.title) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(removal.named, fontWeight = FontWeight.SemiBold)
+                    Text(removal.consequence)
+                }
+            },
+            confirmButton = { TextButton(onClick = { removing = null; onRemove(row.transaction.id) }) { Text(removal.action) } },
             dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } },
         )
     }
-    return { row ->
-        when {
-            row.isEditable -> onOpen(row.transaction.id)
-            row.isRemovable -> removing = row
-        }
+    val open by rememberUpdatedState(onOpen)
+    return remember {
+        RowActions(
+            tap = { row ->
+                when {
+                    row.isEditable -> open(row.transaction.id)
+                    row.isRemovable -> removing = row
+                }
+            },
+            remove = { row -> removing = row },
+        )
     }
 }
 
@@ -258,7 +285,7 @@ private fun amount(money: Money, hidden: Boolean) = if (hidden) MoneyFormat.HIDD
 
 /** One day's transactions under its date and total, as History lists them. */
 @Composable
-fun DayGroup(day: HistoryDay, hideAmounts: Boolean, onTap: (TransactionDetails) -> Unit) {
+fun DayGroup(day: HistoryDay, hideAmounts: Boolean, actions: RowActions) {
     val c = BtTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -269,21 +296,68 @@ fun DayGroup(day: HistoryDay, hideAmounts: Boolean, onTap: (TransactionDetails) 
             Column {
                 day.rows.forEachIndexed { i, row ->
                     if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
-                    TransactionRow(row, hideAmounts, onTap)
+                    // Keyed, so a swipe stays with its own row when the one above it goes.
+                    key(row.transaction.id) { TransactionRow(row, hideAmounts, actions) }
                 }
             }
         }
     }
 }
 
+/** How far a row has to go before letting go asks to delete it. A quick flick asks too. */
+private const val SWIPE_THRESHOLD = 0.4f
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TransactionRow(row: TransactionDetails, hideAmounts: Boolean, onTap: (TransactionDetails) -> Unit) {
+private fun TransactionRow(row: TransactionDetails, hideAmounts: Boolean, actions: RowActions) {
+    val tappable = row.isEditable || row.isRemovable
+    val current by rememberUpdatedState(row)
+    // The row springs back as the question opens, and only goes once the answer is yes.
+    val swipe = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) actions.remove(current)
+            value != SwipeToDismissBoxValue.EndToStart
+        },
+        positionalThreshold = { width -> width * SWIPE_THRESHOLD },
+    )
+    SwipeToDismissBox(
+        state = swipe,
+        backgroundContent = { SwipeBehind(if (row.isEditable) "Delete" else "Remove") },
+        enableDismissFromStartToEnd = false,
+        gesturesEnabled = tappable,
+    ) {
+        RowContent(
+            row,
+            hideAmounts,
+            Modifier.clickable(enabled = tappable) { actions.tap(row) }.semantics {
+                if (tappable) customActions = listOf(CustomAccessibilityAction("Delete") { actions.remove(current); true })
+            },
+        )
+    }
+}
+
+/** What a swipe uncovers at the row's end. */
+@Composable
+private fun SwipeBehind(label: String) {
+    val c = BtTheme.colors
+    Row(
+        Modifier.fillMaxSize().background(c.moneyExpense.copy(alpha = TILE_TINT)).padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+    ) {
+        Icon(Icons.Rounded.Delete, null, tint = c.moneyExpense, modifier = Modifier.size(20.dp))
+        Text(label, style = BtTheme.type.label, color = c.moneyExpense)
+    }
+}
+
+@Composable
+private fun RowContent(row: TransactionDetails, hideAmounts: Boolean, modifier: Modifier) {
     val c = BtTheme.colors
     val style = row.parentCategory ?: row.category
-    val tappable = row.isEditable || row.isRemovable
     val fallbackIcon = if (row.transaction.kind == TransactionKind.DEBT) "handshake" else "swap_horiz"
+    // Opaque, so what's behind only shows where the row has moved away.
     Row(
-        Modifier.fillMaxWidth().clickable(enabled = tappable) { onTap(row) }.padding(horizontal = 14.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().background(c.bgSurface).then(modifier).padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

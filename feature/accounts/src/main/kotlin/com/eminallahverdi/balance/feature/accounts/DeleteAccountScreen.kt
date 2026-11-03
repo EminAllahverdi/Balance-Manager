@@ -47,7 +47,7 @@ import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.feature.history.DayGroup
-import com.eminallahverdi.balance.feature.history.rememberRowTap
+import com.eminallahverdi.balance.feature.history.rememberRowActions
 
 /**
  * Deleting an archived account: everything it would take with it, listed as History lists it. [onOpen] opens one entry to
@@ -60,7 +60,7 @@ fun DeleteAccountRoute(onBack: () -> Unit, onOpen: (Long) -> Unit, viewModel: De
     var picking by rememberSaveable { mutableStateOf(false) }
     var target by remember { mutableStateOf<Account?>(null) }
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
-    val onTap = rememberRowTap(onOpen, viewModel::deleteEntry)
+    val actions = rememberRowActions(onOpen, viewModel::deleteEntry, state.hideAmounts)
 
     LaunchedEffect(state.isGone) { if (state.isGone) onBack() }
 
@@ -84,7 +84,7 @@ fun DeleteAccountRoute(onBack: () -> Unit, onOpen: (Long) -> Unit, viewModel: De
                 }
             }
             if (state.payments.isNotEmpty()) item(key = "payments") { RecurringPayments(state.payments) }
-            items(state.days, key = { it.date.toEpochDay() }) { DayGroup(it, state.hideAmounts, onTap) }
+            items(state.days, key = { it.date.toEpochDay() }) { DayGroup(it, state.hideAmounts, actions) }
         }
         if (!state.loading) {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
