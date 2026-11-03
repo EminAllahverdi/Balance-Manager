@@ -103,7 +103,7 @@ private fun CategoryFields(editor: CatalogEditor.CategoryDraft, state: CatalogUi
         IconPicker(category.color, category.icon, { vm.update(category.copy(icon = it)) })
     }
     EditorField("Colour") {
-        ColourPicker(CategoryPalette, category.color) { vm.update(category.copy(color = it)) }
+        ColourPicker(CategoryPalette, category.color, icon = category.icon) { vm.update(category.copy(color = it)) }
     }
 }
 
