@@ -3,6 +3,8 @@ package com.eminallahverdi.balance.feature.receipts
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,6 +36,7 @@ import java.time.YearMonth
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -44,6 +47,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 
 /** Where adding a receipt stands. Each step says what's happening, and a problem says what to do about it. */
 sealed interface ScanState {
@@ -149,9 +153,30 @@ class GroceriesViewModel @Inject constructor(
     fun readPhoto(uri: Uri) {
         viewModelScope.launch {
             scan.value = ScanState.Working("Reading the receipt…")
-            val bitmap = runCatching { context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) } }.getOrNull()
+            val bitmap = runCatching { upright(uri) }.getOrNull()
             scan.value = if (bitmap == null) ScanState.Problem("Couldn't open that picture.") else read(bitmap, fiscalId = null)
         }
+    }
+
+    /**
+     * A camera saves a photo the way the sensor sees it and notes which way up it goes. Text recognition reads the
+     * picture as saved, so a receipt held upright arrives sideways and its rows can't be put together, until it's turned.
+     */
+    private suspend fun upright(uri: Uri): Bitmap? = withContext(Dispatchers.Default) {
+        val resolver = context.contentResolver
+        val bitmap = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) } ?: return@withContext null
+        val turn = runCatching {
+            resolver.openInputStream(uri)?.use { stream ->
+                when (ExifInterface(stream).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                    ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                    ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                    else -> 0f
+                }
+            }
+        }.getOrNull() ?: 0f
+        if (turn == 0f) return@withContext bitmap
+        Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { postRotate(turn) }, true).also { if (it !== bitmap) bitmap.recycle() }
     }
 
     private suspend fun read(bitmap: Bitmap?, fiscalId: String?): ScanState {

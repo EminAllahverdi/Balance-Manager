@@ -248,7 +248,7 @@ private fun TopItemsCard(report: GroceryReport) {
                     Text("${i + 1}", style = BtTheme.type.caption, color = c.textMuted, modifier = Modifier.size(width = 18.dp, height = 18.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(item.name, style = BtTheme.type.body, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text("${quantityLabel(item.quantityMilli)} · ${if (item.times == 1) "once" else "${item.times} times"}", style = BtTheme.type.caption, color = c.textSecondary)
+                        Text("×${quantityLabel(item.quantityMilli)} · ${if (item.times == 1) "once" else "${item.times} times"}", style = BtTheme.type.caption, color = c.textSecondary)
                     }
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(MoneyFormat.format(item.amount), style = BtTheme.type.amountSmall, color = c.textPrimary)
@@ -262,7 +262,7 @@ private fun TopItemsCard(report: GroceryReport) {
 
 /** 3 for pieces, 2.45 for what's weighed. */
 private fun quantityLabel(milli: Long): String =
-    if (milli % 1000 == 0L) "×${milli / 1000}" else "×" + java.math.BigDecimal(milli).movePointLeft(3).stripTrailingZeros().toPlainString()
+    if (milli % 1000 == 0L) "${milli / 1000}" else java.math.BigDecimal(milli).movePointLeft(3).stripTrailingZeros().toPlainString()
 
 private val ItemGroup.icon: ImageVector
     get() = when (this) {

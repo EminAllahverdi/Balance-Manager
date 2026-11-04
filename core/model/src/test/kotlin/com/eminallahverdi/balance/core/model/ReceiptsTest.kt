@@ -57,6 +57,71 @@ class ReceiptsTest {
         assertThat(receipt.isComplete).isTrue()
     }
 
+    /**
+     * As text recognition read the picture e-kassa answered with for a real receipt, with invented items, shop and company:
+     * the lone digits of quantities mostly missed, a total read as 1l.60, and the owning company split over two rows.
+     */
+    private val eKassa = """
+        Object name: YASHIL BAZAR GANJLIK
+        Object address: AZ1000 BAKI ŞƏHƏRİ
+        Taxpayer name: "NUMUNƏ
+        SUPERMARKET" MƏHDUD MƏSULİYYƏTLİ
+        TIN: 1234567890
+        Cashier: LEYLA A. Date: 03.11.2026
+        Product Quantity Price Total
+        QATIQ ATENA 450Q. pc) 1.35 1.35
+        *VAT: 18%
+        COREK AG (pc) 1 0.60 0.60
+        *VAT: 18%
+        SU BADAMLI 1.5L (pc) 1.00 3.00
+        *VAT: 18%
+        SAQQIZ NANE 13.6G. (pc) 0.80 1l.60
+        *VAT: 18%
+        Total 6.55
+        *VAT 18% = 1.00 6.55
+        Cashless: 6.55
+        Fiscal ID: 7MbR5E7xNh2Y
+    """.trimIndent().lines()
+
+    @Test fun `a quantity text recognition missed is worked out from the price and total`() {
+        val receipt = parseReceiptText(eKassa)
+        assertThat(receipt.items.map { it.name }).containsExactly("QATIQ ATENA 450Q.", "COREK AG", "SU BADAMLI 1.5L", "SAQQIZ NANE 13.6G.").inOrder()
+        assertThat(receipt.items.map { it.quantityMilli }).containsExactly(1000L, 1000L, 3000L, 2000L).inOrder()
+        assertThat(receipt.items[2].price).isEqualTo(Money(1_00))
+        assertThat(receipt.items[3].total).isEqualTo(Money(1_60))
+        assertThat(receipt.isComplete).isTrue()
+    }
+
+    @Test fun `the shop is the one the receipt names, not the company that owns it`() {
+        val receipt = parseReceiptText(eKassa)
+        assertThat(receipt.store).isEqualTo("Yashil Bazar Ganjlik")
+        assertThat(receipt.fiscalId).isEqualTo("7MbR5E7xNh2Y")
+        assertThat(parseReceiptText(listOf("NUMUNƏ SUPERMARKET MMC", "Obyektin adı: YAŞIL BAZAR", "Çörək 1 0.60 0.60", "Cəmi 0.60")).store).isEqualTo("Yaşil Bazar")
+    }
+
+    @Test fun `a printed receipt's misreadings are read through`() {
+        // As read off a photo of the paper: ədəd as ddəd or Jdəd, a 1 as I or L, and a price split at its point.
+        val rows = listOf(
+            "Məhsul adı Miqdar Qiymət Toplam",
+            "QATIQ ATENA 450Q. ddəd .00 1.35 1.35",
+            "8690000000001 ODV 18%",
+            "KEFIR ATENA 1L, Odəd 2.00 I.45 2.90",
+            "4760000000002 JDY 18%",
+            "SU BADAMLI 1.5L, Jdəd 3.00 L. 00 3.00",
+            "4760000000003 JDV 18%",
+            "Yekun məbləğ 7.25",
+        )
+        val receipt = parseReceiptText(rows)
+        assertThat(receipt.items.map { it.name }).containsExactly("QATIQ ATENA 450Q.", "KEFIR ATENA 1L", "SU BADAMLI 1.5L").inOrder()
+        assertThat(receipt.items.map { it.quantityMilli }).containsExactly(1000L, 2000L, 3000L).inOrder()
+        assertThat(receipt.isComplete).isTrue()
+    }
+
+    @Test fun `numbers in a header don't make an item when a count is worked out`() {
+        val receipt = parseReceiptText(listOf("Çek nömrəsi: 104 1248 ECR: 75", "Növbə: 5 10","Çörək 1 0.60 0.60", "Cəmi 0.60"))
+        assertThat(receipt.items.map { it.name }).containsExactly("Çörək")
+    }
+
     @Test fun `columns read apart are put back into rows`() {
         val pieces = listOf(
             TextPiece(10, 100, 200, 120, "Süd 1L"), TextPiece(300, 102, 330, 121, "2"), TextPiece(400, 99, 450, 119, "1.95"), TextPiece(500, 101, 560, 120, "3.90"),

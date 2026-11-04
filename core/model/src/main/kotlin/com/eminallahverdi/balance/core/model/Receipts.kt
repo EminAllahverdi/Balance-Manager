@@ -109,7 +109,16 @@ data class ParsedReceipt(
 
 private val NUMBER = Regex("""(?<![\d.,])\d{1,6}(?:[.,]\d{1,3})?(?![\d.,]*\d)""")
 private val DATE = Regex("""(\d{2})[./-](\d{2})[./-](\d{4})""")
-private val FISCAL = Regex("""(?i)fiskal\s*id\s*[:№]?\s*([A-Za-z0-9]{12})\b""")
+private val FISCAL = Regex("""(?i)fis[kc]al\s*id\s*[:№]?\s*([A-Za-z0-9]{12})\b""")
+/** The shop itself, as e-kassa and the printed receipt name it, ahead of the company that owns it. */
+private val OBJECT_NAME = Regex("""(?iu)(?:object\s*name|obyekt(?:in)?\s*ad[ıi1l]?)\s*:\s*(.*\p{L}.*)""")
+/** A number with a 1 that text recognition read as l, I, L or |, alone between spaces, like I.00, or 1l.60 for 1.60. */
+private val MISREAD_NUMBER = Regex("""(?<!\S)(?=[\d.,lIL|]*\d)(?=[\d.,]*[lIL|])[\d.,lIL|]+(?!\S)""")
+private val LOOKS_LIKE_ONE = Regex("[lIL|]")
+private val NUMBERISH = Regex("""(?=.*\d)[\d.,lIL|]+""")
+/** A number split at its point, like 3. 16 for 3.16. */
+private val SPLIT_NUMBER = Regex("""(?<!\S)([\dlIL|]{1,4}[.,])\s(\d{2})(?!\S)""")
+private const val MOST_PIECES = 99
 private val TOTAL_WORDS = listOf("cemi", "yekun", "umumi", "total", "итого", "odenilecek", "odenis")
 
 /** Rows about tax, payment and change, by their first word, so Kartof stays an item while Kart goes. */
@@ -131,6 +140,7 @@ fun parseReceiptText(rows: List<String>): ParsedReceipt {
     var fiscalId: String? = null
     var pendingName: String? = null
     var store: String? = null
+    var shop: String? = null
     var inItems = true
     for (raw in rows) {
         val row = raw.trim()
@@ -138,6 +148,7 @@ fun parseReceiptText(rows: List<String>): ParsedReceipt {
         val folded = fold(row)
         FISCAL.find(row)?.let { fiscalId = it.groupValues[1] }
         if (date == null) DATE.find(row)?.let { m -> date = runCatching { LocalDate.of(m.groupValues[3].toInt(), m.groupValues[2].toInt(), m.groupValues[1].toInt()) }.getOrNull() }
+        if (shop == null) OBJECT_NAME.find(row)?.let { shop = prettyMerchant(it.groupValues[1]) }
         if (store == null && STORE_MARKERS.any { folded.contains(it) } && !folded.contains("voen")) store = cleanStore(row)
         val firstWord = folded.split(Regex("""[^\p{L}]+""")).firstOrNull { it.isNotEmpty() }
         if (TOTAL_WORDS.any { firstWord == it || folded.contains(" $it") } && NUMBER.find(row) != null) {
@@ -146,7 +157,7 @@ fun parseReceiptText(rows: List<String>): ParsedReceipt {
             continue
         }
         if (!inItems || firstWord in SKIP_WORDS) continue
-        val item = itemIn(row, pendingName)
+        val item = readingsOf(row).firstNotNullOfOrNull { itemIn(it, pendingName) }
         if (item != null) {
             items += item
             pendingName = null
@@ -155,12 +166,40 @@ fun parseReceiptText(rows: List<String>): ParsedReceipt {
             pendingName = row
         }
     }
-    return ParsedReceipt(store, date, total, fiscalId, items)
+    return ParsedReceipt(shop ?: store, date, total, fiscalId, items)
+}
+
+/**
+ * The row as it was read, then as text recognition likely misread it: a number split at its point put back together, and
+ * each number holding an l, I, L or | read both ways, the l as a 1, as in I.00, or as a second look at the 1 beside it, as
+ * in 1l.60. Only a row whose quantity, price and total agree is taken, which picks the right one.
+ */
+private fun readingsOf(row: String): List<String> {
+    val joined = SPLIT_NUMBER.replace(row, "$1$2")
+    return listOf(row, joined).distinct().flatMap { text -> listOf(text) + onesIn(text) }.distinct()
+}
+
+/** Only the numbers a row ends with, where a till prints quantity, price and total, so a size in the name, like 1L, stays. */
+private fun onesIn(row: String): List<String> {
+    val numbersStart = Regex("""\S+""").findAll(row).toList().asReversed().takeWhile { NUMBERISH.matches(it.value) }.lastOrNull()?.range?.first ?: return emptyList()
+    val misread = MISREAD_NUMBER.findAll(row).filter { it.range.first >= numbersStart }.toList().takeLast(3)
+    if (misread.isEmpty()) return emptyList()
+    return (0 until (1 shl misread.size)).map { ways: Int ->
+        var text = row
+        for (i in misread.indices.reversed()) {
+            val m = misread[i]
+            val asOne = (ways shr i) and 1 == 0
+            text = text.replaceRange(m.range, m.value.replace(LOOKS_LIKE_ONE, if (asOne) "1" else ""))
+        }
+        text
+    }
 }
 
 /**
  * A row with a quantity, price and total that agree and sit together, with the name before them or on the row above.
- * Totals come last on a till's row, so windows are tried from the end; a quantity of one is sometimes left out.
+ * Totals come last on a till's row, so windows are tried from the end. A quantity can be missing: some tills leave out a
+ * quantity of one, and text recognition often misses a digit standing alone, so a whole number of pieces is worked out
+ * from the price and the total.
  */
 private fun itemIn(row: String, nameAbove: String?): ReceiptItem? {
     val numbers = NUMBER.findAll(row).toList()
@@ -168,12 +207,14 @@ private fun itemIn(row: String, nameAbove: String?): ReceiptItem? {
         for (start in numbers.size - take downTo 0) {
             val window = numbers.subList(start, start + take)
             if (window.zipWithNext().any { (a, b) -> !BETWEEN_NUMBERS.matches(row.substring(a.range.last + 1, b.range.first)) }) continue
-            val quantity = if (take == 3) window[0].value.toDecimal() else BigDecimal.ONE
             val price = window[take - 2].value.toDecimal()
             val sum = window[take - 1].value.toDecimal()
-            if (quantity.signum() <= 0 || price.signum() <= 0) continue
-            if (quantity.multiply(price).subtract(sum).abs() > TOLERANCE) continue
-            val before = row.substring(0, window.first().range.first).trim().trimEnd('x', 'X', '*', '×', '=').trim()
+            if (price.signum() <= 0) continue
+            val quantity = if (take == 3) window[0].value.toDecimal() else sum.divide(price, 0, RoundingMode.HALF_UP)
+            if (quantity.signum() <= 0 || quantity.multiply(price).subtract(sum).abs() > TOLERANCE) continue
+            // A worked-out count needs prices written as money, so numbers in a header, like 104 and 1248, don't make an item.
+            if (take == 2 && quantity > BigDecimal.ONE && (quantity > BigDecimal(MOST_PIECES) || window.any { !it.value.contains('.') && !it.value.contains(',') })) continue
+            val before = row.substring(0, window.first().range.first).trim().trimEnd('x', 'X', '*', '×', '=').trim().replace(TRAILING_UNIT, "").trimEnd(',')
             val name = before.takeIf { it.any(Char::isLetter) } ?: nameAbove?.trim() ?: continue
             return ReceiptItem(
                 name = name,
@@ -185,6 +226,13 @@ private fun itemIn(row: String, nameAbove: String?): ReceiptItem? {
     }
     return null
 }
+
+/**
+ * What a till prints between a name and its numbers for pieces: (pc), ədəd, əd, with a quantity after it that couldn't be
+ * read. Text recognition often reads ədəd as ddəd or ddod, so any short word shaped like it goes too. Weights stay, as kq
+ * tells a weighed item apart.
+ */
+private val TRAILING_UNIT = Regex("""(?iu)\s+(?:\(?\s*(?:pcs?|шт)\s*\)?|\S?d[əoea]d|ad|əd)\.?\)?(?:\s+[\d.,lIL|]+)?$""")
 
 private val TOLERANCE = BigDecimal("0.011")
 
