@@ -105,6 +105,10 @@ class TransactionRepository @Inject constructor(
         )
     }
 
+    /** Entries per category over the last year, so the one in use wins when two categories share a name. */
+    suspend fun categoryUse(today: LocalDate = LocalDate.now()): Map<Long, Int> =
+        dao.categoryUse(today.minusYears(1).toEpochDay()).associate { it.categoryId to it.uses }
+
     private fun joinDetails(source: Flow<List<Transaction>>): Flow<List<TransactionDetails>> =
         combine(source, catalog.accounts, catalog.categories, catalog.people, combine(catalog.merchants, debtDao.observeAll()) { m, d -> m to d }) { txns, accounts, categories, people, (merchants, debts) ->
             val a = accounts.associateBy(Account::id)

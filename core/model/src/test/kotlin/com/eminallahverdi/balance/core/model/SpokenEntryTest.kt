@@ -105,5 +105,130 @@ class SpokenEntryTest {
     @Test fun `short words aren't matched by chance`() {
         // Sam in Samsung, Nar in Nargiz: an ending has to be a real one.
         assertThat(en("Samsung charger 30").personId).isNull()
+        assertThat(az("Samsung adapter 30 manat").personId).isNull()
+    }
+
+    /** Two vehicles with the same sub-categories, as the owner has them. */
+    private val vehicles = SpokenNames(
+        categories = listOf(
+            Category(10, "Car", e, icon = "directions_car", color = 0, defaultPersonId = 1),
+            Category(11, "Fuel", e, parentId = 10, icon = "local_gas_station", color = 0),
+            Category(12, "Service", e, parentId = 10, icon = "build", color = 0),
+            Category(20, "Motorbike", e, icon = "two_wheeler", color = 0, defaultPersonId = 2),
+            Category(21, "Fuel", e, parentId = 20, icon = "local_gas_station", color = 0),
+            Category(22, "Service", e, parentId = 20, icon = "build", color = 0),
+        ),
+        people = names.people,
+        accounts = names.accounts,
+        merchants = emptyList(),
+    )
+
+    @Test fun `a sub-category said with its parent wins over one of the same name elsewhere`() {
+        fun en(text: String) = parseSpokenEntry(text, vehicles, ENGLISH)
+        assertThat(en("motorbike fuel 20").categoryId).isEqualTo(21)
+        assertThat(en("motorbike fuel 20").personId).isEqualTo(2)
+        assertThat(en("motorbike service 45").categoryId).isEqualTo(22)
+        assertThat(en("20 for fuel for the motorbike").categoryId).isEqualTo(21)
+        assertThat(en("car service 60").categoryId).isEqualTo(12)
+        assertThat(en("motorbike 20").categoryId).isEqualTo(20)
+    }
+
+    @Test fun `a main category said beats a sub-category of another`() {
+        val noBikeFuel = vehicles.copy(categories = vehicles.categories.filterNot { it.id == 21L })
+        assertThat(parseSpokenEntry("motorbike fuel 20", noBikeFuel, ENGLISH).categoryId).isEqualTo(20)
+    }
+
+    @Test fun `of two sub-categories with one name, the one in use wins`() {
+        assertThat(parseSpokenEntry("fuel 30", vehicles.copy(categoryUse = mapOf(11L to 2, 21L to 9)), ENGLISH).categoryId).isEqualTo(21)
+        assertThat(parseSpokenEntry("fuel 30", vehicles, ENGLISH).categoryId).isEqualTo(11)
+    }
+
+    /** Names a user might make up, none of them in the word list, so only the ranking can tell them apart. */
+    private val sheds = SpokenNames(
+        categories = listOf(
+            Category(10, "Garden", e, icon = "yard", color = 0, defaultPersonId = 3),
+            Category(11, "Tools", e, parentId = 10, icon = "build", color = 0),
+            Category(12, "Seeds", e, parentId = 10, icon = "grass", color = 0),
+            Category(20, "Workshop", e, icon = "handyman", color = 0, defaultPersonId = 1),
+            Category(21, "Tools", e, parentId = 20, icon = "build", color = 0),
+            Category(22, "Paint", e, parentId = 20, icon = "format_paint", color = 0),
+            Category(30, "Bağ", e, icon = "yard", color = 0),
+            Category(31, "Alətlər", e, parentId = 30, icon = "build", color = 0),
+            Category(40, "Emalatxana", e, icon = "handyman", color = 0),
+            Category(41, "Alətlər", e, parentId = 40, icon = "build", color = 0),
+        ),
+        people = names.people,
+        accounts = names.accounts,
+        merchants = emptyList(),
+    )
+
+    @Test fun `any names a user makes up are told apart the same way`() {
+        fun en(text: String) = parseSpokenEntry(text, sheds, ENGLISH)
+        fun az(text: String) = parseSpokenEntry(text, sheds, AZERBAIJANI)
+        assertThat(en("workshop tools 20").categoryId).isEqualTo(21)
+        assertThat(en("garden tools 20").categoryId).isEqualTo(11)
+        assertThat(en("20 on tools for the workshop").categoryId).isEqualTo(21)
+        assertThat(en("workshop 20").categoryId).isEqualTo(20)
+        assertThat(parseSpokenEntry("tools 30", sheds.copy(categoryUse = mapOf(21L to 9)), ENGLISH).categoryId).isEqualTo(21)
+        assertThat(az("emalatxananın alətlərinə 15 manat").categoryId).isEqualTo(41)
+        assertThat(az("bağ alətləri 12 manat").categoryId).isEqualTo(31)
+        assertThat(az("bağ alətləri 12 manat").personId).isNull()
+    }
+
+    @Test fun `English isn't read with Azerbaijani endings`() {
+        assertThat(parseSpokenEntry("self care 20", vehicles, ENGLISH).categoryId).isNull()
+    }
+
+    @Test fun `Azerbaijani finds categories named in English`() {
+        fun az(text: String) = parseSpokenEntry(text, vehicles, AZERBAIJANI)
+        assertThat(az("motosiklet yanacağı 20 manat").categoryId).isEqualTo(21)
+        assertThat(az("motosikletə servis 40 manat").categoryId).isEqualTo(22)
+        assertThat(az("maşının servisinə 60 manat").categoryId).isEqualTo(12)
+        assertThat(parseSpokenEntry("taksiyə 5 manat", names, AZERBAIJANI).categoryId).isEqualTo(31)
+    }
+
+    /** Categories named in Azerbaijani, as a new user might add them. */
+    private val azNames = SpokenNames(
+        categories = listOf(
+            Category(1, "Ərzaq", e, icon = "shopping_cart", color = 0),
+            Category(2, "Çörək", e, parentId = 1, icon = "bakery_dining", color = 0),
+            Category(3, "Motosiklet", e, icon = "two_wheeler", color = 0),
+            Category(4, "Yanacaq", e, parentId = 3, icon = "local_gas_station", color = 0),
+            Category(5, "Servis", e, parentId = 3, icon = "build", color = 0),
+            Category(6, "Kafe və restoran", e, icon = "restaurant", color = 0),
+        ),
+        people = names.people,
+        accounts = names.accounts,
+        merchants = emptyList(),
+    )
+
+    @Test fun `Azerbaijani names are found with their endings`() {
+        fun az(text: String) = parseSpokenEntry(text, azNames, AZERBAIJANI)
+        assertThat(az("ərzağa 15 manat").categoryId).isEqualTo(1)
+        assertThat(az("çörəyə 2 manat").categoryId).isEqualTo(2)
+        assertThat(az("motosikletin yanacağına 20 manat").categoryId).isEqualTo(4)
+        assertThat(az("yanacaq 10").categoryId).isEqualTo(4)
+        assertThat(az("motosiklet servisi 35 manat").categoryId).isEqualTo(5)
+        assertThat(az("kafe-restorana 30 manat").categoryId).isEqualTo(6)
+    }
+
+    @Test fun `English finds categories named in Azerbaijani`() {
+        assertThat(parseSpokenEntry("groceries 15", azNames, ENGLISH).categoryId).isEqualTo(1)
+        assertThat(parseSpokenEntry("motorbike fuel 20", azNames, ENGLISH).categoryId).isEqualTo(4)
+    }
+
+    @Test fun `the number said with manat is the amount`() {
+        assertThat(az("bir kofe 3 manat").amount).isEqualTo(Money(3_00))
+        assertThat(en("2 coffees 7 dollars").amount).isEqualTo(Money(7_00))
+        assertThat(az("20 manata aldım").amount).isEqualTo(Money(20_00))
+    }
+
+    @Test fun `Azerbaijani endings on words for money, people and cards`() {
+        val salary = az("maaşım 1500 manat")
+        assertThat(salary.kind).isEqualTo(TransactionKind.INCOME)
+        assertThat(salary.categoryId).isEqualTo(9)
+        val spoken = az("Samə 10 manat kartımdan")
+        assertThat(spoken.personId).isEqualTo(2)
+        assertThat(spoken.accountId).isEqualTo(1)
     }
 }
