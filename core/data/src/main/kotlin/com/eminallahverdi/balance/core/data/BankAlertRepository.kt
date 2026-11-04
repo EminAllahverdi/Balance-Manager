@@ -19,6 +19,7 @@ import com.eminallahverdi.balance.core.model.Transaction
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.guessFor
 import com.eminallahverdi.balance.core.model.parseBankNotification
+import com.eminallahverdi.balance.core.model.whyNotRead
 import java.security.MessageDigest
 import java.time.Instant
 import java.time.ZoneId
@@ -27,8 +28,12 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 
 /** Tells MainActivity to open To confirm, from the launcher shortcut or the widget. */
 const val EXTRA_OPEN_CONFIRM = "openConfirm"
@@ -36,6 +41,11 @@ const val EXTRA_OPEN_CONFIRM = "openConfirm"
 private const val DAYS_TO_REMEMBER_FINISHED = 30L
 
 data class PendingItem(val entry: PendingEntry, val guess: EntryGuess)
+
+/** A notification from a picked bank app that wasn't read, and why. Kept in memory only, so it never reaches a backup. */
+data class UnreadNotification(val source: String, val title: String, val text: String, val postedAt: Instant, val why: String)
+
+private const val UNREAD_TO_KEEP = 10
 
 private class Known(val aliases: Map<String, Long>, val merchants: List<Merchant>, val categories: List<Category>, val payments: List<RecurringPayment>)
 
@@ -54,6 +64,11 @@ class BankAlertRepository @Inject constructor(
     private val preferences: UserPreferencesRepository,
 ) {
     val waitingCount: Flow<Int> = dao.observeWaitingCount()
+
+    private val skipped = MutableStateFlow<List<UnreadNotification>>(emptyList())
+
+    /** The last few notifications from picked bank apps that weren't read, newest first, since the app started. */
+    val unread: StateFlow<List<UnreadNotification>> = skipped.asStateFlow()
 
     /** Everything waiting, and what was added since [since], with what each would be saved as. */
     fun items(since: Instant): Flow<List<PendingItem>> {
@@ -82,12 +97,21 @@ class BankAlertRepository @Inject constructor(
     }
 
     /** One notification, from any app. It's only read if bank notifications are on and the user picked this app. */
-    suspend fun receive(packageName: String, source: String, title: String, text: String, postedAt: Instant) {
+    suspend fun receive(packageName: String, source: String, title: String, text: String, postedAt: Instant, setAside: String? = null) {
         val settings = preferences.current()
         if (!settings.bankNotificationsEnabled) return
         noteApps(setOf(packageName))
         if (packageName !in settings.bankApps) return
-        val alert = parseBankNotification(title, text, appName = source) ?: return
+        if (setAside != null) {
+            // A group's own summary usually has no text, and says nothing worth showing.
+            if (title.isNotBlank() || text.isNotBlank()) rememberUnread(UnreadNotification(source, title, text, postedAt, setAside))
+            return
+        }
+        val alert = parseBankNotification(title, text, appName = source)
+        if (alert == null) {
+            whyNotRead(title, text, appName = source)?.let { rememberUnread(UnreadNotification(source, title, text, postedAt, it)) }
+            return
+        }
         val id = dao.insert(
             PendingEntryEntity(
                 externalId = fingerprint(packageName, title, text, postedAt),
@@ -105,6 +129,12 @@ class BankAlertRepository @Inject constructor(
         dao.deleteFinishedBefore(postedAt.minus(DAYS_TO_REMEMBER_FINISHED, ChronoUnit.DAYS).toEpochMilli())
         // The one thing that adds an entry unasked, and only after the user accepted it, for merchants they've confirmed themselves.
         if (settings.autoConfirmKnownMerchants) entry(id)?.let { if (guess(it).isKnown) confirm(id) }
+    }
+
+    private fun rememberUnread(unread: UnreadNotification) = skipped.update { list ->
+        (listOf(unread) + list.filterNot { it.title == unread.title && it.text == unread.text && it.postedAt == unread.postedAt })
+            .sortedByDescending { it.postedAt }
+            .take(UNREAD_TO_KEEP)
     }
 
     /** Saves the entry as guessed. A merchant with no category yet has to go through quick add. */

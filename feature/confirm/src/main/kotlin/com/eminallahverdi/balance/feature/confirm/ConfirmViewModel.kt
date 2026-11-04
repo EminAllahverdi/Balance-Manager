@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.PendingItem
+import com.eminallahverdi.balance.core.data.UnreadNotification
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.Category
@@ -60,6 +61,8 @@ data class ConfirmUiState(
     val autoConfirm: Boolean = false,
     val askingAutoConfirm: Boolean = false,
     val hideAmounts: Boolean = false,
+    /** Notifications from picked bank apps that weren't read, so the user can see why. */
+    val unread: List<UnreadNotification> = emptyList(),
 ) {
     val waiting: Int get() = rows.count { it.isWaiting }
 }
@@ -77,9 +80,9 @@ class ConfirmViewModel @Inject constructor(
     val state: StateFlow<ConfirmUiState> = combine(
         alerts.items(startOfToday),
         combine(catalog.categories, catalog.people, catalog.accounts) { c, p, a -> Triple(c, p, a) },
-        prefs.preferences,
+        combine(prefs.preferences, alerts.unread) { settings, unread -> settings to unread },
         asking,
-    ) { items, (categories, people, accounts), settings, askingNow ->
+    ) { items, (categories, people, accounts), (settings, unread), askingNow ->
         ConfirmUiState(
             loading = false,
             rows = items.map { item ->
@@ -97,6 +100,7 @@ class ConfirmViewModel @Inject constructor(
             autoConfirm = settings.autoConfirmKnownMerchants,
             askingAutoConfirm = askingNow,
             hideAmounts = settings.hideAmountsInApp,
+            unread = unread,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ConfirmUiState())
 

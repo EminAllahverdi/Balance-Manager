@@ -136,6 +136,35 @@ class BankAlertTest {
         assertThat(parse("Bonus kampaniyası: 10 AZN ödəniş edin")).isNull()
     }
 
+    @Test fun `a card payment with its own authorisation code is still a payment, a login code isn't`() {
+        val alert = parse("SOME SHOP\nKart: **1234\nAvtorizasiya kodu: 123456\nBalans: 900.00₼", title = "💸 Ödəniş: -18.50₼")!!
+        assertThat(alert.amount).isEqualTo(Money(18_50))
+        assertThat(alert.merchant).isEqualTo("SOME SHOP")
+        assertThat(parse("Təsdiq kodu: 4821. Kart **1234, ödəniş 12.40 AZN")).isNull()
+        assertThat(parse("SOME SHOP\nKart: **1234\nOTP: 4821", title = "Ödəniş: -18.50₼")).isNull()
+    }
+
+    @Test fun `any kind of space or minus a bank uses reads like a plain one`() {
+        for (space in listOf(" ", " ", " ")) {
+            val alert = parse("SOME SHOP\nKart: **1234", title = "💸 Ödəniş: −18.50${space}₼")!!
+            assertThat(alert.amount).isEqualTo(Money(18_50))
+            assertThat(alert.kind).isEqualTo(TransactionKind.EXPENSE)
+        }
+        assertThat(parse("SOME SHOP Kart: **1234", title = "Ödəniş: -5.00₼")!!.merchant).isEqualTo("SOME SHOP")
+    }
+
+    @Test fun `what wasn't read says why`() {
+        assertThat(whyNotRead("Bank", "Balans: 533.12 AZN")).isNotNull()
+        assertThat(whyNotRead("Bank", "Ödəniş uğurla tamamlandı")).isEqualTo("No sum in manats was found in it.")
+        assertThat(whyNotRead("Bank", "Kartınıza 20 AZN keşbek qazanın")).contains("offer")
+        assertThat(whyNotRead("💸 Ödəniş: -5.20₼", "SOME SHOP\nKart: **1234")).isNull()
+    }
+
+    @Test fun `hidden characters are written out, and what shows stays as it is`() {
+        assertThat(showHidden("💸 Ödəniş: -‎15.24‎₼")).isEqualTo("💸 Ödəniş: -⟨U+200E⟩15.24⟨U+200E⟩₼")
+        assertThat(showHidden("18.50 ₼ − Kart: **1234\nBalans")).isEqualTo("18.50⟨U+00A0⟩₼ ⟨U+2212⟩ Kart: **1234\nBalans")
+    }
+
     @Test fun `no sum at all, no entry`() {
         assertThat(parse("Ödəniş uğurla tamamlandı")).isNull()
     }

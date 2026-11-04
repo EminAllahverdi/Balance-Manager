@@ -1,5 +1,10 @@
 package com.eminallahverdi.balance.feature.confirm
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Build
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +23,7 @@ import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material3.AlertDialog
@@ -30,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -37,14 +44,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.common.MoneyFormat
+import com.eminallahverdi.balance.core.data.UnreadNotification
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtChip
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
 import com.eminallahverdi.balance.core.designsystem.component.BtSwitch
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
+import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.TransactionKind
+import com.eminallahverdi.balance.core.model.showHidden
 import java.time.ZoneId
 
 /** Ready-made entries read from bank notifications. [onEdit] opens one in quick add. */
@@ -69,6 +79,19 @@ fun ConfirmRoute(onBack: () -> Unit, onEdit: (Long) -> Unit, viewModel: ConfirmV
         }
         items(state.rows, key = { it.item.entry.id }) { row -> EntryCard(row, state.hideAmounts, viewModel, onEdit) }
         if (state.listening) item(key = "auto") { AutoConfirmRow(state.autoConfirm, viewModel::setAutoConfirm) }
+        if (state.unread.isNotEmpty()) {
+            item(key = "unread") {
+                Column(Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Overline("Not read")
+                    Text(
+                        "From your bank apps since Cibim last started, and kept only until it stops. Copy one to send it, with card digits and balances changed to X.",
+                        style = BtTheme.type.caption,
+                        color = c.textSecondary,
+                    )
+                }
+            }
+            items(state.unread, key = { "u${it.postedAt.toEpochMilli()}${it.title.hashCode()}${it.text.hashCode()}" }) { UnreadCard(it) }
+        }
     }
     if (state.askingAutoConfirm) {
         AlertDialog(
@@ -149,6 +172,33 @@ private fun EntryCard(row: ConfirmRow, hideAmounts: Boolean, vm: ConfirmViewMode
             }
         }
     }
+}
+
+/** A notification that wasn't read: why, and its text as it really is, hidden characters written out. */
+@Composable
+private fun UnreadCard(unread: UnreadNotification) {
+    val c = BtTheme.colors
+    val context = LocalContext.current
+    val posted = unread.postedAt.atZone(ZoneId.systemDefault())
+    val shown = listOf(unread.title, unread.text).filter { it.isNotBlank() }.joinToString("\n") { showHidden(it) }
+    BtCard(bordered = true) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(Icons.Rounded.Notifications, null, tint = c.textMuted, modifier = Modifier.size(16.dp))
+                Text("${unread.source} · ${DateLabels.timeOfDay(posted.hour * 60 + posted.minute)}", style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1)
+            }
+            Text(unread.why, style = BtTheme.type.bodyStrong, color = c.textPrimary)
+            Text(shown, style = BtTheme.type.caption.copy(fontFamily = FontFamily.Monospace), color = c.textSecondary)
+            CardButton("Copy", Icons.Rounded.ContentCopy, false, { copyReport(context, unread) }, Modifier.fillMaxWidth())
+        }
+    }
+}
+
+private fun copyReport(context: Context, unread: UnreadNotification) {
+    val report = "Not read: ${unread.why}\nApp: ${unread.source}\nTitle: ${showHidden(unread.title)}\nText:\n${showHidden(unread.text)}"
+    context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Bank notification", report))
+    // Android 13 and up confirm a copy themselves.
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
 }
 
 @Composable

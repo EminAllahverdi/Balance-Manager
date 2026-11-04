@@ -62,12 +62,18 @@ class BankNotificationListener : NotificationListenerService() {
     }
 
     private suspend fun read(sbn: StatusBarNotification) {
-        if (sbn.packageName == packageName || sbn.isOngoing || sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
+        if (sbn.packageName == packageName) return
+        // Never a payment, but said why, so a bank that posts payments this way shows up on To confirm as not read.
+        val setAside = when {
+            sbn.isOngoing -> "It's an ongoing notification, which is never read as a payment."
+            sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY != 0 -> "It's the summary of a group of notifications, which is never read as a payment."
+            else -> null
+        }
         val extras = sbn.notification.extras
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
         val text = (extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: extras.getCharSequence(Notification.EXTRA_TEXT))?.toString().orEmpty()
         val posted = Instant.ofEpochMilli(sbn.notification.`when`.takeIf { it > 0 } ?: sbn.postTime)
         val source = packageManager.runCatching { getApplicationLabel(getApplicationInfo(sbn.packageName, 0)).toString() }.getOrDefault(sbn.packageName)
-        app.bankAlerts().receive(sbn.packageName, source, title, text, posted)
+        app.bankAlerts().receive(sbn.packageName, source, title, text, posted, setAside)
     }
 }

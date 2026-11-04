@@ -33,17 +33,35 @@ data class PendingEntry(
  * came in. Anything it can't read stays off the page, and the bank's own notification is untouched.
  */
 fun parseBankNotification(title: String, text: String, appName: String = ""): BankAlert? =
-    readBankNotification(title.replace(INVISIBLE, ""), text.replace(INVISIBLE, ""), appName)
+    (readBankNotification(clean(title), clean(text), appName) as? BankReading.Read)?.alert
 
-private fun readBankNotification(title: String, text: String, appName: String): BankAlert? {
+/** Why a notification from a bank app wasn't read, in plain words, or null when it was. */
+fun whyNotRead(title: String, text: String, appName: String = ""): String? =
+    (readBankNotification(clean(title), clean(text), appName) as? BankReading.NotRead)?.why
+
+private sealed interface BankReading {
+    data class Read(val alert: BankAlert) : BankReading
+    data class NotRead(val why: String) : BankReading
+}
+
+/**
+ * What's on screen, and only that: invisible marks go, every kind of space becomes a plain one, and a typeset minus a plain
+ * one, so a no-break space between a sum and ₼ can't split them.
+ */
+private fun clean(text: String): String = text.replace(INVISIBLE, "").replace(LINE_BREAKS, "\n").replace(SPACES, " ").replace('−', '-')
+
+private fun readBankNotification(title: String, text: String, appName: String): BankReading {
     val message = "$title\n$text"
-    if (SECURITY_WORDS.containsMatchIn(message)) return null
-    val sum = AMOUNT.findAll(message).firstOrNull { !it.isSideFigure(message) } ?: return null
-    // An offer doesn't name one of the user's cards beside a sum with a sign. A payment can mention cashback and still be one.
+    if (LOGIN_WORDS.containsMatchIn(message)) return BankReading.NotRead("It has a word for a login code or password, like OTP or şifrə.")
+    val sum = AMOUNT.findAll(message).firstOrNull { !it.isSideFigure(message) } ?: return BankReading.NotRead("No sum in manats was found in it.")
+    // A real movement names one of the user's cards beside a sum with a sign. A code or an offer doesn't, though a payment can mention either.
     val signed = message.substring(0, sum.range.first).trimEnd().lastOrNull()?.let { it in SIGNS } == true
-    if (OFFER_WORDS.containsMatchIn(message) && !(signed && CARD_ENDING.containsMatchIn(message))) return null
-    val amount = parseAmount(sum.groups["before"]?.value ?: sum.groups["after"]?.value ?: return null) ?: return null
-    if (amount.isZero || !MONEY_MOVED_WORDS.containsMatchIn(message)) return null
+    val movement = signed && CARD_ENDING.containsMatchIn(message)
+    if (CODE_WORDS.containsMatchIn(message) && !movement) return BankReading.NotRead("It mentions a code, and has no signed sum beside a card.")
+    if (OFFER_WORDS.containsMatchIn(message) && !movement) return BankReading.NotRead("It looks like an offer, and has no signed sum beside a card.")
+    val amount = parseAmount(sum.groups["before"]?.value ?: sum.groups["after"]?.value.orEmpty()) ?: return BankReading.NotRead("Its sum couldn't be read.")
+    if (amount.isZero) return BankReading.NotRead("Its sum is zero.")
+    if (!MONEY_MOVED_WORDS.containsMatchIn(message)) return BankReading.NotRead("Nothing in it says money moved.")
     val kind = when {
         INCOMING_WORDS.containsMatchIn(message) || message.substring(0, sum.range.first).trimEnd().endsWith('+') -> TransactionKind.INCOME
         CASH_WORDS.containsMatchIn(message) -> TransactionKind.TRANSFER
@@ -51,8 +69,30 @@ private fun readBankNotification(title: String, text: String, appName: String): 
     }
     val titleMerchant = if (title.trim().equals(appName.trim(), ignoreCase = true)) "" else merchantIn(title, sum.value)
     val merchant = merchantIn(text, sum.value).ifBlank { titleMerchant }
-    return BankAlert(amount, kind, merchant, CARD_ENDING.find(message)?.groupValues?.get(1).orEmpty())
+    return BankReading.Read(BankAlert(amount, kind, merchant, CARD_ENDING.find(message)?.groupValues?.get(1).orEmpty()))
 }
+
+/**
+ * The text with what doesn't show on screen written out, like ⟨U+200E⟩, so a notification that looks right can be seen as it
+ * really is. Letters, digits, punctuation, ₼ and emoji stay as they are.
+ */
+fun showHidden(text: String): String = buildString {
+    var i = 0
+    while (i < text.length) {
+        val point = text.codePointAt(i)
+        if (point == '\n'.code || point == ' '.code || point in 0x21..0x7E || Character.isLetterOrDigit(point) || Character.getType(point) in SHOWN_AS_IS) {
+            appendCodePoint(point)
+        } else {
+            append("⟨U+%04X⟩".format(point))
+        }
+        i += Character.charCount(point)
+    }
+}
+
+private val SHOWN_AS_IS = setOf(
+    Character.CURRENCY_SYMBOL, Character.OTHER_SYMBOL, Character.OTHER_PUNCTUATION, Character.DASH_PUNCTUATION,
+    Character.START_PUNCTUATION, Character.END_PUNCTUATION, Character.INITIAL_QUOTE_PUNCTUATION, Character.FINAL_QUOTE_PUNCTUATION,
+).map { it.toInt() }.toSet()
 
 /** A balance, a commission or an exchange rate: a sum in manats, but not what was paid. */
 private fun MatchResult.isSideFigure(message: String): Boolean {
@@ -127,7 +167,15 @@ private val WHITESPACE = Regex("""\s+""")
 private val CARD_ENDING = Regex("""\*+\s*(\d{4})(?!\d)""")
 private val BILLING_WORD = words("""sub|subscription|membership""")
 
-private val SECURITY_WORDS = words("""$START(otp|kod|kodu|kodunuz|code|şifrə|sifre|parol|password|пароль|код)$END""")
+/** Every kind of space, like the no-break ones some banks put between a sum and its currency. */
+private val SPACES = Regex("""\p{Zs}""")
+private val LINE_BREAKS = Regex("""[\p{Zl}\p{Zp}]""")
+
+/** Words only a login code or a password message has. */
+private val LOGIN_WORDS = words("""$START(otp|şifrə|sifre|parol|password|пароль)$END""")
+
+/** A code: a login one, or a card payment's own authorisation code, which still makes it a payment. */
+private val CODE_WORDS = words("""$START(kod|kodu|kodunuz|code|код)$END""")
 private val OFFER_WORDS = words("""(təklif|kampaniya|endirim|keşbek|kesbek|cashback|promo|$START(offer|bonus)|предлож|акци|скидк)""")
 private val SIDE_FIGURE_WORDS = words(
     """(balans|balance|qalıq|qaliq|mövcud|movcud|баланс|остаток|доступно|limit|лимит|komissiya|commission|комисси|kurs|məzənnə|mezenne|курс|$START(fee|rate)$END|""" +
