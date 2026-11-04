@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.eminallahverdi.balance.core.common.DateLabels
@@ -59,6 +60,7 @@ import java.time.LocalDate
 
 private val AmountKeyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal)
 private val NumberKeyboard = KeyboardOptions(keyboardType = KeyboardType.Number)
+private val NameKeyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Words)
 private val KINDS = DebtKind.entries
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,6 +84,7 @@ internal fun NewEntrySheet(vm: LoansViewModel) {
     // Each option opens its own sheet in this one's place, so there's no closing first: that would close the new one too.
     ChoiceSheet("Add", onClose = vm::closeSheet) { _ ->
         OptionRow("Bank loan", selected = false, onClick = vm::newLoan, caption = "A set number of monthly payments, with a reminder for each")
+        OptionRow("I paid for others", selected = false, onClick = vm::newBill, caption = "Lunch for the table. Your share is spending, and what they send back to any card isn't income")
         OptionRow("They paid for me", selected = false, onClick = { vm.newDebt(DebtKind.PAID_FOR_ME) }, caption = "Your share of lunch or a gift. It becomes an expense when you pay them back")
         OptionRow("I borrowed money", selected = false, onClick = { vm.newDebt(DebtKind.BORROWED) }, caption = "Into your account, or one already running. It isn't income")
         OptionRow("I lent money", selected = false, onClick = { vm.newDebt(DebtKind.LENT) }, caption = "Out of your account, or one already running. It isn't spending")
@@ -254,6 +257,82 @@ internal fun DebtEditorSheet(draft: DebtDraft, state: LoansUiState, vm: LoansVie
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun BillEditorSheet(draft: BillDraft, state: LoansUiState, vm: LoansViewModel) {
+    val c = BtTheme.colors
+    val subCategories = state.subCategoriesOf(draft.categoryId)
+    val named = draft.others.map { it.lowercase() }.toSet()
+    val names = state.knownNames.filter { it.lowercase() !in named }
+    var pickDate by remember { mutableStateOf(false) }
+
+    SheetFrame(vm::closeSheet) {
+        EditorTitle("I paid for others") { CategoryTile("handshake", 0xFF8A94A3) }
+        Text(
+            "The whole bill leaves your account. Your share is spending, and what the others send back isn't income.",
+            style = BtTheme.type.caption,
+            color = c.textSecondary,
+        )
+        EditorField("Amount paid") {
+            BtTextField(draft.totalText, "${MoneyFormat.SYMBOL}0.00", { vm.updateBill { copy(totalText = it) } }, keyboardOptions = AmountKeyboard)
+        }
+        EditorField("Who owes you") {
+            BtTextField(draft.who, "Sam, Alex and Kamal", { vm.updateBill { copy(who = it) } }, keyboardOptions = NameKeyboard)
+        }
+        if (names.isNotEmpty()) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                names.forEach { name -> BtChip(name, false, { vm.addToBill(name) }) }
+            }
+        }
+        EditorField("Category") { CategoryChipRow(state.topCategories, draft.categoryId, vm::selectBillCategory) }
+        if (subCategories.isNotEmpty()) {
+            EditorField("Sub-category") {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    subCategories.forEach { sub -> BtChip(sub.name, sub.id == draft.subCategoryId, { vm.selectBillSubCategory(sub) }) }
+                }
+            }
+        }
+        EditorField("Merchant") { BtTextField(draft.merchant, "Where, like Bravo", { vm.updateBill { copy(merchant = it) } }) }
+        EditorField("Your share") {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                BtTextField(draft.mineText, "${MoneyFormat.SYMBOL}0.00", { vm.updateBill { copy(mineText = it) } }, keyboardOptions = AmountKeyboard)
+                draft.evenSplit?.let { even ->
+                    val people = draft.others.size + 1
+                    BtChip("Split evenly by $people: ${MoneyFormat.format(even)}", draft.mine == even, { vm.updateBill { copy(mineText = even.toFieldText()) } })
+                }
+                Text(shareCaption(draft), style = BtTheme.type.caption, color = c.textSecondary)
+            }
+        }
+        EditorField("For whom") {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                state.activePeople.forEach { person ->
+                    BtChip(person.name, person.id == draft.personId, { vm.updateBill { copy(personId = person.id) } }, leading = { PersonDot(person.color) })
+                }
+            }
+        }
+        EditorField("From") { AccountChips(state, draft.accountId) { id -> vm.updateBill { copy(accountId = id) } } }
+        EditorField("Date") { DateChip(draft.date, state.today) { pickDate = true } }
+        BtTextField(draft.note, "Note, like Friday lunch", { vm.updateBill { copy(note = it) } })
+        PrimaryButton(draft.total?.let { "Save ${MoneyFormat.format(it)}" } ?: "Save", vm::saveBill, enabled = draft.canSave)
+    }
+
+    if (pickDate) {
+        BtDatePickerDialog(draft.date, onPick = { date -> vm.updateBill { copy(date = date) } }, onClose = { pickDate = false }, latest = state.today)
+    }
+}
+
+/** What saving will do with the money, in plain words, so the split is never a surprise. */
+private fun shareCaption(draft: BillDraft): String {
+    val mine = draft.mine
+    val owed = draft.owed
+    return when {
+        mine == null -> "That isn't an amount."
+        draft.total != null && owed == null -> "Your share can't be the whole bill. Add it in quick add instead."
+        owed != null && !mine.isZero -> "${MoneyFormat.format(mine)} is spending now, and the others owe you ${MoneyFormat.format(owed)}."
+        else -> "Leave it empty if you don't know yet. Whatever isn't paid back can be marked as yours later."
+    }
+}
+
 @Composable
 internal fun PaySheet(draft: PayDraft, state: LoansUiState, vm: LoansViewModel) {
     val c = BtTheme.colors
@@ -276,7 +355,7 @@ internal fun PaySheet(draft: PayDraft, state: LoansUiState, vm: LoansViewModel) 
                 val amount = MoneyFormat.format(draft.amountFor(balance))
                 val where = state.categoryPath(balance.debt.categoryId)
                 val line = when {
-                    where != null -> "$amount as an expense in $where"
+                    where != null && iOwe -> "$amount as an expense in $where"
                     iOwe -> "$amount as a debt payment, not spending"
                     else -> "$amount back into your account, not income"
                 }
@@ -287,6 +366,17 @@ internal fun PaySheet(draft: PayDraft, state: LoansUiState, vm: LoansViewModel) 
         EditorField("Date") { DateChip(draft.date, state.today) { pickDate = true } }
         val action = if (iOwe) "Pay" else "Add"
         PrimaryButton(if (total != null) "$action ${MoneyFormat.format(total)}" else action, vm::confirmPay, enabled = draft.canPay)
+        if (draft.canMarkShare && total != null) {
+            // What nobody is sending back: the user's own part of the bill.
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                BtChip("${MoneyFormat.format(total)} is my share", selected = false, onClick = vm::markShare)
+                Text(
+                    "Spending in ${state.categoryPath(first.debt.categoryId).orEmpty()}, on the day of the bill, from the account that paid it.",
+                    style = BtTheme.type.caption,
+                    color = c.textSecondary,
+                )
+            }
+        }
     }
 
     if (pickDate) {
