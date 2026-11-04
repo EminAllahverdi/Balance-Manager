@@ -100,6 +100,9 @@ interface MerchantDao {
 /** Per-account sum of every movement, in minor units. */
 data class AccountSum(val accountId: Long, val total: Long)
 
+/** How many entries a category has. */
+data class CategoryUse(val categoryId: Long, val uses: Int)
+
 @Dao
 interface TransactionDao {
     @Query("SELECT * FROM txn WHERE date BETWEEN :fromEpochDay AND :toEpochDay ORDER BY date DESC, created_at DESC")
@@ -118,6 +121,9 @@ interface TransactionDao {
 
     @Query("SELECT * FROM txn WHERE category_id = :categoryId AND kind = 'EXPENSE' ORDER BY date DESC, created_at DESC LIMIT 1")
     suspend fun lastForCategory(categoryId: Long): TransactionEntity?
+
+    @Query("SELECT category_id AS categoryId, COUNT(*) AS uses FROM txn WHERE category_id IS NOT NULL AND date >= :fromEpochDay GROUP BY category_id")
+    suspend fun categoryUse(fromEpochDay: Long): List<CategoryUse>
 
     /**
      * Balance contribution per account. Outgoing side of transfers and expenses are negative;

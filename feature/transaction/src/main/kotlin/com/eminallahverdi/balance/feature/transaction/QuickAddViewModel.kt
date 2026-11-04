@@ -235,7 +235,7 @@ class QuickAddViewModel @Inject constructor(
     /** A sentence the user said. What it named is filled in, the rest as usual, and nothing is saved until they press Save. */
     private suspend fun loadFromSpeech(text: String, language: SpokenLanguage): SpokenEntry {
         val categories = catalog.categories.first()
-        val names = SpokenNames(categories, catalog.people.first(), catalog.accounts.first(), catalog.merchants.first())
+        val names = SpokenNames(categories, catalog.people.first(), catalog.accounts.first(), catalog.merchants.first(), transactions.categoryUse())
         val spoken = parseSpokenEntry(text, names, language)
         val category = categories.firstOrNull { it.id == spoken.categoryId }
         _state.update {
