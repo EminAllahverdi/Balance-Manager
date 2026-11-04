@@ -98,6 +98,7 @@ fun LoansRoute(onBack: () -> Unit, viewModel: LoansViewModel = hiltViewModel()) 
         LoansSheet.New -> NewEntrySheet(viewModel)
         is LoansSheet.Loan -> LoanEditorSheet(sheet.draft, state, viewModel)
         is LoansSheet.NewDebt -> DebtEditorSheet(sheet.draft, state, viewModel)
+        is LoansSheet.NewBill -> BillEditorSheet(sheet.draft, state, viewModel)
         is LoansSheet.Pay -> PaySheet(sheet.draft, state, viewModel)
         null -> Unit
     }
@@ -229,7 +230,7 @@ private fun DebtRow(balance: DebtBalance, state: LoansUiState, iOwe: Boolean, on
             Text(title, style = BtTheme.type.body, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(details, style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Text(amount(balance.left, debt.isPlainLoan, state), style = BtTheme.type.amountSmall, color = c.textPrimary)
+        Text(amount(balance.left, debt.movesMoney, state), style = BtTheme.type.amountSmall, color = c.textPrimary)
         BtChip(if (iOwe) "Pay" else "Received", selected = false, onClick = onPay)
     }
 }

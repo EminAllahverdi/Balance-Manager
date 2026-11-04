@@ -37,8 +37,11 @@ fun parseBankNotification(title: String, text: String, appName: String = ""): Ba
 
 private fun readBankNotification(title: String, text: String, appName: String): BankAlert? {
     val message = "$title\n$text"
-    if (SECURITY_WORDS.containsMatchIn(message) || OFFER_WORDS.containsMatchIn(message)) return null
+    if (SECURITY_WORDS.containsMatchIn(message)) return null
     val sum = AMOUNT.findAll(message).firstOrNull { !it.isSideFigure(message) } ?: return null
+    // An offer doesn't name one of the user's cards beside a sum with a sign. A payment can mention cashback and still be one.
+    val signed = message.substring(0, sum.range.first).trimEnd().lastOrNull()?.let { it in SIGNS } == true
+    if (OFFER_WORDS.containsMatchIn(message) && !(signed && CARD_ENDING.containsMatchIn(message))) return null
     val amount = parseAmount(sum.groups["before"]?.value ?: sum.groups["after"]?.value ?: return null) ?: return null
     if (amount.isZero || !MONEY_MOVED_WORDS.containsMatchIn(message)) return null
     val kind = when {
@@ -127,8 +130,10 @@ private val BILLING_WORD = words("""sub|subscription|membership""")
 private val SECURITY_WORDS = words("""$START(otp|kod|kodu|kodunuz|code|şifrə|sifre|parol|password|пароль|код)$END""")
 private val OFFER_WORDS = words("""(təklif|kampaniya|endirim|keşbek|kesbek|cashback|promo|$START(offer|bonus)|предлож|акци|скидк)""")
 private val SIDE_FIGURE_WORDS = words(
-    """(balans|balance|qalıq|qaliq|mövcud|movcud|баланс|остаток|доступно|limit|лимит|komissiya|commission|комисси|kurs|məzənnə|mezenne|курс|$START(fee|rate)$END)""",
+    """(balans|balance|qalıq|qaliq|mövcud|movcud|баланс|остаток|доступно|limit|лимит|komissiya|commission|комисси|kurs|məzənnə|mezenne|курс|$START(fee|rate)$END|""" +
+        """keşbek|kesbek|cashback|кешбэк|bonus|бонус|endirim|скидк)""",
 )
+private const val SIGNS = "-+−"
 
 // Cash out of a card, wherever it was taken. The place in the notification isn't a shop.
 private const val CASH_OUT = """n[aə][ğg]dl[aə][şs]d[ıi]r|bankomat|${START}atm$END|withdraw|снятие|наличн"""

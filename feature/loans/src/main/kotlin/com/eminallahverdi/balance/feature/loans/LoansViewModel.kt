@@ -24,6 +24,8 @@ import com.eminallahverdi.balance.core.model.RecurringFrequency
 import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
+import com.eminallahverdi.balance.core.model.evenShare
+import com.eminallahverdi.balance.core.model.namesIn
 import com.eminallahverdi.balance.core.model.sum
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -140,6 +142,48 @@ data class DebtDraft(
     val openingAccount: Long? get() = accountId.takeUnless { kind == DebtKind.PAID_FOR_ME }
 }
 
+/**
+ * A bill paid for others too, like lunch for the table. The whole of it leaves the account: the user's share is spending,
+ * and the rest is owed back by [who]. The share can stay empty and be marked later, from whatever isn't paid back.
+ */
+data class BillDraft(
+    val totalText: String = "",
+    val who: String = "",
+    val mineText: String = "",
+    val merchant: String = "",
+    val note: String = "",
+    val categoryId: Long? = null,
+    val subCategoryId: Long? = null,
+    val personId: Long? = null,
+    val accountId: Long? = null,
+    val date: LocalDate,
+) {
+    val total: Money? get() = positiveAmount(totalText)
+    val mine: Money? get() = if (mineText.isBlank()) Money.ZERO else Money.parse(mineText)?.takeIf { !it.isNegative }
+    val others: List<String> get() = namesIn(who)
+
+    /** What the others owe, once the share is taken off. Nothing to owe means there's no one to wait for. */
+    val owed: Money? get() = total?.let { t -> mine?.let { m -> (t - m).takeIf { it.minor > 0 } } }
+
+    /** The user's share if it's split evenly with everyone named. */
+    val evenSplit: Money? get() = total?.takeIf { others.isNotEmpty() }?.let { evenShare(it, others.size) }
+
+    val canSave: Boolean get() = who.isNotBlank() && owed != null && categoryId != null && accountId != null
+
+    fun toDebt(): Debt? {
+        if (!canSave) return null
+        return Debt(
+            id = 0,
+            counterparty = who.trim(),
+            direction = DebtDirection.OWED_TO_ME,
+            amount = total ?: return null,
+            categoryId = subCategoryId ?: categoryId,
+            note = note.trim().ifBlank { merchant.trim() },
+            date = date,
+        )
+    }
+}
+
 /** Paying one debt can be for part of it. Paying several settles each in full, as its own entry. */
 data class PayDraft(
     val debts: List<DebtBalance>,
@@ -151,6 +195,9 @@ data class PayDraft(
     val total: Money? get() = if (isSingle) positiveAmount(amountText)?.takeIf { it <= debts.single().left } else debts.map { it.left }.sum()
     val canPay: Boolean get() = total != null && accountId != null
 
+    /** Of a bill paid for others, what isn't coming back can be marked as the user's own share instead. */
+    val canMarkShare: Boolean get() = isSingle && debts.single().debt.isPaidForOthers && total != null
+
     fun amountFor(balance: DebtBalance): Money = (if (isSingle) total else null) ?: balance.left
 }
 
@@ -158,13 +205,14 @@ sealed interface LoansSheet {
     data object New : LoansSheet
     data class Loan(val draft: LoanDraft) : LoansSheet
     data class NewDebt(val draft: DebtDraft) : LoansSheet
+    data class NewBill(val draft: BillDraft) : LoansSheet
     data class Pay(val draft: PayDraft) : LoansSheet
 }
 
 /** Everything open with one person, in one direction. */
 data class PersonDebts(val name: String, val direction: DebtDirection, val debts: List<DebtBalance>) {
     val total: Money get() = debts.map { it.left }.sum()
-    val isSensitive: Boolean get() = debts.any { it.debt.isPlainLoan }
+    val isSensitive: Boolean get() = debts.any { it.debt.movesMoney }
 }
 
 internal fun List<DebtBalance>.groupedByPerson(): List<PersonDebts> =
@@ -203,8 +251,8 @@ data class LoansUiState(
 
     val openDebts: List<PersonDebts> get() = debts.groupedByPerson()
 
-    /** Names already used, for picking someone again without retyping them. */
-    val knownNames: List<String> get() = debts.map { it.debt.counterparty }.distinctBy { it.lowercase() }
+    /** Names already used, one person each even from a shared bill, for picking someone again without retyping them. */
+    val knownNames: List<String> get() = debts.flatMap { namesIn(it.debt.counterparty) }.distinctBy { it.lowercase() }
 
     val topCategories: List<Category> get() = categories.filter { it.parentId == null && it.type == CategoryType.EXPENSE && !it.isArchived }
     val activeAccounts: List<Account> get() = accounts.filterNot { it.isArchived }
@@ -300,6 +348,41 @@ class LoansViewModel @Inject constructor(
         val debt = draft.toDebt() ?: return
         sheet.update { null }
         viewModelScope.launch { debtRepository.add(debt, draft.openingAccount) }
+    }
+
+    fun newBill() {
+        val s = state.value
+        sheet.update { LoansSheet.NewBill(BillDraft(accountId = s.defaultAccountId, personId = s.activePeople.firstOrNull()?.id, date = LocalDate.now())) }
+    }
+
+    fun updateBill(change: BillDraft.() -> BillDraft) = sheet.update { (it as? LoansSheet.NewBill)?.let { open -> open.copy(draft = open.draft.change()) } ?: it }
+
+    fun selectBillCategory(category: Category) = updateBill { copy(categoryId = category.id, subCategoryId = null, personId = category.defaultPersonId ?: personId) }
+
+    fun selectBillSubCategory(category: Category) = updateBill {
+        val next = category.id.takeIf { it != subCategoryId }
+        copy(subCategoryId = next, personId = category.defaultPersonId.takeIf { next != null } ?: personId)
+    }
+
+    /** Adds a name someone was owed by before to who's in on this one. */
+    fun addToBill(name: String) = updateBill { copy(who = if (who.isBlank()) name else "${who.trim().trimEnd(',')}, $name") }
+
+    fun saveBill() {
+        val draft = (sheet.value as? LoansSheet.NewBill)?.draft ?: return
+        val bill = draft.toDebt() ?: return
+        val accountId = draft.accountId ?: return
+        sheet.update { null }
+        viewModelScope.launch { debtRepository.addPaidForOthers(bill, accountId, draft.mine ?: Money.ZERO, draft.merchant.takeIf { it.isNotBlank() }, draft.personId) }
+    }
+
+    /** What isn't coming back of a bill paid for others becomes the user's own share: spending, on the bill's day. */
+    fun markShare() {
+        val draft = (sheet.value as? LoansSheet.Pay)?.draft ?: return
+        if (!draft.canMarkShare) return
+        val bill = draft.debts.single().debt
+        val mine = draft.total ?: return
+        sheet.update { null }
+        viewModelScope.launch { debtRepository.addShare(bill, mine, state.value.personFor(bill)) }
     }
 
     fun openPay(debts: List<DebtBalance>) {

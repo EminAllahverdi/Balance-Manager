@@ -58,23 +58,11 @@ class TransactionRepository @Inject constructor(
 
     suspend fun get(id: Long): Transaction? = dao.get(id)?.toModel()
 
-    /** Saves and teaches the merchant what was chosen, so next time is one tap. */
+    /** Saves and teaches the merchant what was chosen, so next time is one tap. With no [merchantName], the entry keeps its own. */
     suspend fun save(transaction: Transaction, merchantName: String?, externalId: String? = null): Long {
         val now = Instant.now()
         val isNew = transaction.id == 0L
-        val merchantId = merchantName?.trim()?.takeIf { it.isNotEmpty() }?.let { name ->
-            val existing = merchantDao.findByName(name)
-            if (existing == null) {
-                merchantDao.insert(
-                    MerchantEntity(name = name, lastCategoryId = transaction.categoryId, lastAccountId = transaction.accountId, lastPersonId = transaction.personId, useCount = 1),
-                )
-            } else {
-                merchantDao.update(
-                    existing.copy(lastCategoryId = transaction.categoryId, lastAccountId = transaction.accountId, lastPersonId = transaction.personId, useCount = existing.useCount + if (isNew) 1 else 0),
-                )
-                existing.id
-            }
-        }
+        val merchantId = if (merchantName == null) transaction.merchantId else teach(merchantName, transaction, counts = isNew)
         val toSave = transaction.copy(
             merchantId = merchantId,
             createdAt = if (isNew) now else transaction.createdAt,
@@ -82,6 +70,17 @@ class TransactionRepository @Inject constructor(
         )
         // An edit keeps the import id, or the next import would add this transaction again.
         return dao.upsert(toSave.toEntity(externalId = externalId ?: dao.get(transaction.id)?.externalId))
+    }
+
+    /** The merchant called [name], taught what [like] chose: its category, account and who it was for. Null for a blank name. */
+    suspend fun teach(name: String, like: Transaction, counts: Boolean = true): Long? {
+        val clean = name.trim().takeIf { it.isNotEmpty() } ?: return null
+        val existing = merchantDao.findByName(clean)
+            ?: return merchantDao.insert(MerchantEntity(name = clean, lastCategoryId = like.categoryId, lastAccountId = like.accountId, lastPersonId = like.personId, useCount = 1))
+        merchantDao.update(
+            existing.copy(lastCategoryId = like.categoryId, lastAccountId = like.accountId, lastPersonId = like.personId, useCount = existing.useCount + if (counts) 1 else 0),
+        )
+        return existing.id
     }
 
     suspend fun delete(id: Long) = dao.delete(id)

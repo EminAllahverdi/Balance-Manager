@@ -118,6 +118,24 @@ class BankAlertTest {
         assertThat(parse("Your balance is 533.12 AZN")).isNull()
     }
 
+    @Test fun `a card payment that mentions cashback or a bonus is still a payment`() {
+        for (extra in listOf("Keşbek: +0.19₼", "Bonus: 0.37₼", "Endirim: 1.00₼", "Cashback: 0.19₼")) {
+            val alert = parse("SOME SHOP\nKart: **1234\n$extra\nBalans: 2,000.50₼", title = "💸 Ödəniş: -18.50₼")
+            assertThat(alert).isNotNull()
+            assertThat(alert!!.amount).isEqualTo(Money(18_50))
+            assertThat(alert.kind).isEqualTo(TransactionKind.EXPENSE)
+            assertThat(alert.merchant).isEqualTo("SOME SHOP")
+            assertThat(alert.cardEnding).isEqualTo("1234")
+        }
+        // Even with the cashback first, the payment is the sum.
+        assertThat(parse("Keşbek: +0.19₼\nKart: **1234", title = "💸 Ödəniş: -18.50₼")!!.amount).isEqualTo(Money(18_50))
+    }
+
+    @Test fun `an offer that names a card is still an offer, unless a signed sum says money moved`() {
+        assertThat(parse("Kart **1234 ilə 50 AZN xərcləyin, 5 AZN keşbek qazanın")).isNull()
+        assertThat(parse("Bonus kampaniyası: 10 AZN ödəniş edin")).isNull()
+    }
+
     @Test fun `no sum at all, no entry`() {
         assertThat(parse("Ödəniş uğurla tamamlandı")).isNull()
     }

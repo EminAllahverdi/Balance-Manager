@@ -142,6 +142,8 @@ interface TransactionDao {
     @Query("SELECT * FROM txn WHERE debt_id IS NOT NULL")
     fun observeDebtEntries(): Flow<List<TransactionEntity>>
 
+    @Query("SELECT * FROM txn WHERE debt_id = :debtId ORDER BY date, id") suspend fun forDebt(debtId: Long): List<TransactionEntity>
+
     @Query("DELETE FROM txn WHERE debt_id = :debtId") suspend fun deleteForDebt(debtId: Long)
 
     @Query("DELETE FROM txn WHERE account_id = :accountId OR to_account_id = :accountId")
