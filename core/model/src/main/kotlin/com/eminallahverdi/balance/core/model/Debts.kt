@@ -4,6 +4,9 @@ import java.time.LocalDate
 
 enum class DebtDirection { I_OWE, OWED_TO_ME }
 
+/** How a paid-back share of something they paid for names them in its note. Renaming them changes it there too. */
+const val PAID_BACK_TO = "Paid back to "
+
 /**
  * Money between the user and someone outside the household.
  *
@@ -71,7 +74,7 @@ data class Debt(
                 kind = TransactionKind.EXPENSE,
                 categoryId = categoryId,
                 personId = personId,
-                note = listOf(note, "Paid back to $counterparty").filter { it.isNotBlank() }.joinToString(" · "),
+                note = listOf(note, "$PAID_BACK_TO$counterparty").filter { it.isNotBlank() }.joinToString(" · "),
             )
             direction == DebtDirection.I_OWE -> shared.copy(amount = -paid)
             else -> shared

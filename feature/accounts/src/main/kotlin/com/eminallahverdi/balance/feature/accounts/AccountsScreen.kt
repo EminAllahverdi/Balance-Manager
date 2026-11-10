@@ -107,6 +107,7 @@ fun AccountsRoute(
     onOpenTransaction: (Long) -> Unit,
     onOpenLoans: () -> Unit,
     onDeleteArchived: (Long) -> Unit,
+    onSeeAllTransfers: () -> Unit,
     viewModel: AccountsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -149,7 +150,16 @@ fun AccountsRoute(
         if (state.transfers.isNotEmpty()) {
             item(key = "transfers") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Overline("Recent transfers", Modifier.padding(top = 8.dp, start = 4.dp))
+                    // Only the last few here, so the page stays light; the rest are one tap away.
+                    Row(Modifier.padding(top = 4.dp, start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Overline("Recent transfers", Modifier.weight(1f))
+                        Box(
+                            Modifier.heightIn(min = 44.dp).clip(BtShapes.full).clickable(role = Role.Button, onClick = onSeeAllTransfers).padding(horizontal = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("See all", style = BtTheme.type.label, color = c.accentText)
+                        }
+                    }
                     BtCard {
                         Column {
                             state.transfers.forEachIndexed { i, transfer ->

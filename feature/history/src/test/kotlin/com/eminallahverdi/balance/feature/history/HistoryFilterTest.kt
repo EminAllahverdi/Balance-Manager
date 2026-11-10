@@ -47,6 +47,21 @@ class HistoryFilterTest {
         assertThat(filter).isEqualTo(HistoryFilter())
     }
 
+    @Test fun `all the transfers start on all time, and keep only transfers`() {
+        val filter = initialFilter(month = null, categoryId = null, personId = null, kind = "TRANSFER")
+        assertThat(filter.month).isNull()
+        assertThat(filter.kind).isEqualTo(TransactionKind.TRANSFER)
+        assertThat(filter.matches(row(kind = TransactionKind.TRANSFER, category = null, parent = null, toAccount = cash))).isTrue()
+        assertThat(filter.matches(row())).isFalse()
+        assertThat(filter.emptyMessage(YearMonth.now())).isEqualTo("No transfers yet.")
+    }
+
+    @Test fun `a list of only transfers totals what moved`() {
+        val moves = listOf(row(500_00, TransactionKind.TRANSFER, null, null, cash), row(250_00, TransactionKind.TRANSFER, null, null, cash))
+        assertThat(moves.headlineTotal()).isEqualTo(Money(750_00))
+        assertThat(moves.hasSpending()).isFalse()
+    }
+
     @Test fun `opens on what was tapped on Home`() {
         val filter = initialFilter(month = "2026-10", categoryId = transport.id, personId = me.id)
         assertThat(filter.month).isEqualTo(YearMonth.of(2026, 10))

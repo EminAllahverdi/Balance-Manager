@@ -164,10 +164,10 @@ fun rememberRowActions(onOpen: (Long) -> Unit, onRemove: (Long) -> Unit, hideAmo
 @Composable
 private fun Header(state: HistoryUiState, onBack: (() -> Unit)?) {
     val filter = state.filter
-    val title = if (onBack == null) {
-        "History"
-    } else {
-        state.categories.firstOrNull { it.id == filter.categoryId }?.name ?: state.people.firstOrNull { it.id == filter.personId }?.name ?: "History"
+    val title = when {
+        onBack == null -> "History"
+        filter.kind == TransactionKind.TRANSFER -> "Transfers"
+        else -> state.categories.firstOrNull { it.id == filter.categoryId }?.name ?: state.people.firstOrNull { it.id == filter.personId }?.name ?: "History"
     }
     Row(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
@@ -264,7 +264,11 @@ private fun Summary(state: HistoryUiState) {
     val c = BtTheme.colors
     val filter = state.filter
     val parts = listOfNotNull(
-        if (state.count == 1) "1 transaction" else "${state.count} transactions",
+        when {
+            filter.kind == TransactionKind.TRANSFER -> if (state.count == 1) "1 transfer" else "${state.count} transfers"
+            state.count == 1 -> "1 transaction"
+            else -> "${state.count} transactions"
+        },
         state.people.firstOrNull { it.id == filter.personId }?.name,
         state.categories.firstOrNull { it.id == filter.categoryId }?.name,
         state.accounts.firstOrNull { it.id == filter.accountId }?.name,

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -66,18 +67,28 @@ fun CategoryTile(icon: String, color: Long, modifier: Modifier = Modifier, size:
     }
 }
 
-/** Person avatar: their photo when set, otherwise the initial on their colour. */
+/**
+ * Person avatar: the initial on their colour, or their photo inside a ring of it. A photo would hide the colour, and the
+ * colour is what ties them to their dots and bars everywhere else, so it stays in view. [selected] adds a lime ring outside.
+ */
 @Composable
 fun PersonAvatar(person: Person, modifier: Modifier = Modifier, size: Dp = 40.dp, selected: Boolean = false) {
     val ring = if (selected) Modifier.border(2.dp, BtTheme.colors.accentFill, CircleShape).padding(4.dp) else Modifier
-    Box(modifier = modifier.then(ring).size(size).clip(CircleShape).background(person.color.toColor()), contentAlignment = Alignment.Center) {
-        if (person.avatarUri != null) {
-            AsyncImage(model = person.avatarUri, contentDescription = person.name, contentScale = ContentScale.Crop, modifier = Modifier.size(size))
-        } else {
+    val hue = person.color.toColor()
+    if (person.avatarUri != null) {
+        val band = (size * PHOTO_RING).coerceAtLeast(2.dp)
+        Box(modifier = modifier.then(ring).size(size).border(band, hue, CircleShape).padding(band + 1.5.dp).clip(CircleShape).background(hue)) {
+            AsyncImage(model = person.avatarUri, contentDescription = person.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        }
+    } else {
+        Box(modifier = modifier.then(ring).size(size).clip(CircleShape).background(hue), contentAlignment = Alignment.Center) {
             Text(person.initial, style = TextStyle(fontWeight = FontWeight.ExtraBold, fontSize = (size.value * 0.38f).sp), color = Color(0xFF0B0D10))
         }
     }
 }
+
+/** How thick a photo's ring of the person's colour is, against the avatar's size. */
+private const val PHOTO_RING = 0.08f
 
 @Composable
 fun PersonDot(color: Long, size: Dp = 8.dp) {

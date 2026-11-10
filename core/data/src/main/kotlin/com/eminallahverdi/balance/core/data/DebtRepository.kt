@@ -7,6 +7,7 @@ import com.eminallahverdi.balance.core.database.dao.TransactionDao
 import com.eminallahverdi.balance.core.model.Debt
 import com.eminallahverdi.balance.core.model.DebtBalance
 import com.eminallahverdi.balance.core.model.Money
+import com.eminallahverdi.balance.core.model.PAID_BACK_TO
 import com.eminallahverdi.balance.core.model.TransactionKind
 import java.time.LocalDate
 import javax.inject.Inject
@@ -69,6 +70,20 @@ class DebtRepository @Inject constructor(
     suspend fun pay(payments: List<DebtPayment>, accountId: Long, on: LocalDate) = db.withTransaction {
         payments.forEach { payment ->
             transactions.save(payment.debt.repayment(payment.paid, accountId, on, payment.personId), merchantName = null)
+        }
+    }
+
+    /**
+     * Gives everyone filed under [from], whatever its case, the name [to]: every debt with them, and the notes their paybacks
+     * wrote. A name someone else already has brings the two together, which is how a misspelt second one is folded in.
+     */
+    suspend fun rename(from: String, to: String) = db.withTransaction {
+        val name = to.trim()
+        if (name.isEmpty()) return@withTransaction
+        val now = System.currentTimeMillis()
+        dao.all().filter { it.counterparty.trim().equals(from.trim(), ignoreCase = true) }.forEach { debt ->
+            dao.upsert(debt.copy(counterparty = name))
+            transactionDao.replaceInNotes(debt.id, "$PAID_BACK_TO${debt.counterparty}", "$PAID_BACK_TO$name", now)
         }
     }
 

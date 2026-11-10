@@ -19,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
+import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.feature.accounts.AccountsRoute
 import com.eminallahverdi.balance.feature.accounts.DeleteAccountRoute
 import com.eminallahverdi.balance.feature.catalog.CatalogRoute
@@ -45,7 +46,8 @@ import kotlinx.serialization.Serializable
 @Serializable data object GroceriesDestination
 
 /** History narrowed to what was tapped on Home. The names match the ARG_ keys in HistoryViewModel. */
-@Serializable data class TransactionsDestination(val categoryId: Long?, val personId: Long?, val month: String)
+/** History narrowed to what was tapped. A list of one kind, like all transfers, has no month: it starts on all time. */
+@Serializable data class TransactionsDestination(val categoryId: Long? = null, val personId: Long? = null, val month: String? = null, val kind: String? = null)
 
 /** The name matches ARG_ACCOUNT in DeleteAccountViewModel. */
 @Serializable data class DeleteAccountDestination(val accountId: Long)
@@ -115,6 +117,7 @@ fun BalanceApp(
                     onOpenTransaction = onOpenTransaction,
                     onOpenLoans = { nav.navigate(LoansDestination) { launchSingleTop = true } },
                     onDeleteArchived = { id -> nav.navigate(DeleteAccountDestination(id)) { launchSingleTop = true } },
+                    onSeeAllTransfers = { nav.navigate(TransactionsDestination(kind = TransactionKind.TRANSFER.name)) { launchSingleTop = true } },
                 )
             }
             composable<DeleteAccountDestination> { DeleteAccountRoute(onBack = { nav.popBackStack() }, onOpen = onOpenTransaction) }

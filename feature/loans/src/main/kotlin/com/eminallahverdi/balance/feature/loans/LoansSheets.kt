@@ -393,6 +393,29 @@ internal fun PaySheet(draft: PayDraft, state: LoansUiState, vm: LoansViewModel) 
     }
 }
 
+/** A new name for someone outside the household, on every debt with them, so a typo doesn't mean starting again. */
+@Composable
+internal fun RenameSheet(rename: LoansSheet.Rename, state: LoansUiState, vm: LoansViewModel) {
+    val c = BtTheme.colors
+    val count = state.debts.count { it.debt.counterparty.trim().equals(rename.from.trim(), ignoreCase = true) }
+    // Someone else already called this: their debts come together, which is how a second spelling is folded in.
+    val joining = state.knownNames.firstOrNull { it.equals(rename.text.trim(), ignoreCase = true) && !it.equals(rename.from.trim(), ignoreCase = true) }
+    SheetFrame(vm::closeSheet) {
+        EditorTitle("Change the name") { CategoryTile("handshake", 0xFF8A94A3) }
+        BtTextField(rename.text, "Name", vm::updateRename, keyboardOptions = NameKeyboard)
+        Text(
+            buildString {
+                append(if (count == 1) "Changes it on the debt with ${rename.from}" else "Changes it on all $count debts with ${rename.from}")
+                append(", and in the notes of what was paid back.")
+                if (joining != null) append(" They join $joining's, as one person.")
+            },
+            style = BtTheme.type.caption,
+            color = c.textSecondary,
+        )
+        PrimaryButton("Save", vm::saveRename, enabled = rename.canSave)
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AccountChips(state: LoansUiState, selected: Long?, onSelect: (Long) -> Unit) {

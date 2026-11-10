@@ -108,6 +108,12 @@ interface TransactionDao {
     @Query("SELECT * FROM txn WHERE date BETWEEN :fromEpochDay AND :toEpochDay ORDER BY date DESC, created_at DESC")
     fun observeBetween(fromEpochDay: Long, toEpochDay: Long): Flow<List<TransactionEntity>>
 
+    @Query("SELECT COUNT(*) FROM txn WHERE date BETWEEN :fromEpochDay AND :toEpochDay")
+    fun observeCountBetween(fromEpochDay: Long, toEpochDay: Long): Flow<Int>
+
+    @Query("SELECT MIN(date) FROM txn") suspend fun firstDate(): Long?
+    @Query("SELECT MAX(date) FROM txn") suspend fun lastDate(): Long?
+
     @Query("SELECT * FROM txn ORDER BY date DESC, created_at DESC LIMIT :limit")
     fun observeLatest(limit: Int): Flow<List<TransactionEntity>>
 
@@ -156,6 +162,10 @@ interface TransactionDao {
 
     @Query("DELETE FROM txn WHERE debt_id = :debtId") suspend fun deleteForDebt(debtId: Long)
 
+    /** Puts a new name in the notes a debt's paybacks wrote, like "Paid back to Sam". */
+    @Query("UPDATE txn SET note = REPLACE(note, :old, :new), updated_at = :now WHERE debt_id = :debtId AND note LIKE '%' || :old || '%'")
+    suspend fun replaceInNotes(debtId: Long, old: String, new: String, now: Long)
+
     @Query("DELETE FROM txn WHERE account_id = :accountId OR to_account_id = :accountId")
     suspend fun deleteForAccount(accountId: Long)
 
@@ -181,6 +191,7 @@ interface DebtDao {
 
     @Upsert suspend fun upsert(debt: DebtEntity): Long
     @Query("DELETE FROM debt WHERE id = :id") suspend fun delete(id: Long)
+    @Query("SELECT * FROM debt") suspend fun all(): List<DebtEntity>
 }
 
 @Dao

@@ -11,18 +11,20 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Locale
 
-/** What the list is narrowed to. [month] null means all time. */
+/** What the list is narrowed to. [month] null means all time. [kind] is set when the list opens on one kind, like transfers. */
 data class HistoryFilter(
     val month: YearMonth? = YearMonth.now(),
     val query: String = "",
     val personId: Long? = null,
     val categoryId: Long? = null,
     val accountId: Long? = null,
+    val kind: TransactionKind? = null,
 ) {
     val range: DateRange get() = month?.let(DateRange::month) ?: DateRange.ALL_TIME
 
     fun matches(d: TransactionDetails): Boolean =
-        (personId == null || d.person?.id == personId) &&
+        (kind == null || d.transaction.kind == kind) &&
+            (personId == null || d.person?.id == personId) &&
             (categoryId == null || d.category?.id == categoryId || d.parentCategory?.id == categoryId) &&
             (accountId == null || d.account.id == accountId || d.toAccount?.id == accountId) &&
             matchesQuery(d)
@@ -37,25 +39,35 @@ data class HistoryFilter(
     private fun plainAmount(amount: Money): String = MoneyFormat.format(amount.abs()).removePrefix(MoneyFormat.SYMBOL).replace(",", "")
 }
 
-/** What a list opens with: this month, or what was tapped on Home. [month] is a YearMonth as text. */
-internal fun initialFilter(month: String?, categoryId: Long?, personId: Long?) = HistoryFilter(
-    month = month?.let(YearMonth::parse) ?: YearMonth.now(),
-    categoryId = categoryId,
-    personId = personId,
-)
+/**
+ * What a list opens with: this month, or what was tapped on Home. [month] is a YearMonth as text. A list of one [kind], like
+ * Accounts' See all for transfers, starts on all time, since that's what "all" means there.
+ */
+internal fun initialFilter(month: String?, categoryId: Long?, personId: Long?, kind: String? = null): HistoryFilter {
+    val only = kind?.let { name -> TransactionKind.entries.firstOrNull { it.name == name } }
+    return HistoryFilter(
+        month = month?.let(YearMonth::parse) ?: if (only != null) null else YearMonth.now(),
+        categoryId = categoryId,
+        personId = personId,
+        kind = only,
+    )
+}
 
 /** What an empty list says. It only invites a first expense when there's truly nothing yet. */
 internal fun HistoryFilter.emptyMessage(now: YearMonth): String = when {
     query.isNotBlank() || personId != null || categoryId != null || accountId != null -> "Nothing matches these filters."
+    kind == TransactionKind.TRANSFER -> if (month == null) "No transfers yet." else "No transfers in ${month.label()}."
     month == null -> "Nothing here yet. Tap + to add your first expense."
     month == now -> "Nothing this month yet. Tap + to add an expense."
     else -> "Nothing in ${month.label()}."
 }
 
-/** One figure for a set of rows: what was spent, or what came in when nothing was spent. */
+/** One figure for a set of rows: what was spent, or what came in when nothing was spent, or what moved when it's only transfers. */
 internal fun List<TransactionDetails>.headlineTotal(): Money {
     val spent = filter { it.transaction.kind == TransactionKind.EXPENSE }
-    val rows = spent.ifEmpty { filter { it.transaction.kind == TransactionKind.INCOME } }
+    val rows = spent
+        .ifEmpty { filter { it.transaction.kind == TransactionKind.INCOME } }
+        .ifEmpty { filter { it.transaction.kind == TransactionKind.TRANSFER } }
     return rows.map { it.transaction.amount }.sum()
 }
 

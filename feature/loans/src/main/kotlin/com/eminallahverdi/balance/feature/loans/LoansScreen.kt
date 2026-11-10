@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -101,6 +102,7 @@ fun LoansRoute(onBack: () -> Unit, viewModel: LoansViewModel = hiltViewModel()) 
         is LoansSheet.NewDebt -> DebtEditorSheet(sheet.draft, state, viewModel)
         is LoansSheet.NewBill -> BillEditorSheet(sheet.draft, state, viewModel)
         is LoansSheet.Pay -> PaySheet(sheet.draft, state, viewModel)
+        is LoansSheet.Rename -> RenameSheet(sheet, state, viewModel)
         null -> Unit
     }
 }
@@ -192,12 +194,19 @@ private fun PersonCard(person: PersonDebts, state: LoansUiState, vm: LoansViewMo
     val iOwe = person.direction == DebtDirection.I_OWE
     BtCard {
         Column {
-            Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                Modifier.fillMaxWidth().clickable(onClickLabel = "Change the name") { vm.openRename(person.name) }.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 Box(Modifier.size(40.dp).clip(BtShapes.full).background(c.bgSurfaceHigh), contentAlignment = Alignment.Center) {
                     Text(person.name.take(1).uppercase(), style = BtTheme.type.bodyStrong, color = c.textPrimary)
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(person.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(person.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                        Icon(Icons.Rounded.Edit, null, tint = c.textMuted, modifier = Modifier.size(14.dp))
+                    }
                     Text(if (iOwe) "I owe" else "Owes me", style = BtTheme.type.caption, color = if (iOwe) c.moneyExpense else c.moneyIncome)
                 }
                 Text(amount(person.total, person.isSensitive, state), style = BtTheme.type.amountMedium, color = c.textPrimary)

@@ -42,6 +42,15 @@ class TransactionRepository @Inject constructor(
     fun observeDetails(range: DateRange): Flow<List<TransactionDetails>> =
         joinDetails(dao.observeBetween(range.start.toEpochDay(), range.endInclusive.toEpochDay()).map { r -> r.map { it.toModel() } })
 
+    /** How many entries fall in [range], for showing what an export will hold before it's made. */
+    fun countIn(range: DateRange): Flow<Int> = dao.observeCountBetween(range.start.toEpochDay(), range.endInclusive.toEpochDay())
+
+    /** From the first entry's day to the last one's, or null with none yet. */
+    suspend fun entryDates(): DateRange? {
+        val first = dao.firstDate() ?: return null
+        return DateRange(LocalDate.ofEpochDay(first), LocalDate.ofEpochDay(dao.lastDate() ?: first))
+    }
+
     fun observeLatest(limit: Int = 200): Flow<List<TransactionDetails>> =
         joinDetails(dao.observeLatest(limit).map { r -> r.map { it.toModel() } })
 

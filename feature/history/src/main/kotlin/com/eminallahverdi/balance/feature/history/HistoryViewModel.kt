@@ -51,7 +51,7 @@ class HistoryViewModel @Inject constructor(
     savedState: SavedStateHandle,
 ) : ViewModel() {
 
-    private val filter = MutableStateFlow(initialFilter(savedState[ARG_MONTH], savedState[ARG_CATEGORY], savedState[ARG_PERSON]))
+    private val filter = MutableStateFlow(initialFilter(savedState[ARG_MONTH], savedState[ARG_CATEGORY], savedState[ARG_PERSON], savedState[ARG_KIND]))
 
     private val rows = filter.map { it.range }.distinctUntilChanged().flatMapLatest { transactions.observeDetails(it) }
 
@@ -88,5 +88,6 @@ class HistoryViewModel @Inject constructor(
         const val ARG_MONTH = "month"
         const val ARG_CATEGORY = "categoryId"
         const val ARG_PERSON = "personId"
+        const val ARG_KIND = "kind"
     }
 }

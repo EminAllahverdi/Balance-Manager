@@ -26,9 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Bedtime
-import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Download
@@ -71,7 +69,6 @@ import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
 import com.eminallahverdi.balance.core.designsystem.component.BtSwitch
 import com.eminallahverdi.balance.core.designsystem.component.BtTimePickerSheet
-import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
 import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
@@ -80,7 +77,6 @@ import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.importer.moneymanager.ImportPreview
-import java.time.LocalDate
 
 @Composable
 fun SettingsRoute(
@@ -125,9 +121,8 @@ private fun SettingsList(
             Text("Settings", style = BtTheme.type.titleLarge, color = BtTheme.colors.textPrimary)
         }
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            // The default account is set on Accounts, and the eye on Home hides amounts: neither repeats here.
             Section("General") {
-                AccountRow(state, viewModel)
-                Divider()
                 SettingRow(Icons.Rounded.Palette, "Theme") {
                     SegmentedToggle(
                         options = listOf("Dark", "Light", "System"),
@@ -147,13 +142,6 @@ private fun SettingsList(
                 AppLockRow(state, viewModel)
                 Divider()
                 WidgetBalanceRow(state, viewModel)
-                Divider()
-                SettingRow(
-                    icon = Icons.Rounded.BlurOn,
-                    title = "Hide balance and income",
-                    caption = "Tap the eye on Home to show them",
-                    onClick = { viewModel.setHideAmounts(!state.preferences.hideAmountsInApp) },
-                ) { BtSwitch(state.preferences.hideAmountsInApp, viewModel::setHideAmounts) }
             }
             Section("Reminders") {
                 BankNotificationRows(state, viewModel, onOpenConfirm)
@@ -189,32 +177,6 @@ private fun VersionLine() {
 private fun Context.appVersion(): String {
     val info = packageManager.getPackageInfo(packageName, 0)
     return "${applicationInfo.loadLabel(packageManager)} ${info.versionName} (${PackageInfoCompat.getLongVersionCode(info)})"
-}
-
-@Composable
-private fun AccountRow(state: SettingsUiState, vm: SettingsViewModel) {
-    var open by remember { mutableStateOf(false) }
-    SettingRow(
-        icon = Icons.Rounded.AccountBalanceWallet,
-        title = "Default expense account",
-        caption = "Picked first when you add an expense",
-        onClick = { open = true },
-    ) {
-        Text(state.defaultAccount?.name.orEmpty(), style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
-        Chevron()
-    }
-    if (open) {
-        ChoiceSheet("Default expense account", onClose = { open = false }) { choose ->
-            state.accounts.forEach { account ->
-                OptionRow(
-                    text = account.name,
-                    selected = account.id == state.defaultAccount?.id,
-                    onClick = { choose { vm.setDefaultAccount(account.id) } },
-                    leading = { CategoryTile(account.icon, account.color, size = 32.dp, iconSize = 18.dp, corner = 10.dp) },
-                )
-            }
-        }
-    }
 }
 
 @Composable
@@ -276,13 +238,14 @@ private fun AppLockRow(state: SettingsUiState, vm: SettingsViewModel) {
 @Composable
 private fun ExportRow(vm: SettingsViewModel) {
     val message by vm.exportMessage.collectAsStateWithLifecycle()
-    val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { file -> file?.let(vm::exportCsv) }
+    val export by vm.export.collectAsStateWithLifecycle()
     SettingRow(
         icon = Icons.Rounded.Download,
         title = "Export CSV",
-        caption = message ?: "Every entry, as a spreadsheet",
-        onClick = { pickFile.launch("balance-${LocalDate.now()}.csv") },
+        caption = message ?: "Entries between two dates, to save or share",
+        onClick = vm::openExport,
     ) { Chevron() }
+    export?.let { ExportSheet(it, vm) }
 }
 
 /** A backup, an optional mapping file, and a look at what would change before anything does. */

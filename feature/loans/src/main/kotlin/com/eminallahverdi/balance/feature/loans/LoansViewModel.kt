@@ -277,6 +277,11 @@ sealed interface LoansSheet {
     data class NewDebt(val draft: DebtDraft) : LoansSheet
     data class NewBill(val draft: BillDraft) : LoansSheet
     data class Pay(val draft: PayDraft) : LoansSheet
+
+    /** A new name for everyone filed under [from]. */
+    data class Rename(val from: String, val text: String) : LoansSheet {
+        val canSave: Boolean get() = text.isNotBlank() && text.trim() != from.trim()
+    }
 }
 
 /** Everything open with one person, in one direction. */
@@ -478,5 +483,15 @@ class LoansViewModel @Inject constructor(
     fun removeDebt(debt: Debt) {
         sheet.update { null }
         viewModelScope.launch { debtRepository.remove(debt) }
+    }
+
+    fun openRename(name: String) = sheet.update { LoansSheet.Rename(name, name) }
+
+    fun updateRename(text: String) = sheet.update { (it as? LoansSheet.Rename)?.copy(text = text) ?: it }
+
+    fun saveRename() {
+        val rename = (sheet.value as? LoansSheet.Rename)?.takeIf { it.canSave } ?: return
+        sheet.update { null }
+        viewModelScope.launch { debtRepository.rename(rename.from, rename.text) }
     }
 }
