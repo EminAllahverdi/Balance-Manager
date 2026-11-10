@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_nothing_matches">Bu filtrlərə uyğun heç nə yoxdur.</string>
+    <string name="history_no_transfers_yet">Hələ köçürmə yoxdur.</string>
+    <string name="history_no_transfers_in">%1$s ərzində köçürmə yoxdur.</string>
+    <string name="history_nothing_yet_first">Hələ heç nə yoxdur. İlk xərci əlavə etmək üçün + düyməsinə toxunun.</string>
+    <string name="history_nothing_this_month">Bu ay hələ heç nə yoxdur. Xərc əlavə etmək üçün + düyməsinə toxunun.</string>
+    <string name="history_nothing_in">%1$s ərzində heç nə yoxdur.</string>
+    <string name="history_transfer">Köçürmə</string>
+    <string name="history_balance_adjustment">Balans düzəlişi</string>
+    <string name="history_transaction">Əməliyyat</string>
+    <string name="history_remove_payment_q">Bu ödəniş silinsin?</string>
+    <string name="history_remove_payment_text">Borc və hesabın balansı bu məbləğ qədər geri dəyişəcək. Bunu geri qaytarmaq olmayacaq.</string>
+    <string name="history_remove_adjustment_q">Bu düzəliş silinsin?</string>
+    <string name="history_remove_adjustment_text">Hesabın balansı bu məbləğ qədər geri dəyişəcək. Bunu geri qaytarmaq olmayacaq.</string>
+    <string name="history_delete_transaction_q">Bu əməliyyat silinsin?</string>
+    <string name="history_delete_transaction_text">Tarixçədən və balanslardan silinəcək. Bunu geri qaytarmaq olmayacaq.</string>
+    <string name="history_remove">Sil</string>
+    <string name="history_delete">Sil</string>
+    <string name="history_month">Ay</string>
+    <string name="history_person">Şəxs</string>
+    <string name="history_category">Kateqoriya</string>
+    <string name="history_account">Hesab</string>
+    <string name="history_all_time">Bütün vaxt</string>
+    <string name="history_everyone">Hamı</string>
+    <string name="history_all_accounts">Bütün hesablar</string>
+    <string name="history_all_categories">Bütün kateqoriyalar</string>
+    <string name="history_expense">Xərc</string>
+    <string name="history_income">Gəlir</string>
+    <string name="history_cancel">Ləğv et</string>
+    <string name="history_history">Tarixçə</string>
+    <string name="history_transfers">Köçürmələr</string>
+    <string name="history_back">Geri</string>
+    <string name="history_search_hint">Mağaza, qeyd və ya məbləğ axtarın</string>
+    <string name="history_clear_search">Axtarışı təmizlə</string>
+    <plurals name="history_transfers">
+        <item quantity="one">%d köçürmə</item>
+        <item quantity="other">%d köçürmə</item>
+    </plurals>
+    <plurals name="history_transactions">
+        <item quantity="one">%d əməliyyat</item>
+        <item quantity="other">%d əməliyyat</item>
+    </plurals>
+</resources>

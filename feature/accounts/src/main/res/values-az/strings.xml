@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accounts_new_account">Yeni hesab</string>
+    <string name="accounts_edit_account">Hesaba düzəliş</string>
+    <string name="accounts_name">Ad</string>
+    <string name="accounts_type">Növ</string>
+    <string name="accounts_card_digits">Kartın son 4 rəqəmi</string>
+    <string name="accounts_card_digits_hint">Bu kartdan gələn bank bildirişləri bu hesaba düşür.</string>
+    <string name="accounts_default_for_expenses">Xərclər üçün əsas hesab</string>
+    <string name="accounts_default_on_caption">Yeni xərclər burada başlayır. Dəyişmək üçün başqa hesabı əsas edin</string>
+    <string name="accounts_default_off_caption">Yeni xərclər bu hesabdan başlasın</string>
+    <string name="accounts_count_in_total">Cəmə daxil et</string>
+    <string name="accounts_count_in_total_caption">Buradakı cəmə və Əsas səhifədəki balansa daxildir</string>
+    <string name="accounts_show_on_widget">Vidcetdə göstər</string>
+    <string name="accounts_show_on_widget_caption">Balans vidcetlərinə daxildir</string>
+    <string name="accounts_icon">İkon</string>
+    <string name="accounts_colour">Rəng</string>
+    <string name="accounts_save">Yadda saxla</string>
+    <string name="accounts_remove_named">%1$s silinsin?</string>
+    <string name="accounts_remove_text">Əməliyyatları varsa, arxivə düşür: tarixçə olduğu kimi qalır, balansı isə cəmdən çıxır.</string>
+    <string name="accounts_remove">Sil</string>
+    <string name="accounts_cancel">Ləğv et</string>
+    <string name="accounts_adjust_balance">Balansı düzəlt</string>
+    <string name="accounts_account">Hesab</string>
+    <string name="accounts_actual_balance">Faktiki balans</string>
+    <string name="accounts_change_by">Fərq %1$s</string>
+    <string name="accounts_now_balance">İndi %1$s</string>
+    <string name="accounts_adjust_hint">Hesab bankdakı ilə eyni olsun deyə düzəliş əlavə olunur. Bu, xərc və ya gəlir sayılmır.</string>
+    <string name="accounts_save_balance">Balansı yadda saxla</string>
+    <string name="accounts_debit_card">Debet kart</string>
+    <string name="accounts_credit_card">Kredit kartı</string>
+    <string name="accounts_cash">Nağd</string>
+    <string name="accounts_savings">Əmanət</string>
+    <string name="accounts_archived">Arxiv</string>
+    <string name="accounts_hide_archived">Arxivdəki hesabları gizlət</string>
+    <string name="accounts_show_archived">Arxivdəki hesabları göstər</string>
+    <string name="accounts_accounts">Hesablar</string>
+    <string name="accounts_add_account">Hesab əlavə et</string>
+    <string name="accounts_loans_debts">Kreditlər və borclar</string>
+    <string name="accounts_recurring_payments">Müntəzəm ödənişlər</string>
+    <string name="accounts_none_yet">Hələ yoxdur</string>
+    <string name="accounts_recent_transfers">Son köçürmələr</string>
+    <string name="accounts_see_all">Hamısı</string>
+    <string name="accounts_transfer">Köçürmə</string>
+    <string name="accounts_edit_named">%1$s: düzəliş et</string>
+    <string name="accounts_not_in_total">cəmə daxil deyil</string>
+    <string name="accounts_on_widget">Vidcetdə</string>
+    <string name="accounts_make_default">%1$s əsas hesab olsun</string>
+    <string name="accounts_is_default">%1$s əsas hesabdır</string>
+    <string name="accounts_new_expenses_start">Yeni xərclər %1$s hesabından başlayır</string>
+    <string name="accounts_undo">Geri al</string>
+    <string name="accounts_restore">Bərpa et</string>
+    <string name="accounts_delete">Sil</string>
+    <string name="accounts_back">Geri</string>
+    <string name="accounts_delete_account">Hesabı sil</string>
+    <string name="accounts_move_all">Hamısını başqa hesaba köçür</string>
+    <string name="accounts_move_to">Hara köçürülsün</string>
+    <string name="accounts_move">Köçür</string>
+    <string name="accounts_delete_title">%1$s silinsin?</string>
+    <string name="accounts_move_title">%1$s hesabına köçürülsün?</string>
+    <string name="accounts_delete_intro_unused">Bu hesabdan artıq heç nə istifadə etmir, ona görə silmək başqa heç nəyi dəyişməyəcək.</string>
+    <string name="accounts_delete_intro_payments">Bu hesabdan yalnız bu müntəzəm ödənişlər istifadə edir.</string>
+    <string name="accounts_past_months_change">Keçmiş aylar dəyişəcək.</string>
+    <string name="accounts_cant_be_undone">Bunu geri qaytarmaq olmayacaq.</string>
+    <string name="accounts_nothing_else_changes">Başqa heç nə dəyişmir.</string>
+    <string name="accounts_balance_changes_too">%1$s hesabının balansı da dəyişəcək.</string>
+    <string name="accounts_balance_changes_by">%1$s hesabının balansı %2$s dəyişəcək.</string>
+    <string name="accounts_payment_goes_too">%1$s müntəzəm ödənişi də silinəcək.</string>
+    <string name="accounts_payment_moves_too">%1$s müntəzəm ödənişi də köçürüləcək.</string>
+    <plurals name="accounts_payments_go_too">
+        <item quantity="one">%d müntəzəm ödəniş də silinəcək.</item>
+        <item quantity="other">%d müntəzəm ödəniş də silinəcək.</item>
+    </plurals>
+    <plurals name="accounts_payments_move_too">
+        <item quantity="one">%d müntəzəm ödəniş də köçürüləcək.</item>
+        <item quantity="other">%d müntəzəm ödəniş də köçürüləcək.</item>
+    </plurals>
+    <plurals name="accounts_transfers_between_go">
+        <item quantity="one">%2$s ilə %3$s arasındakı %1$d köçürmə silinəcək, çünki hesabdan elə həmin hesaba olardı.</item>
+        <item quantity="other">%2$s ilə %3$s arasındakı %1$d köçürmə silinəcək, çünki hesabdan elə həmin hesaba olardı.</item>
+    </plurals>
+    <plurals name="accounts_delete_intro_rows">
+        <item quantity="one">Bu hesabdan %d əməliyyat istifadə edir. Dəyişmək üçün birinə toxunun və ya hamısını başqa hesaba köçürün.</item>
+        <item quantity="other">Bu hesabdan %d əməliyyat istifadə edir. Dəyişmək üçün birinə toxunun və ya hamısını başqa hesaba köçürün.</item>
+    </plurals>
+    <plurals name="accounts_delete_account_and">
+        <item quantity="one">Hesabı və %d əməliyyatı sil</item>
+        <item quantity="other">Hesabı və %d əməliyyatı sil</item>
+    </plurals>
+    <plurals name="accounts_delete_title_rows">
+        <item quantity="one">%2$s və %1$d əməliyyat silinsin?</item>
+        <item quantity="other">%2$s və %1$d əməliyyat silinsin?</item>
+    </plurals>
+    <plurals name="accounts_move_title_rows">
+        <item quantity="one">%1$d əməliyyat %2$s hesabına köçürülsün?</item>
+        <item quantity="other">%1$d əməliyyat %2$s hesabına köçürülsün?</item>
+    </plurals>
+    <plurals name="accounts_total_accounts">
+        <item quantity="one">Cəmi · %d hesab</item>
+        <item quantity="other">Cəmi · %d hesab</item>
+    </plurals>
+    <string name="accounts_delete_named">%1$s hesabını sil</string>
+</resources>

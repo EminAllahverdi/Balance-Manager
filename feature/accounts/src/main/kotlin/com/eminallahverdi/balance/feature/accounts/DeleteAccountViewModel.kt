@@ -4,6 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.common.MoneyFormat
+import com.eminallahverdi.balance.core.common.UiText
+import com.eminallahverdi.balance.core.common.pluralText
+import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.RecurringRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
@@ -43,61 +46,59 @@ data class DeleteAccountUiState(
     /** Nothing depends on it, so deleting it needs no warning. */
     val isUnused: Boolean get() = rows.isEmpty() && payments.isEmpty()
 
-    val transactionCount: String get() = if (rows.size == 1) "1 transaction" else "${rows.size} transactions"
+    private val count: Int get() = rows.size
 
-    val intro: String
+    val intro: UiText
         get() = when {
-            isUnused -> "Nothing uses this account any more, so deleting it changes nothing else."
-            rows.isEmpty() -> "Only these recurring payments use this account."
-            else -> "$transactionCount ${if (rows.size == 1) "uses" else "use"} this account. Tap one to change it, or move them all to another account."
+            isUnused -> uiText(R.string.accounts_delete_intro_unused)
+            rows.isEmpty() -> uiText(R.string.accounts_delete_intro_payments)
+            else -> pluralText(R.plurals.accounts_delete_intro_rows, count, count)
         }
 
-    val deleteLabel: String get() = if (rows.isEmpty()) "Delete account" else "Delete account and $transactionCount"
+    val deleteLabel: UiText get() = if (rows.isEmpty()) uiText(R.string.accounts_delete_account) else pluralText(R.plurals.accounts_delete_account_and, count, count)
 
-    val deleteTitle: String get() = if (rows.isEmpty()) "Delete ${account?.name}?" else "Delete ${account?.name} and $transactionCount?"
+    val deleteTitle: UiText
+        get() = if (rows.isEmpty()) uiText(R.string.accounts_delete_title, account?.name.orEmpty()) else pluralText(R.plurals.accounts_delete_title_rows, count, count, account?.name.orEmpty())
 
     /** What goes with the account, and which balances change, because money that moved to or from it goes too. */
-    val deleteWarning: String
+    val deleteWarning: List<UiText>
         get() {
-            val id = account?.id ?: return ""
+            val id = account?.id ?: return emptyList()
             val changes = balanceChangesFromDeleting(id, rows.map { it.transaction })
             return buildList {
-                if (rows.isNotEmpty()) add("Past months change.")
+                if (rows.isNotEmpty()) add(uiText(R.string.accounts_past_months_change))
                 targets.forEach { other -> changes[other.id]?.let { add(balanceLine(other, it)) } }
-                paymentsLine("go too", "goes too")?.let(::add)
-                add("This can't be undone.")
-            }.joinToString(" ")
+                paymentsLine(R.string.accounts_payment_goes_too, R.plurals.accounts_payments_go_too)?.let(::add)
+                add(uiText(R.string.accounts_cant_be_undone))
+            }
         }
 
-    fun moveTitle(target: Account): String = if (rows.isEmpty()) "Move to ${target.name}?" else "Move $transactionCount to ${target.name}?"
+    fun moveTitle(target: Account): UiText =
+        if (rows.isEmpty()) uiText(R.string.accounts_move_title, target.name) else pluralText(R.plurals.accounts_move_title_rows, count, count, target.name)
 
     /** A move can't lose money: [target] takes on this account's balance, and only what would then go from it to itself goes. */
-    fun moveWarning(target: Account): String {
-        val id = account?.id ?: return ""
+    fun moveWarning(target: Account): List<UiText> {
+        val account = account ?: return emptyList()
         val entries = rows.map { it.transaction }
-        val gained = balanceFrom(id, entries)
-        val between = transfersBetween(id, target.id, entries).size
+        val gained = balanceFrom(account.id, entries)
+        val between = transfersBetween(account.id, target.id, entries).size
         return listOfNotNull(
             balanceLine(target, gained).takeIf { !gained.isZero },
-            when (between) {
-                0 -> null
-                1 -> "1 transfer between ${account.name} and ${target.name} goes, because it would be from an account to itself."
-                else -> "$between transfers between ${account.name} and ${target.name} go, because they'd be from an account to itself."
-            },
-            paymentsLine("move too", "moves too"),
-        ).joinToString(" ").ifEmpty { "Nothing else changes." }
+            pluralText(R.plurals.accounts_transfers_between_go, between, between, account.name, target.name).takeIf { between > 0 },
+            paymentsLine(R.string.accounts_payment_moves_too, R.plurals.accounts_payments_move_too),
+        ).ifEmpty { listOf(uiText(R.string.accounts_nothing_else_changes)) }
     }
 
     /** The eye hides what's in an account, so it only says that this one changes. */
-    private fun balanceLine(other: Account, change: Money): String =
-        if (hideAmounts) "${other.name}'s balance changes too." else "${other.name}'s balance changes by ${change.withSign()}."
+    private fun balanceLine(other: Account, change: Money): UiText =
+        if (hideAmounts) uiText(R.string.accounts_balance_changes_too, other.name) else uiText(R.string.accounts_balance_changes_by, other.name, change.withSign())
 
     private fun Money.withSign(): String = if (isNegative) MoneyFormat.format(this, signed = true) else "+" + MoneyFormat.format(this)
 
-    private fun paymentsLine(many: String, one: String): String? = when (payments.size) {
+    private fun paymentsLine(one: Int, many: Int): UiText? = when (payments.size) {
         0 -> null
-        1 -> "The recurring payment ${payments.single().name} $one."
-        else -> "${payments.size} recurring payments $many."
+        1 -> uiText(one, payments.single().name)
+        else -> pluralText(many, payments.size, payments.size)
     }
 }
 

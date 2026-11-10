@@ -48,20 +48,7 @@ data class CsvPreview(
     val accounts: List<String>,
     val newCategories: List<String>,
     val unreadable: Int,
-) {
-    val headline: String
-        get() {
-            val count = if (entries == 1) "1 entry" else "$entries entries"
-            return if (firstYear == lastYear) "$count in $firstYear" else "$count, $firstYear to $lastYear"
-        }
-
-    val unreadableNote: String?
-        get() = when (unreadable) {
-            0 -> null
-            1 -> "1 line can't be read and will be left out"
-            else -> "$unreadable lines can't be read and will be left out"
-        }
-}
+)
 
 /** Names match whatever their case or stray spaces, so CARD in a file is the Card in the app. */
 fun nameKey(name: String): String = name.trim().lowercase(Locale.ROOT)

@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -56,7 +57,6 @@ import com.eminallahverdi.balance.core.designsystem.component.ColourPicker
 import com.eminallahverdi.balance.core.designsystem.component.EditorField
 import com.eminallahverdi.balance.core.designsystem.component.EditorTitle
 import com.eminallahverdi.balance.core.designsystem.component.OptionRow
-import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonAvatar
 import com.eminallahverdi.balance.core.designsystem.component.PrimaryButton
 import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
@@ -81,13 +81,13 @@ internal fun PeopleStep(state: OnboardingUiState, vm: OnboardingViewModel) {
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Who is it for?", style = BtTheme.type.titleLarge, color = c.textPrimary)
-                Text("Every expense is for someone, so you can see who the money went to.", style = BtTheme.type.body, color = c.textSecondary)
+                Text(stringResource(R.string.onboarding_who_is_it_for), style = BtTheme.type.titleLarge, color = c.textPrimary)
+                Text(stringResource(R.string.onboarding_who_explained), style = BtTheme.type.body, color = c.textSecondary)
             }
-            EditorField("Your name") {
-                BtTextField(state.ownerName, "Your name", vm::setOwnerName, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
+            EditorField(stringResource(R.string.onboarding_your_name)) {
+                BtTextField(state.ownerName, stringResource(R.string.onboarding_your_name), vm::setOwnerName, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
             }
-            EditorField("Others") {
+            EditorField(stringResource(R.string.onboarding_others)) {
                 BtCard {
                     Column {
                         state.others.forEach { person ->
@@ -100,14 +100,14 @@ internal fun PeopleStep(state: OnboardingUiState, vm: OnboardingViewModel) {
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Icon(Icons.Rounded.Add, null, tint = c.accentText)
-                            Text("Add a person", style = BtTheme.type.bodyStrong, color = c.accentText)
+                            Text(stringResource(R.string.onboarding_add_a_person), style = BtTheme.type.bodyStrong, color = c.accentText)
                         }
                     }
                 }
             }
         }
         Box(Modifier.padding(16.dp)) {
-            PrimaryButton("Continue", vm::next, enabled = state.ownerName.isNotBlank())
+            PrimaryButton(stringResource(R.string.onboarding_continue_), vm::next, enabled = state.ownerName.isNotBlank())
         }
     }
     state.editor?.let { PersonSheet(it, vm) }
@@ -124,7 +124,7 @@ private fun PersonRow(person: PersonDraft, onClick: () -> Unit) {
         PersonAvatar(Person(0, person.name, person.color))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(person.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (person.key == SHARED_PERSON) Text("For shared things, like groceries", style = BtTheme.type.caption, color = c.textSecondary)
+            if (person.key == SHARED_PERSON) Text(stringResource(R.string.onboarding_shared_things), style = BtTheme.type.caption, color = c.textSecondary)
         }
         Icon(Icons.Rounded.ChevronRight, null, tint = c.textMuted, modifier = Modifier.size(20.dp))
     }
@@ -143,14 +143,14 @@ private fun PersonSheet(editor: PersonEditor, vm: OnboardingViewModel) {
             Modifier.fillMaxWidth().imePadding().navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            EditorTitle(if (editor.isNew) "New person" else person.name, onRemove = if (editor.isNew) null else vm::removeEditing) {
+            EditorTitle(if (editor.isNew) stringResource(R.string.onboarding_new_person) else person.name, onRemove = if (editor.isNew) null else vm::removeEditing) {
                 PersonAvatar(Person(0, person.name, person.color))
             }
-            BtTextField(person.name, "Name", { vm.updateEditor(person.copy(name = it)) }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
-            EditorField("Colour") {
+            BtTextField(person.name, stringResource(R.string.onboarding_name), { vm.updateEditor(person.copy(name = it)) }, keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
+            EditorField(stringResource(R.string.onboarding_colour)) {
                 ColourPicker(PersonPalette, person.color) { vm.updateEditor(person.copy(color = it)) }
             }
-            PrimaryButton("Save", vm::saveEditor, enabled = person.name.isNotBlank())
+            PrimaryButton(stringResource(R.string.onboarding_save), vm::saveEditor, enabled = person.name.isNotBlank())
         }
     }
 }
@@ -163,8 +163,8 @@ internal fun CategoriesStep(state: OnboardingUiState, vm: OnboardingViewModel) {
         StepHeader(state.progress, vm::back)
         Column(Modifier.weight(1f).padding(start = 16.dp, end = 16.dp, top = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Your categories", style = BtTheme.type.titleLarge, color = c.textPrimary)
-                Text("Tap one to leave it out. You can change all of this later.", style = BtTheme.type.body, color = c.textSecondary)
+                Text(stringResource(R.string.onboarding_your_categories), style = BtTheme.type.titleLarge, color = c.textPrimary)
+                Text(stringResource(R.string.onboarding_categories_explained), style = BtTheme.type.body, color = c.textSecondary)
             }
             BtCard {
                 Row(
@@ -172,29 +172,29 @@ internal fun CategoriesStep(state: OnboardingUiState, vm: OnboardingViewModel) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text("Template", style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
-                    Text(state.template.label, style = BtTheme.type.caption, color = c.textSecondary)
+                    Text(stringResource(R.string.onboarding_template), style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
+                    Text(stringResource(state.template.label), style = BtTheme.type.caption, color = c.textSecondary)
                     Icon(Icons.Rounded.ChevronRight, null, tint = c.textMuted, modifier = Modifier.size(20.dp))
                 }
             }
-            SegmentedToggle(listOf("Expense", "Income"), if (state.showingIncome) 1 else 0, { vm.showIncome(it == 1) }, Modifier.fillMaxWidth(), fill = true)
+            SegmentedToggle(listOf(stringResource(R.string.onboarding_expense), stringResource(R.string.onboarding_income)), if (state.showingIncome) 1 else 0, { vm.showIncome(it == 1) }, Modifier.fillMaxWidth(), fill = true)
             LazyVerticalGrid(
                 GridCells.Fixed(GRID_COLUMNS),
                 Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(state.shownCategories, key = { it.name }) { category ->
-                    CategoryChoice(category, keptIn = category.name !in state.dropped, onClick = { vm.toggle(category) })
+                items(state.shownCategories, key = { it.key }) { category ->
+                    CategoryChoice(category, keptIn = category.key !in state.dropped, onClick = { vm.toggle(category) })
                 }
             }
         }
-        Box(Modifier.padding(16.dp)) { PrimaryButton("Continue", vm::next) }
+        Box(Modifier.padding(16.dp)) { PrimaryButton(stringResource(R.string.onboarding_continue_), vm::next) }
     }
     if (pickingTemplate) {
-        ChoiceSheet("Category template", onClose = { pickingTemplate = false }) { choose ->
+        ChoiceSheet(stringResource(R.string.onboarding_category_template), onClose = { pickingTemplate = false }) { choose ->
             CategoryTemplate.entries.forEach { template ->
-                OptionRow(template.label, template == state.template, onClick = { choose { vm.chooseTemplate(template) } }, caption = template.caption)
+                OptionRow(stringResource(template.label), template == state.template, onClick = { choose { vm.chooseTemplate(template) } }, caption = stringResource(template.caption))
             }
         }
     }

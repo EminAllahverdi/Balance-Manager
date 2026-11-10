@@ -1,4 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Cibim</string>
     <string name="tile_add_expense">Add expense</string>
+    <string name="app_unlock_cibim">Unlock Cibim</string>
+    <string name="app_cibim_locked">Cibim is locked</string>
+    <string name="app_use_fingerprint_or_pin">Use your fingerprint or your phone\'s PIN</string>
+    <string name="app_unlock">Unlock</string>
+    <string name="app_add_expense">Add expense</string>
+    <string name="app_add_by_voice">Add by voice</string>
+    <string name="app_add_income">Add income</string>
+    <string name="app_transfer">Transfer</string>
+    <string name="app_to_confirm">To confirm</string>
+    <string name="app_evening_reminder">Evening reminder</string>
+    <string name="app_nothing_added_today">Nothing added today</string>
+    <string name="app_tap_to_add_spent">Tap to add what you spent</string>
+    <string name="app_home">Home</string>
+    <string name="app_history">History</string>
+    <string name="app_reports">Reports</string>
+    <string name="app_accounts">Accounts</string>
+    <string name="app_add_transaction">Add transaction</string>
+    <string name="app_spending">Spending</string>
+    <string name="app_groceries">Groceries</string>
+    <string name="app_reports_tab">Reports</string>
 </resources>

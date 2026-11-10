@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accounts_new_account">New account</string>
+    <string name="accounts_edit_account">Edit account</string>
+    <string name="accounts_name">Name</string>
+    <string name="accounts_type">Type</string>
+    <string name="accounts_card_digits">Card\'s last 4 digits</string>
+    <string name="accounts_card_digits_hint">Bank notifications from this card go to this account.</string>
+    <string name="accounts_default_for_expenses">Default for expenses</string>
+    <string name="accounts_default_on_caption">New expenses start here. Make another account the default to change it</string>
+    <string name="accounts_default_off_caption">New expenses start on this account</string>
+    <string name="accounts_count_in_total">Count in the total</string>
+    <string name="accounts_count_in_total_caption">Part of Total here and the balance on Home</string>
+    <string name="accounts_show_on_widget">Show on the widget</string>
+    <string name="accounts_show_on_widget_caption">Added into the balance widgets</string>
+    <string name="accounts_icon">Icon</string>
+    <string name="accounts_colour">Colour</string>
+    <string name="accounts_save">Save</string>
+    <string name="accounts_remove_named">Remove %1$s?</string>
+    <string name="accounts_remove_text">If it has transactions it\'s archived, so your history stays the same, and its balance leaves your total.</string>
+    <string name="accounts_remove">Remove</string>
+    <string name="accounts_cancel">Cancel</string>
+    <string name="accounts_adjust_balance">Adjust balance</string>
+    <string name="accounts_account">Account</string>
+    <string name="accounts_actual_balance">Actual balance</string>
+    <string name="accounts_change_by">Change %1$s</string>
+    <string name="accounts_now_balance">Now %1$s</string>
+    <string name="accounts_adjust_hint">This adds a correction so the account matches your bank. It isn\'t counted as spending or income.</string>
+    <string name="accounts_save_balance">Save balance</string>
+    <string name="accounts_debit_card">Debit card</string>
+    <string name="accounts_credit_card">Credit card</string>
+    <string name="accounts_cash">Cash</string>
+    <string name="accounts_savings">Savings</string>
+    <string name="accounts_archived">Archived</string>
+    <string name="accounts_hide_archived">Hide archived accounts</string>
+    <string name="accounts_show_archived">Show archived accounts</string>
+    <string name="accounts_accounts">Accounts</string>
+    <string name="accounts_add_account">Add account</string>
+    <string name="accounts_loans_debts">Loans &amp; debts</string>
+    <string name="accounts_recurring_payments">Recurring payments</string>
+    <string name="accounts_none_yet">None yet</string>
+    <string name="accounts_recent_transfers">Recent transfers</string>
+    <string name="accounts_see_all">See all</string>
+    <string name="accounts_transfer">Transfer</string>
+    <string name="accounts_edit_named">Edit %1$s</string>
+    <string name="accounts_not_in_total">not in the total</string>
+    <string name="accounts_on_widget">On the widget</string>
+    <string name="accounts_make_default">Make %1$s the default</string>
+    <string name="accounts_is_default">%1$s is the default</string>
+    <string name="accounts_new_expenses_start">New expenses start on %1$s</string>
+    <string name="accounts_undo">Undo</string>
+    <string name="accounts_restore">Restore</string>
+    <string name="accounts_delete">Delete</string>
+    <string name="accounts_back">Back</string>
+    <string name="accounts_delete_account">Delete account</string>
+    <string name="accounts_move_all">Move all to another account</string>
+    <string name="accounts_move_to">Move to</string>
+    <string name="accounts_move">Move</string>
+    <string name="accounts_delete_title">Delete %1$s?</string>
+    <string name="accounts_move_title">Move to %1$s?</string>
+    <string name="accounts_delete_intro_unused">Nothing uses this account any more, so deleting it changes nothing else.</string>
+    <string name="accounts_delete_intro_payments">Only these recurring payments use this account.</string>
+    <string name="accounts_past_months_change">Past months change.</string>
+    <string name="accounts_cant_be_undone">This can\'t be undone.</string>
+    <string name="accounts_nothing_else_changes">Nothing else changes.</string>
+    <string name="accounts_balance_changes_too">%1$s\'s balance changes too.</string>
+    <string name="accounts_balance_changes_by">%1$s\'s balance changes by %2$s.</string>
+    <string name="accounts_payment_goes_too">The recurring payment %1$s goes too.</string>
+    <string name="accounts_payment_moves_too">The recurring payment %1$s moves too.</string>
+    <plurals name="accounts_payments_go_too">
+        <item quantity="one">%d recurring payment goes too.</item>
+        <item quantity="other">%d recurring payments go too.</item>
+    </plurals>
+    <plurals name="accounts_payments_move_too">
+        <item quantity="one">%d recurring payment moves too.</item>
+        <item quantity="other">%d recurring payments move too.</item>
+    </plurals>
+    <plurals name="accounts_transfers_between_go">
+        <item quantity="one">%1$d transfer between %2$s and %3$s goes, because it would be from an account to itself.</item>
+        <item quantity="other">%1$d transfers between %2$s and %3$s go, because they\'d be from an account to itself.</item>
+    </plurals>
+    <plurals name="accounts_delete_intro_rows">
+        <item quantity="one">%d transaction uses this account. Tap one to change it, or move them all to another account.</item>
+        <item quantity="other">%d transactions use this account. Tap one to change it, or move them all to another account.</item>
+    </plurals>
+    <plurals name="accounts_delete_account_and">
+        <item quantity="one">Delete account and %d transaction</item>
+        <item quantity="other">Delete account and %d transactions</item>
+    </plurals>
+    <plurals name="accounts_delete_title_rows">
+        <item quantity="one">Delete %2$s and %1$d transaction?</item>
+        <item quantity="other">Delete %2$s and %1$d transactions?</item>
+    </plurals>
+    <plurals name="accounts_move_title_rows">
+        <item quantity="one">Move %1$d transaction to %2$s?</item>
+        <item quantity="other">Move %1$d transactions to %2$s?</item>
+    </plurals>
+    <plurals name="accounts_total_accounts">
+        <item quantity="one">Total · %d account</item>
+        <item quantity="other">Total · %d accounts</item>
+    </plurals>
+    <string name="accounts_delete_named">Delete %1$s</string>
+</resources>

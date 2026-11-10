@@ -1,5 +1,6 @@
 package com.eminallahverdi.balance.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +22,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.eminallahverdi.balance.R
 import com.eminallahverdi.balance.core.designsystem.component.BtChip
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.feature.insights.InsightsRoute
@@ -29,9 +32,9 @@ import com.eminallahverdi.balance.feature.receipts.GroceriesRoute
 import com.eminallahverdi.balance.feature.receipts.ReceiptEntry
 
 /** Each report the tab holds. A new one adds a chip here. */
-private enum class Report(val label: String, val icon: ImageVector) {
-    SPENDING("Spending", Icons.Rounded.BarChart),
-    GROCERIES("Groceries", Icons.Rounded.ShoppingCart),
+private enum class Report(@StringRes val label: Int, val icon: ImageVector) {
+    SPENDING(R.string.app_spending, Icons.Rounded.BarChart),
+    GROCERIES(R.string.app_groceries, Icons.Rounded.ShoppingCart),
 }
 
 /**
@@ -43,12 +46,12 @@ internal fun ReportsRoute(onAddReceipt: (ReceiptEntry) -> Unit) {
     val c = BtTheme.colors
     var shown by rememberSaveable { mutableStateOf(Report.SPENDING) }
     Column(Modifier.fillMaxSize().background(c.bgCanvas)) {
-        Text("Reports", style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp))
+        Text(stringResource(R.string.app_reports), style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp))
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Report.entries.forEach { report ->
                 val on = report == shown
                 BtChip(
-                    text = report.label,
+                    text = stringResource(report.label),
                     selected = on,
                     onClick = { shown = report },
                     leading = { Icon(report.icon, null, tint = if (on) c.accentOn else c.textSecondary, modifier = Modifier.size(16.dp)) },

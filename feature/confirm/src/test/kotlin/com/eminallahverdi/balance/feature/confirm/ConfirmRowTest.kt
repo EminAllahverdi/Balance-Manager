@@ -1,5 +1,7 @@
 package com.eminallahverdi.balance.feature.confirm
 
+import com.eminallahverdi.balance.core.common.rawText
+import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.data.PendingItem
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.AccountType
@@ -38,23 +40,23 @@ class ConfirmRowTest {
     )
 
     @Test fun `the title reads from the category down to the merchant`() {
-        assertThat(row().title).isEqualTo("Groceries · Bravo")
-        assertThat(row("Spotify", apps, subscriptions).title).isEqualTo("Subscriptions · Apps · Spotify")
+        assertThat(row().title).isEqualTo(rawText("Groceries · Bravo"))
+        assertThat(row("Spotify", apps, subscriptions).title).isEqualTo(rawText("Subscriptions · Apps · Spotify"))
     }
 
     @Test fun `a merchant with no category yet shows only its name, and asks for one`() {
-        assertThat(row(category = null).title).isEqualTo("Bravo")
-        assertThat(row(category = null).caption).isEqualTo("Pick a category")
+        assertThat(row(category = null).title).isEqualTo(rawText("Bravo"))
+        assertThat(row(category = null).caption).containsExactly(uiText(R.string.confirm_pick_a_category))
     }
 
     @Test fun `a payment with no merchant still has a title`() {
-        assertThat(row("", category = null).title).isEqualTo("Bank payment")
+        assertThat(row("", category = null).title).isEqualTo(uiText(R.string.confirm_bank_payment))
     }
 
     @Test fun `money coming in isn't called a payment`() {
         val incoming = row("", category = null)
         val item = incoming.item.copy(entry = entry.copy(kind = TransactionKind.INCOME))
-        assertThat(incoming.copy(item = item).title).isEqualTo("Money received")
+        assertThat(incoming.copy(item = item).title).isEqualTo(uiText(R.string.confirm_money_received))
     }
 
     @Test fun `only an entry with a category and an account can be confirmed in one tap`() {
@@ -69,7 +71,7 @@ class ConfirmRowTest {
     }
 
     @Test fun `the caption shows who and from where`() {
-        assertThat(row().caption).isEqualTo("Me · Card")
+        assertThat(row().caption).containsExactly(rawText("Me"), rawText("Card")).inOrder()
     }
 
     private val wallet = Account(2, "Cash", AccountType.CASH, "account_balance_wallet", 0)
@@ -85,14 +87,14 @@ class ConfirmRowTest {
 
     @Test fun `a withdrawal shows both accounts and needs no category`() {
         val row = withdrawal(wallet)
-        assertThat(row.title).isEqualTo("Cash withdrawal")
-        assertThat(row.caption).isEqualTo("Card → Cash")
+        assertThat(row.title).isEqualTo(uiText(R.string.confirm_cash_withdrawal))
+        assertThat(row.caption).containsExactly(rawText("Card → Cash"))
         assertThat(row.canConfirm).isTrue()
     }
 
     @Test fun `a withdrawal with no cash account goes through Edit`() {
         val row = withdrawal(null)
-        assertThat(row.caption).isEqualTo("Pick an account to move it to")
+        assertThat(row.caption).containsExactly(uiText(R.string.confirm_pick_account_to_move))
         assertThat(row.canConfirm).isFalse()
     }
 }

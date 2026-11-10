@@ -23,6 +23,7 @@ data class StarterTemplate(
         fun toEntity() = AccountEntity(name = name, type = type.name, icon = icon, color = color, sortOrder = sortOrder)
     }
 
+    /** [key] is its English name, which stays the same whichever language [name] is in. */
     data class TemplateCategory(
         val name: String,
         val type: CategoryType,
@@ -30,6 +31,7 @@ data class StarterTemplate(
         val color: Long? = null,
         val defaultPerson: String? = null,
         val children: List<TemplateCategory> = emptyList(),
+        val key: String = name,
     ) {
         fun toEntity(sortOrder: Int, defaultPersonId: Long?) = CategoryEntity(
             name = name,
@@ -55,7 +57,8 @@ data class StarterTemplate(
         return copy(people = everyone, categories = categories.map { it.reassigned() })
     }
 
-    fun without(dropped: Set<String>): StarterTemplate = copy(categories = categories.filterNot { it.name in dropped })
+    /** Leaves out the categories whose [TemplateCategory.key] is in [dropped]. */
+    fun without(dropped: Set<String>): StarterTemplate = copy(categories = categories.filterNot { it.key in dropped })
 
     companion object {
         private val E = CategoryType.EXPENSE
@@ -69,12 +72,28 @@ data class StarterTemplate(
             TemplateCategory(name, E, icon = icon, defaultPerson = person)
 
         /** Eight spending categories with nothing under them, for someone who'd rather start small. */
-        fun simple(ownerName: String = "Me"): StarterTemplate = household(ownerName).let { full ->
+        fun simple(ownerName: String = "Me", azerbaijani: Boolean = false): StarterTemplate = english(ownerName).let { full ->
             full.copy(categories = full.categories.filter { it.name in SIMPLE }.map { it.copy(children = emptyList()) })
-        }
+        }.inLanguage(azerbaijani)
 
-        /** The household template designed with Emin; a sensible start for anyone. */
-        fun household(ownerName: String = "Me") = StarterTemplate(
+        /**
+         * The household template designed with Emin; a sensible start for anyone. In Azerbaijani the names are written as
+         * someone there would say them, and the owner's own name is left as typed.
+         */
+        fun household(ownerName: String = "Me", azerbaijani: Boolean = false): StarterTemplate = english(ownerName).inLanguage(azerbaijani)
+
+        private fun StarterTemplate.inLanguage(azerbaijani: Boolean): StarterTemplate = if (!azerbaijani) this else copy(
+            people = people.map { if (it.key == "family" || it.name == "Me") it.copy(name = AZERBAIJANI.getValue(it.name)) else it },
+            accounts = accounts.map { it.copy(name = AZERBAIJANI.getValue(it.name)) },
+            categories = categories.map { parent ->
+                parent.copy(
+                    name = AZERBAIJANI.getValue(parent.name),
+                    children = parent.children.map { it.copy(name = AZERBAIJANI["${parent.name}/${it.name}"] ?: AZERBAIJANI.getValue(it.name)) },
+                )
+            },
+        )
+
+        private fun english(ownerName: String) = StarterTemplate(
             people = listOf(
                 TemplatePerson("me", ownerName, 0xFF5B9DFF, 0),
                 TemplatePerson("family", "Family", 0xFF8A94A3, 1),
@@ -106,6 +125,35 @@ data class StarterTemplate(
                 TemplateCategory("Received from others", I, "swap_horiz", 0xFF6FC7D9, "me"),
                 TemplateCategory("Other income", I, "more_horiz", 0xFF8A94A3, "me"),
             ),
+        )
+
+        /**
+         * The template in Azerbaijani, by meaning rather than word for word. "Parent/Child" names a sub-category one way
+         * under one parent where its English name is shared, like Activities, which for children are clubs.
+         */
+        private val AZERBAIJANI = mapOf(
+            "Me" to "Mən", "Family" to "Ailə", "Card" to "Kart", "Cash" to "Nağd",
+            "Groceries" to "Ərzaq",
+            "Cafe & Restaurants" to "Kafe və restoranlar", "Coffee shop" to "Kofe", "Restaurant" to "Restoran", "Delivery" to "Çatdırılma",
+            "Work" to "İş", "Breakfast" to "Səhər yeməyi", "Lunch" to "Nahar", "Snacks" to "Qəlyanaltı",
+            "Colleague gifts" to "İş yoldaşlarına hədiyyə", "Collections" to "Pul yığımı",
+            "Transport" to "Nəqliyyat", "Taxi" to "Taksi", "Public transport" to "İctimai nəqliyyat",
+            "Car" to "Avtomobil", "Fuel" to "Yanacaq", "Wash" to "Yuyulma", "Service" to "Servis", "Parking" to "Dayanacaq",
+            "Health" to "Sağlamlıq", "Doctor" to "Həkim", "Pharmacy" to "Aptek", "Lab tests" to "Analizlər",
+            "Grooming" to "Şəxsi qulluq", "Barber" to "Bərbər", "Laser" to "Lazer", "Manicure / Pedicure" to "Manikür / Pedikür", "Hair" to "Saç",
+            "Utilities" to "Kommunal xidmətlər", "Electricity" to "İşıq", "Gas" to "Qaz", "Water" to "Su", "Internet" to "İnternet",
+            "Phone line" to "Ev telefonu",
+            "Subscriptions" to "Abunəliklər", "Apps" to "Tətbiqlər", "Mobile top-up" to "Mobil balans",
+            "Kids & Education" to "Uşaqlar və təhsil", "School" to "Məktəb", "Kids & Education/Activities" to "Dərnəklər", "Toys" to "Oyuncaqlar",
+            "Shopping" to "Alış-veriş", "Clothes" to "Geyim", "Home" to "Ev", "Electronics" to "Elektronika", "Online" to "Onlayn",
+            "Entertainment" to "Əyləncə", "Games" to "Oyunlar", "Cinema" to "Kino", "Activities" to "Aktiv istirahət", "Massage" to "Masaj",
+            "Gifts & Occasions" to "Hədiyyələr və mərasimlər", "Presents" to "Hədiyyələr", "Occasions" to "Mərasimlər",
+            "Family support" to "Ailəyə dəstək", "Pocket money" to "Cib xərcliyi", "Support" to "Dəstək",
+            "Travel" to "Səyahət", "Hotel" to "Otel", "Food" to "Yemək", "Fun" to "Əyləncə",
+            "Other" to "Digər",
+            "Paycheck" to "Əmək haqqı", "Salary" to "Maaş", "Bonus" to "Mükafat",
+            "Cashback & Interest" to "Keşbek və faizlər", "Gift" to "Hədiyyə", "Received from others" to "Başqalarından gələn",
+            "Other income" to "Digər gəlir",
         )
     }
 }

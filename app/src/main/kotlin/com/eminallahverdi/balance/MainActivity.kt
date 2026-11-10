@@ -1,13 +1,16 @@
 package com.eminallahverdi.balance
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.data.EXTRA_OPEN_CONFIRM
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.TransactionKind
@@ -16,9 +19,13 @@ import com.eminallahverdi.balance.feature.transaction.QuickAddViewModel
 import com.eminallahverdi.balance.navigation.BalanceApp
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
+    // Starts in the language picked in Settings, so nothing shows in the phone's first.
+    override fun attachBaseContext(newBase: Context) = super.attachBaseContext(Language.wrap(newBase))
+
     @Inject lateinit var prefs: UserPreferencesRepository
     @Inject lateinit var appLock: AppLock
 
@@ -28,7 +35,8 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        publishAppShortcuts(this)
+        // Published again when the language changes, so the launcher's menu speaks it too.
+        lifecycleScope.launch { Language.flow.collect { publishAppShortcuts(applicationContext) } }
         openRecurring = savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_RECURRING, false)
         openConfirm = savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_CONFIRM, false)
         setContent {

@@ -27,6 +27,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,14 +67,14 @@ fun LoansRoute(onBack: () -> Unit, viewModel: LoansViewModel = hiltViewModel()) 
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
-                    Text("Loans & debts", style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
+                    BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.loans_back), onBack)
+                    Text(stringResource(R.string.loans_debts), style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
                 }
             }
             if (!state.loading && state.isEmpty) {
                 item {
                     Text(
-                        "Add a bank loan, or note what you owe someone and what they owe you.",
+                        stringResource(R.string.loans_hint),
                         style = BtTheme.type.body,
                         color = c.textMuted,
                         modifier = Modifier.padding(4.dp),
@@ -81,19 +83,19 @@ fun LoansRoute(onBack: () -> Unit, viewModel: LoansViewModel = hiltViewModel()) 
             }
             if (state.loans.isNotEmpty()) {
                 item { Summary(state) }
-                item(key = "bank") { Overline("Bank loans", Modifier.padding(top = 4.dp, start = 4.dp)) }
+                item(key = "bank") { Overline(stringResource(R.string.loans_bank_loans), Modifier.padding(top = 4.dp, start = 4.dp)) }
                 items(state.loans, key = { "l${it.id}" }) { loan -> LoanCard(loan, state, onClick = { viewModel.editLoan(loan) }) }
             }
             if (state.cards.isNotEmpty()) {
-                item(key = "cards") { Overline("Cards", Modifier.padding(top = 4.dp, start = 4.dp)) }
+                item(key = "cards") { Overline(stringResource(R.string.loans_cards), Modifier.padding(top = 4.dp, start = 4.dp)) }
                 items(state.cards, key = { "c${it.account.id}" }) { CardRow(it) }
             }
             if (state.openDebts.isNotEmpty()) {
-                item(key = "people") { Overline("People", Modifier.padding(top = 4.dp, start = 4.dp)) }
+                item(key = "people") { Overline(stringResource(R.string.loans_people), Modifier.padding(top = 4.dp, start = 4.dp)) }
                 items(state.openDebts, key = { "p${it.name.lowercase()}${it.direction}" }) { person -> PersonCard(person, state, viewModel) }
             }
         }
-        FloatingAddButton("New loan or debt", viewModel::openNew, Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(16.dp))
+        FloatingAddButton(stringResource(R.string.loans_new_loan_or_debt), viewModel::openNew, Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(16.dp))
     }
 
     when (val sheet = state.sheet) {
@@ -115,11 +117,11 @@ private fun Summary(state: LoansUiState) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Overline("Due in ${DateLabels.monthName(state.today)}")
+            Overline(stringResource(R.string.loans_due_in, DateLabels.monthName(state.today)))
             FittedAmount(MoneyFormat.format(state.dueThisMonth), BtTheme.type.amountLarge)
         }
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Overline("Still to pay")
+            Overline(stringResource(R.string.loans_still_to_pay))
             FittedAmount(MoneyFormat.format(state.stillToPay), BtTheme.type.amountMedium)
         }
     }
@@ -131,9 +133,9 @@ private fun LoanCard(loan: RecurringPayment, state: LoansUiState, onClick: () ->
     val terms = loan.loan ?: return
     val last = terms.lastPayment
     val subtitle = when {
-        loan.isFinished -> "Paid off"
-        last != null -> "Last payment ${MoneyFormat.format(last)}"
-        else -> "Monthly · ${state.accounts.firstOrNull { it.id == loan.accountId }?.name.orEmpty()}"
+        loan.isFinished -> stringResource(R.string.loans_paid_off)
+        last != null -> stringResource(R.string.loans_last_payment, MoneyFormat.format(last))
+        else -> stringResource(R.string.loans_monthly_from, state.accounts.firstOrNull { it.id == loan.accountId }?.name.orEmpty())
     }
     val dueSoon = !loan.isFinished && !loan.nextDate.isAfter(state.today.plusDays(DUE_SOON_DAYS))
     BtCard(Modifier.clip(BtShapes.md).clickable(onClick = onClick), bordered = true) {
@@ -146,7 +148,7 @@ private fun LoanCard(loan: RecurringPayment, state: LoansUiState, onClick: () ->
                 }
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(MoneyFormat.format(loan.amount), style = BtTheme.type.amountMedium, color = c.textPrimary)
-                    Text("per month", style = BtTheme.type.caption, color = c.textSecondary)
+                    Text(stringResource(R.string.loans_per_month), style = BtTheme.type.caption, color = c.textSecondary)
                 }
             }
             Box(Modifier.fillMaxWidth().height(6.dp).clip(BtShapes.full).background(c.bgSurfaceHigh)) {
@@ -156,7 +158,7 @@ private fun LoanCard(loan: RecurringPayment, state: LoansUiState, onClick: () ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val left = terms.paymentsLeft
                     Text(
-                        "${if (left == 1) "1 payment" else "$left payments"} left · ${MoneyFormat.format(loan.stillToPay)}",
+                        pluralStringResource(R.plurals.loans_payments_left_amount, left, left, MoneyFormat.format(loan.stillToPay)),
                         style = BtTheme.type.caption,
                         color = c.textSecondary,
                         modifier = Modifier.weight(1f),
@@ -166,7 +168,7 @@ private fun LoanCard(loan: RecurringPayment, state: LoansUiState, onClick: () ->
                     Text(" ${DateLabels.relative(loan.nextDate, state.today)}", style = BtTheme.type.caption, color = tint)
                 }
                 loan.interestLeft?.let { interest ->
-                    Text("About ${MoneyFormat.format(interest)} of that is interest", style = BtTheme.type.caption, color = c.textMuted)
+                    Text(stringResource(R.string.loans_about_interest_that, MoneyFormat.format(interest)), style = BtTheme.type.caption, color = c.textMuted)
                 }
             }
         }
@@ -181,7 +183,7 @@ private fun CardRow(card: CardUse) {
             CategoryTile(card.account.icon, card.account.color)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(card.account.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("Used this month", style = BtTheme.type.caption, color = c.textSecondary)
+                Text(stringResource(R.string.loans_used_this_month), style = BtTheme.type.caption, color = c.textSecondary)
             }
             Text(MoneyFormat.format(card.used), style = BtTheme.type.amountMedium, color = c.textPrimary)
         }
@@ -195,7 +197,7 @@ private fun PersonCard(person: PersonDebts, state: LoansUiState, vm: LoansViewMo
     BtCard {
         Column {
             Row(
-                Modifier.fillMaxWidth().clickable(onClickLabel = "Change the name") { vm.openRename(person.name) }.padding(14.dp),
+                Modifier.fillMaxWidth().clickable(onClickLabel = stringResource(R.string.loans_change_the_name)) { vm.openRename(person.name) }.padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -207,7 +209,7 @@ private fun PersonCard(person: PersonDebts, state: LoansUiState, vm: LoansViewMo
                         Text(person.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                         Icon(Icons.Rounded.Edit, null, tint = c.textMuted, modifier = Modifier.size(14.dp))
                     }
-                    Text(if (iOwe) "I owe" else "Owes me", style = BtTheme.type.caption, color = if (iOwe) c.moneyExpense else c.moneyIncome)
+                    Text(if (iOwe) stringResource(R.string.loans_i_owe) else stringResource(R.string.loans_owes_me), style = BtTheme.type.caption, color = if (iOwe) c.moneyExpense else c.moneyIncome)
                 }
                 Text(amount(person.total, person.isSensitive, state), style = BtTheme.type.amountMedium, color = c.textPrimary)
             }
@@ -219,7 +221,7 @@ private fun PersonCard(person: PersonDebts, state: LoansUiState, vm: LoansViewMo
                 Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
                 Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.End) {
                     val total = amount(person.total, person.isSensitive, state)
-                    BtChip(if (iOwe) "Pay all $total" else "Received all $total", selected = true, onClick = { vm.openPay(person.debts) })
+                    BtChip(stringResource(if (iOwe) R.string.loans_pay_all else R.string.loans_received_all, total), selected = true, onClick = { vm.openPay(person.debts) })
                 }
             }
         }
@@ -230,12 +232,12 @@ private fun PersonCard(person: PersonDebts, state: LoansUiState, vm: LoansViewMo
 private fun DebtRow(balance: DebtBalance, state: LoansUiState, iOwe: Boolean, onPay: () -> Unit) {
     val c = BtTheme.colors
     val debt = balance.debt
-    val title = debt.note.ifBlank { state.category(debt.categoryId)?.name ?: if (iOwe) "Borrowed" else "Lent" }
+    val title = debt.note.ifBlank { state.category(debt.categoryId)?.name ?: if (iOwe) stringResource(R.string.loans_borrowed) else stringResource(R.string.loans_lent) }
     // With no note the title already is the category, so only what's above it is left to say.
     val where = if (debt.note.isBlank()) state.category(state.category(debt.categoryId)?.parentId)?.name else state.categoryPath(debt.categoryId)
     val plan = balance.paymentsLeft?.takeIf { it > 0 }?.let { n ->
-        val count = if (n == 1) "1 payment" else "$n payments"
-        if (state.hideAmounts && debt.isPlainLoan) "$count left" else "$count of ${MoneyFormat.format(balance.nextPayment)}"
+        val count = pluralStringResource(R.plurals.loans_payments_n, n, n)
+        if (state.hideAmounts && debt.isPlainLoan) stringResource(R.string.loans_left_suffix, count) else stringResource(R.string.loans_n_of_amount, count, MoneyFormat.format(balance.nextPayment))
     }
     val details = listOfNotNull(where, plan, DateLabels.relative(debt.date, state.today)).joinToString(" · ")
     Row(
@@ -248,7 +250,7 @@ private fun DebtRow(balance: DebtBalance, state: LoansUiState, iOwe: Boolean, on
             Text(details, style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Text(amount(balance.left, debt.movesMoney, state), style = BtTheme.type.amountSmall, color = c.textPrimary)
-        BtChip(if (iOwe) "Pay" else "Received", selected = false, onClick = onPay)
+        BtChip(if (iOwe) stringResource(R.string.loans_pay) else stringResource(R.string.loans_received), selected = false, onClick = onPay)
     }
 }
 

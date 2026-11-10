@@ -6,6 +6,8 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import androidx.annotation.PluralsRes
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -35,6 +37,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.eminallahverdi.balance.core.common.ApplicationScope
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.EXTRA_OPEN_CONFIRM
@@ -141,4 +144,22 @@ internal fun ImageVector.toBitmap(context: Context, size: Dp, tint: Color): Bitm
     }
     draw(root)
     return bitmap
+}
+
+/**
+ * A text in the language picked in Settings. A widget draws with whatever context the launcher's broadcast brought, which
+ * may still speak the language the process started in, so the texts come from one set to the picked language.
+ */
+@Composable
+internal fun widgetString(@StringRes id: Int, vararg args: Any): String = widgetTexts().getString(id, *args)
+
+@Composable
+internal fun widgetPlural(@PluralsRes id: Int, count: Int, vararg args: Any): String =
+    widgetTexts().resources.getQuantityString(id, count, *args)
+
+@Composable
+private fun widgetTexts(): Context {
+    val context = LocalContext.current
+    val locale = Language.locale
+    return remember(context, locale) { Language.wrap(context) }
 }

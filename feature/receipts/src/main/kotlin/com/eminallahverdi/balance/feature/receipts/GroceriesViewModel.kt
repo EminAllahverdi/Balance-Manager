@@ -8,6 +8,9 @@ import android.media.ExifInterface
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.eminallahverdi.balance.core.common.Language
+import com.eminallahverdi.balance.core.common.UiText
+import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.ReceiptLookup
 import com.eminallahverdi.balance.core.data.ReceiptRepository
@@ -55,9 +58,9 @@ sealed interface ScanState {
     data object Idle : ScanState
     data object Choosing : ScanState
     data object TypingId : ScanState
-    data class Working(val message: String) : ScanState
+    data class Working(val message: UiText) : ScanState
     data class Review(val parsed: ParsedReceipt, val store: String, val fiscalId: String?, val picture: Bitmap?) : ScanState
-    data class Problem(val message: String, val fiscalId: String? = null) : ScanState
+    data class Problem(val message: UiText, val fiscalId: String? = null) : ScanState
 
     /** Saved. [needsEntry] when no grocery entry has its total yet, so adding one is offered. */
     data class Saved(val receipt: Receipt, val needsEntry: Boolean) : ScanState
@@ -130,20 +133,20 @@ class GroceriesViewModel @Inject constructor(
     fun lookUp(scannedOrTyped: String) {
         val fiscalId = fiscalIdFrom(scannedOrTyped)
         if (fiscalId == null) {
-            scan.value = ScanState.Problem("That isn't an e-kassa receipt's code. Its fiscal ID has 12 letters and digits.")
+            scan.value = ScanState.Problem(uiText(R.string.receipts_not_ekassa))
             return
         }
         viewModelScope.launch {
             if (receipts.exists(fiscalId)) {
-                scan.value = ScanState.Problem("This receipt is saved already.")
+                scan.value = ScanState.Problem(uiText(R.string.receipts_saved_already))
                 return@launch
             }
-            scan.value = ScanState.Working("Asking the tax service for the receipt…")
+            scan.value = ScanState.Working(uiText(R.string.receipts_asking_tax))
             scan.value = when (val found = receipts.lookUp(fiscalId)) {
                 is ReceiptLookup.Found -> read(BitmapFactory.decodeByteArray(found.image, 0, found.image.size), fiscalId)
-                ReceiptLookup.NotFound -> ScanState.Problem("The tax service doesn't have this receipt yet. A receipt can take up to a week to get there.", fiscalId)
-                ReceiptLookup.Refused -> ScanState.Problem("The tax service wants this checked on its own page.", fiscalId)
-                ReceiptLookup.Offline -> ScanState.Problem("Couldn't reach the tax service. Check the connection and try again.", fiscalId)
+                ReceiptLookup.NotFound -> ScanState.Problem(uiText(R.string.receipts_tax_not_found), fiscalId)
+                ReceiptLookup.Refused -> ScanState.Problem(uiText(R.string.receipts_tax_refused), fiscalId)
+                ReceiptLookup.Offline -> ScanState.Problem(uiText(R.string.receipts_tax_offline), fiscalId)
             }
         }
     }
@@ -151,9 +154,9 @@ class GroceriesViewModel @Inject constructor(
     /** A photo or screenshot of the receipt, read on the phone. */
     fun readPhoto(uri: Uri) {
         viewModelScope.launch {
-            scan.value = ScanState.Working("Reading the receipt…")
+            scan.value = ScanState.Working(uiText(R.string.receipts_reading_receipt))
             val bitmap = runCatching { upright(uri) }.getOrNull()
-            scan.value = if (bitmap == null) ScanState.Problem("Couldn't open that picture.") else read(bitmap, fiscalId = null)
+            scan.value = if (bitmap == null) ScanState.Problem(uiText(R.string.receipts_couldnt_open_picture)) else read(bitmap, fiscalId = null)
         }
     }
 
@@ -179,11 +182,11 @@ class GroceriesViewModel @Inject constructor(
     }
 
     private suspend fun read(bitmap: Bitmap?, fiscalId: String?): ScanState {
-        if (bitmap == null) return ScanState.Problem("The receipt's picture couldn't be opened.", fiscalId)
-        scan.value = ScanState.Working("Reading the receipt…")
-        val pieces = runCatching { recognise(bitmap) }.getOrElse { return ScanState.Problem("Couldn't read the receipt on this phone. Google Play services may still be getting the text reader.", fiscalId) }
+        if (bitmap == null) return ScanState.Problem(uiText(R.string.receipts_picture_not_opened), fiscalId)
+        scan.value = ScanState.Working(uiText(R.string.receipts_reading_receipt))
+        val pieces = runCatching { recognise(bitmap) }.getOrElse { return ScanState.Problem(uiText(R.string.receipts_couldnt_read_phone), fiscalId) }
         val parsed = parseReceiptText(rowsFrom(pieces))
-        if (parsed.items.isEmpty()) return ScanState.Problem("No items could be read from this receipt.", fiscalId ?: parsed.fiscalId)
+        if (parsed.items.isEmpty()) return ScanState.Problem(uiText(R.string.receipts_no_items_read), fiscalId ?: parsed.fiscalId)
         return ScanState.Review(parsed, parsed.store.orEmpty(), fiscalId ?: parsed.fiscalId, bitmap)
     }
 
@@ -212,7 +215,7 @@ class GroceriesViewModel @Inject constructor(
         val parsed = review.parsed
         val receipt = Receipt(
             id = 0,
-            store = review.store.trim().ifEmpty { "Shop" },
+            store = review.store.trim().ifEmpty { Language.wrap(context).getString(R.string.receipts_shop) },
             date = parsed.date ?: LocalDate.now(),
             total = parsed.total ?: parsed.items.map { it.total }.sum(),
             fiscalId = review.fiscalId,

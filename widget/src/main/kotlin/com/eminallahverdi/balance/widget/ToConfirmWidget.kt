@@ -53,14 +53,14 @@ private fun ToConfirm(count: Int, c: BtColors) {
     WidgetSurface(c, openConfirmAction(LocalContext.current)) {
         Column(GlanceModifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("TO CONFIRM", style = widgetText(c.textMuted, 11.sp, FontWeight.Bold), modifier = GlanceModifier.defaultWeight(), maxLines = 1)
+                Text(widgetString(R.string.widget_to_confirm_caps), style = widgetText(c.textMuted, 11.sp, FontWeight.Bold), modifier = GlanceModifier.defaultWeight(), maxLines = 1)
                 WidgetIcon(Icons.Rounded.Notifications, if (count > 0) c.statusWarning else c.textMuted, 18.dp)
             }
             Spacer(GlanceModifier.defaultWeight())
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("$count", style = widgetText(c.textPrimary, 24.sp, FontWeight.Medium), maxLines = 1)
                 Spacer(GlanceModifier.width(6.dp))
-                Text(if (count == 1) "payment" else "payments", style = widgetText(c.textSecondary, 12.sp), maxLines = 1)
+                Text(widgetPlural(R.plurals.widget_payments, count), style = widgetText(c.textSecondary, 12.sp), maxLines = 1)
             }
         }
     }

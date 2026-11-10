@@ -32,6 +32,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -82,12 +84,12 @@ private fun SheetFrame(onDismiss: () -> Unit, content: @Composable ColumnScope.(
 @Composable
 internal fun NewEntrySheet(vm: LoansViewModel) {
     // Each option opens its own sheet in this one's place, so there's no closing first: that would close the new one too.
-    ChoiceSheet("Add", onClose = vm::closeSheet) { _ ->
-        OptionRow("Bank loan", selected = false, onClick = vm::newLoan, caption = "A set number of monthly payments, with a reminder for each")
-        OptionRow("I paid for others", selected = false, onClick = vm::newBill, caption = "Lunch for the table. Your share is spending, and what they send back to any card isn't income")
-        OptionRow("They paid for me", selected = false, onClick = { vm.newDebt(DebtKind.PAID_FOR_ME) }, caption = "Your share of lunch or a gift. It becomes an expense when you pay them back")
-        OptionRow("I borrowed money", selected = false, onClick = { vm.newDebt(DebtKind.BORROWED) }, caption = "Into your account, or one already running. It isn't income")
-        OptionRow("I lent money", selected = false, onClick = { vm.newDebt(DebtKind.LENT) }, caption = "Out of your account, or one already running. It isn't spending")
+    ChoiceSheet(stringResource(R.string.loans_add), onClose = vm::closeSheet) { _ ->
+        OptionRow(stringResource(R.string.loans_bank_loan), selected = false, onClick = vm::newLoan, caption = stringResource(R.string.loans_bank_loan_caption))
+        OptionRow(stringResource(R.string.loans_i_paid_for_others), selected = false, onClick = vm::newBill, caption = stringResource(R.string.loans_i_paid_for_others_caption))
+        OptionRow(stringResource(R.string.loans_they_paid_for_me), selected = false, onClick = { vm.newDebt(DebtKind.PAID_FOR_ME) }, caption = stringResource(R.string.loans_they_paid_for_me_caption))
+        OptionRow(stringResource(R.string.loans_i_borrowed_money), selected = false, onClick = { vm.newDebt(DebtKind.BORROWED) }, caption = stringResource(R.string.loans_i_borrowed_money_caption))
+        OptionRow(stringResource(R.string.loans_i_lent_money), selected = false, onClick = { vm.newDebt(DebtKind.LENT) }, caption = stringResource(R.string.loans_i_lent_money_caption))
     }
 }
 
@@ -99,58 +101,58 @@ internal fun LoanEditorSheet(draft: LoanDraft, state: LoansUiState, vm: LoansVie
     var pickDate by remember { mutableStateOf(false) }
 
     SheetFrame(vm::closeSheet) {
-        EditorTitle(if (draft.isNew) "New loan" else "Edit loan", onRemove = if (draft.isNew) null else ({ confirmRemove = true })) {
+        EditorTitle(if (draft.isNew) stringResource(R.string.loans_new_loan) else stringResource(R.string.loans_edit_loan), onRemove = if (draft.isNew) null else ({ confirmRemove = true })) {
             CategoryTile("account_balance", 0xFFF5B544)
         }
-        BtTextField(draft.name, "Name, like Car loan", { vm.updateLoan { copy(name = it) } })
+        BtTextField(draft.name, stringResource(R.string.loans_name_like_car_loan), { vm.updateLoan { copy(name = it) } })
         // Labels, not placeholders: filled in, these are bare numbers.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            EditorField("Amount borrowed", Modifier.weight(1f)) {
-                BtTextField(draft.principalText, "Optional", { vm.updateLoan { copy(principalText = it) } }, keyboardOptions = AmountKeyboard)
+            EditorField(stringResource(R.string.loans_amount_borrowed), Modifier.weight(1f)) {
+                BtTextField(draft.principalText, stringResource(R.string.loans_optional), { vm.updateLoan { copy(principalText = it) } }, keyboardOptions = AmountKeyboard)
             }
-            EditorField("Interest, % a year", Modifier.weight(1f)) {
-                BtTextField(draft.rateText, "Optional", { vm.updateLoan { copy(rateText = it) } }, keyboardOptions = AmountKeyboard)
+            EditorField(stringResource(R.string.loans_interest_a_year), Modifier.weight(1f)) {
+                BtTextField(draft.rateText, stringResource(R.string.loans_optional), { vm.updateLoan { copy(rateText = it) } }, keyboardOptions = AmountKeyboard)
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            EditorField("Months in all", Modifier.weight(1f)) {
+            EditorField(stringResource(R.string.loans_months_in_all), Modifier.weight(1f)) {
                 BtTextField(draft.termText, "0", { vm.updateLoan { copy(termText = it) } }, keyboardOptions = NumberKeyboard)
             }
-            EditorField("Already paid", Modifier.weight(1f)) {
+            EditorField(stringResource(R.string.loans_already_paid), Modifier.weight(1f)) {
                 BtTextField(draft.paymentsMadeText, "0", { vm.updateLoan { copy(paymentsMadeText = it) } }, keyboardOptions = NumberKeyboard)
             }
         }
-        EditorField("Monthly payment") {
+        EditorField(stringResource(R.string.loans_monthly_payment)) {
             BtTextField(draft.amountText, "${MoneyFormat.SYMBOL}0.00", { vm.updateLoan { copy(amountText = it) } }, keyboardOptions = AmountKeyboard)
         }
         draft.suggestedAmount?.let { suggested ->
-            BtChip("Use ${MoneyFormat.format(suggested)}, from the amount, rate and months", selected = false, onClick = { vm.updateLoan { copy(amountText = suggested.toFieldText()) } })
+            BtChip(stringResource(R.string.loans_use_suggested, MoneyFormat.format(suggested)), selected = false, onClick = { vm.updateLoan { copy(amountText = suggested.toFieldText()) } })
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            EditorField("Last payment, if different", Modifier.weight(1f)) {
+            EditorField(stringResource(R.string.loans_last_payment_if_different), Modifier.weight(1f)) {
                 BtTextField(draft.lastAmountText, "${MoneyFormat.SYMBOL}0.00", { vm.updateLoan { copy(lastAmountText = it) } }, keyboardOptions = AmountKeyboard)
             }
-            EditorField("Commission", Modifier.weight(1f)) {
-                BtTextField(draft.commissionText, "Optional", { vm.updateLoan { copy(commissionText = it) } }, keyboardOptions = AmountKeyboard)
+            EditorField(stringResource(R.string.loans_commission), Modifier.weight(1f)) {
+                BtTextField(draft.commissionText, stringResource(R.string.loans_optional), { vm.updateLoan { copy(commissionText = it) } }, keyboardOptions = AmountKeyboard)
             }
         }
-        EditorField("Category") { CategoryChipRow(state.topCategories, draft.categoryId, vm::selectLoanCategory) }
+        EditorField(stringResource(R.string.loans_category)) { CategoryChipRow(state.topCategories, draft.categoryId, vm::selectLoanCategory) }
         if (subCategories.isNotEmpty()) {
-            EditorField("Sub-category") {
+            EditorField(stringResource(R.string.loans_sub_category)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     subCategories.forEach { sub -> BtChip(sub.name, sub.id == draft.subCategoryId, { vm.selectLoanSubCategory(sub) }) }
                 }
             }
         }
-        EditorField("Payments from") {
+        EditorField(stringResource(R.string.loans_payments_from)) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 AccountChips(state, draft.accountId) { id -> vm.updateLoan { copy(accountId = id) } }
-                Text("Adding a loan moves no money. Each payment comes out of this account when you log it.", style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+                Text(stringResource(R.string.loans_loan_moves_no_money), style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
             }
         }
-        EditorField("Next payment") { DateChip(draft.nextDate, state.today) { pickDate = true } }
+        EditorField(stringResource(R.string.loans_next_payment)) { DateChip(draft.nextDate, state.today) { pickDate = true } }
         draft.preview?.let { LoanSums(it) }
-        PrimaryButton("Save", vm::saveLoan, enabled = draft.canSave)
+        PrimaryButton(stringResource(R.string.loans_save), vm::saveLoan, enabled = draft.canSave)
     }
 
     // Outside the sheet: a dialog created inside it takes on the sheet's window and sticks to the bottom edge.
@@ -160,10 +162,10 @@ internal fun LoanEditorSheet(draft: LoanDraft, state: LoansUiState, vm: LoansVie
     if (confirmRemove) {
         AlertDialog(
             onDismissRequest = { confirmRemove = false },
-            title = { Text("Remove ${draft.name}?") },
-            text = { Text("The reminders stop. Payments you logged stay in your history.") },
-            confirmButton = { TextButton(onClick = { confirmRemove = false; vm.removeLoan() }) { Text("Remove") } },
-            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.loans_remove_named, draft.name)) },
+            text = { Text(stringResource(R.string.loans_remove_loan_text)) },
+            confirmButton = { TextButton(onClick = { confirmRemove = false; vm.removeLoan() }) { Text(stringResource(R.string.loans_remove)) } },
+            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.loans_cancel)) } },
         )
     }
 }
@@ -176,9 +178,9 @@ private fun LoanSums(loan: RecurringPayment) {
         Modifier.fillMaxWidth().clip(BtShapes.md).background(c.bgSurfaceRaised).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text("${MoneyFormat.format(loan.stillToPay)} left to pay", style = BtTheme.type.bodyStrong, color = c.textPrimary)
-        loan.interestLeft?.let { Text("About ${MoneyFormat.format(it)} of it is interest", style = BtTheme.type.caption, color = c.textSecondary) }
-        loan.totalCost?.let { Text("Interest and commission over the whole loan: ${MoneyFormat.format(it)}", style = BtTheme.type.caption, color = c.textSecondary) }
+        Text(stringResource(R.string.loans_left_to_pay, MoneyFormat.format(loan.stillToPay)), style = BtTheme.type.bodyStrong, color = c.textPrimary)
+        loan.interestLeft?.let { Text(stringResource(R.string.loans_about_interest_it, MoneyFormat.format(it)), style = BtTheme.type.caption, color = c.textSecondary) }
+        loan.totalCost?.let { Text(stringResource(R.string.loans_interest_commission_total, MoneyFormat.format(it)), style = BtTheme.type.caption, color = c.textSecondary) }
     }
 }
 
@@ -191,20 +193,20 @@ internal fun DebtEditorSheet(draft: DebtDraft, state: LoansUiState, vm: LoansVie
     var pickDate by remember { mutableStateOf(false) }
 
     SheetFrame(vm::closeSheet) {
-        Text("New debt", style = BtTheme.type.titleMedium, color = c.textPrimary)
-        SegmentedToggle(KINDS.map { it.label }, KINDS.indexOf(draft.kind), { i -> vm.updateDebt { copy(kind = KINDS[i]) } }, Modifier.fillMaxWidth(), fill = true)
+        Text(stringResource(R.string.loans_new_debt), style = BtTheme.type.titleMedium, color = c.textPrimary)
+        SegmentedToggle(KINDS.map { stringResource(it.label) }, KINDS.indexOf(draft.kind), { i -> vm.updateDebt { copy(kind = KINDS[i]) } }, Modifier.fillMaxWidth(), fill = true)
         Text(
             when {
-                draft.kind == DebtKind.PAID_FOR_ME -> "Your balance stays the same for now. It becomes an expense in this category when you pay them back."
-                draft.isRunning && draft.kind == DebtKind.BORROWED -> "Nothing moves now: the money came in before. What you pay back from here on leaves an account, and isn't spending."
-                draft.isRunning -> "Nothing moves now: the money went out before. What they pay back from here on comes into an account, and isn't income."
-                draft.kind == DebtKind.BORROWED -> "Adds to your account. It isn't income, and paying it back isn't spending."
-                else -> "Takes from your account. It isn't spending, and getting it back isn't income."
+                draft.kind == DebtKind.PAID_FOR_ME -> stringResource(R.string.loans_paid_for_me_explained)
+                draft.isRunning && draft.kind == DebtKind.BORROWED -> stringResource(R.string.loans_running_borrowed_explained)
+                draft.isRunning -> stringResource(R.string.loans_running_lent_explained)
+                draft.kind == DebtKind.BORROWED -> stringResource(R.string.loans_borrowed_explained)
+                else -> stringResource(R.string.loans_lent_explained)
             },
             style = BtTheme.type.caption,
             color = c.textSecondary,
         )
-        BtTextField(draft.counterparty, "Who", { vm.updateDebt { copy(counterparty = it) } })
+        BtTextField(draft.counterparty, stringResource(R.string.loans_who), { vm.updateDebt { copy(counterparty = it) } })
         if (names.isNotEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 names.forEach { name -> BtChip(name, false, { vm.updateDebt { copy(counterparty = name) } }) }
@@ -214,11 +216,11 @@ internal fun DebtEditorSheet(draft: DebtDraft, state: LoansUiState, vm: LoansVie
             BtTextField(draft.amountText, "${MoneyFormat.SYMBOL}0.00", { vm.updateDebt { copy(amountText = it) } }, keyboardOptions = AmountKeyboard)
         }
         // A running loan has two sums, so this one says it's the whole of it.
-        if (draft.isRunning) EditorField(if (draft.kind == DebtKind.BORROWED) "Borrowed in all" else "Lent in all") { amountField() } else amountField()
+        if (draft.isRunning) EditorField(if (draft.kind == DebtKind.BORROWED) stringResource(R.string.loans_borrowed_in_all) else stringResource(R.string.loans_lent_in_all)) { amountField() } else amountField()
         if (draft.kind == DebtKind.PAID_FOR_ME) {
-            EditorField("Category") { CategoryChipRow(state.topCategories, draft.categoryId, vm::selectDebtCategory) }
+            EditorField(stringResource(R.string.loans_category)) { CategoryChipRow(state.topCategories, draft.categoryId, vm::selectDebtCategory) }
             if (subCategories.isNotEmpty()) {
-                EditorField("Sub-category") {
+                EditorField(stringResource(R.string.loans_sub_category)) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         subCategories.forEach { sub -> BtChip(sub.name, sub.id == draft.subCategoryId, { vm.selectDebtSubCategory(sub) }) }
                     }
@@ -227,29 +229,29 @@ internal fun DebtEditorSheet(draft: DebtDraft, state: LoansUiState, vm: LoansVie
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Already running", style = BtTheme.type.bodyStrong, color = c.textPrimary)
-                    Text("It started before today, and some may be paid back", style = BtTheme.type.caption, color = c.textSecondary)
+                    Text(stringResource(R.string.loans_already_running), style = BtTheme.type.bodyStrong, color = c.textPrimary)
+                    Text(stringResource(R.string.loans_already_running_caption), style = BtTheme.type.caption, color = c.textSecondary)
                 }
                 BtSwitch(draft.running) { on -> vm.updateDebt { copy(running = on) } }
             }
             if (draft.isRunning) {
-                EditorField(if (draft.kind == DebtKind.BORROWED) "Already paid back" else "Already paid back to you") {
+                EditorField(if (draft.kind == DebtKind.BORROWED) stringResource(R.string.loans_already_paid_back) else stringResource(R.string.loans_already_paid_back_to_you)) {
                     BtTextField(draft.paidBeforeText, "${MoneyFormat.SYMBOL}0.00", { vm.updateDebt { copy(paidBeforeText = it) } }, keyboardOptions = AmountKeyboard)
                 }
             } else {
-                EditorField(if (draft.kind == DebtKind.BORROWED) "Into" else "From") { AccountChips(state, draft.accountId) { id -> vm.updateDebt { copy(accountId = id) } } }
+                EditorField(if (draft.kind == DebtKind.BORROWED) stringResource(R.string.loans_into) else stringResource(R.string.loans_from)) { AccountChips(state, draft.accountId) { id -> vm.updateDebt { copy(accountId = id) } } }
             }
-            EditorField("Payments left") {
-                BtTextField(draft.paymentsLeftText, "Optional, like 5", { vm.updateDebt { copy(paymentsLeftText = it) } }, keyboardOptions = NumberKeyboard)
+            EditorField(stringResource(R.string.loans_payments_left)) {
+                BtTextField(draft.paymentsLeftText, stringResource(R.string.loans_optional_like_5), { vm.updateDebt { copy(paymentsLeftText = it) } }, keyboardOptions = NumberKeyboard)
             }
             draft.left?.let { left ->
-                val plan = draft.monthly?.let { " · ${MoneyFormat.format(it)} a month" }.orEmpty()
-                Text("${MoneyFormat.format(left)} left$plan", style = BtTheme.type.caption, color = c.textSecondary)
+                val plan = draft.monthly?.let { " · " + stringResource(R.string.loans_a_month, MoneyFormat.format(it)) }.orEmpty()
+                Text(stringResource(R.string.loans_left_suffix, MoneyFormat.format(left)) + plan, style = BtTheme.type.caption, color = c.textSecondary)
             }
         }
-        BtTextField(draft.note, "Note, like Friday lunch", { vm.updateDebt { copy(note = it) } })
-        EditorField("Date") { DateChip(draft.date, state.today) { pickDate = true } }
-        PrimaryButton("Save", vm::saveDebt, enabled = draft.canSave)
+        BtTextField(draft.note, stringResource(R.string.loans_note_like_friday_lunch), { vm.updateDebt { copy(note = it) } })
+        EditorField(stringResource(R.string.loans_date)) { DateChip(draft.date, state.today) { pickDate = true } }
+        PrimaryButton(stringResource(R.string.loans_save), vm::saveDebt, enabled = draft.canSave)
     }
 
     if (pickDate) {
@@ -267,53 +269,53 @@ internal fun BillEditorSheet(draft: BillDraft, state: LoansUiState, vm: LoansVie
     var pickDate by remember { mutableStateOf(false) }
 
     SheetFrame(vm::closeSheet) {
-        EditorTitle("I paid for others") { CategoryTile("handshake", 0xFF8A94A3) }
+        EditorTitle(stringResource(R.string.loans_i_paid_for_others)) { CategoryTile("handshake", 0xFF8A94A3) }
         Text(
-            "The whole bill leaves your account. Your share is spending, and what the others send back isn't income.",
+            stringResource(R.string.loans_bill_explained),
             style = BtTheme.type.caption,
             color = c.textSecondary,
         )
-        EditorField("Amount paid") {
+        EditorField(stringResource(R.string.loans_amount_paid)) {
             BtTextField(draft.totalText, "${MoneyFormat.SYMBOL}0.00", { vm.updateBill { copy(totalText = it) } }, keyboardOptions = AmountKeyboard)
         }
-        EditorField("Who owes you") {
-            BtTextField(draft.who, "Sam, Alex and Kamal", { vm.updateBill { copy(who = it) } }, keyboardOptions = NameKeyboard)
+        EditorField(stringResource(R.string.loans_who_owes_you)) {
+            BtTextField(draft.who, stringResource(R.string.loans_names_hint), { vm.updateBill { copy(who = it) } }, keyboardOptions = NameKeyboard)
         }
         if (names.isNotEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 names.forEach { name -> BtChip(name, false, { vm.addToBill(name) }) }
             }
         }
-        EditorField("Category") { CategoryChipRow(state.topCategories, draft.categoryId, vm::selectBillCategory) }
+        EditorField(stringResource(R.string.loans_category)) { CategoryChipRow(state.topCategories, draft.categoryId, vm::selectBillCategory) }
         if (subCategories.isNotEmpty()) {
-            EditorField("Sub-category") {
+            EditorField(stringResource(R.string.loans_sub_category)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     subCategories.forEach { sub -> BtChip(sub.name, sub.id == draft.subCategoryId, { vm.selectBillSubCategory(sub) }) }
                 }
             }
         }
-        EditorField("Merchant") { BtTextField(draft.merchant, "Where, like Bravo", { vm.updateBill { copy(merchant = it) } }) }
-        EditorField("Your share") {
+        EditorField(stringResource(R.string.loans_merchant)) { BtTextField(draft.merchant, stringResource(R.string.loans_where_like_bravo), { vm.updateBill { copy(merchant = it) } }) }
+        EditorField(stringResource(R.string.loans_your_share)) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 BtTextField(draft.mineText, "${MoneyFormat.SYMBOL}0.00", { vm.updateBill { copy(mineText = it) } }, keyboardOptions = AmountKeyboard)
                 draft.evenSplit?.let { even ->
                     val people = draft.others.size + 1
-                    BtChip("Split evenly by $people: ${MoneyFormat.format(even)}", draft.mine == even, { vm.updateBill { copy(mineText = even.toFieldText()) } })
+                    BtChip(stringResource(R.string.loans_split_evenly, people, MoneyFormat.format(even)), draft.mine == even, { vm.updateBill { copy(mineText = even.toFieldText()) } })
                 }
                 Text(shareCaption(draft), style = BtTheme.type.caption, color = c.textSecondary)
             }
         }
-        EditorField("For whom") {
+        EditorField(stringResource(R.string.loans_for_whom)) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 state.activePeople.forEach { person ->
                     BtChip(person.name, person.id == draft.personId, { vm.updateBill { copy(personId = person.id) } }, leading = { PersonDot(person.color) })
                 }
             }
         }
-        EditorField("From") { AccountChips(state, draft.accountId) { id -> vm.updateBill { copy(accountId = id) } } }
-        EditorField("Date") { DateChip(draft.date, state.today) { pickDate = true } }
-        BtTextField(draft.note, "Note, like Friday lunch", { vm.updateBill { copy(note = it) } })
-        PrimaryButton(draft.total?.let { "Save ${MoneyFormat.format(it)}" } ?: "Save", vm::saveBill, enabled = draft.canSave)
+        EditorField(stringResource(R.string.loans_from)) { AccountChips(state, draft.accountId) { id -> vm.updateBill { copy(accountId = id) } } }
+        EditorField(stringResource(R.string.loans_date)) { DateChip(draft.date, state.today) { pickDate = true } }
+        BtTextField(draft.note, stringResource(R.string.loans_note_like_friday_lunch), { vm.updateBill { copy(note = it) } })
+        PrimaryButton(draft.total?.let { stringResource(R.string.loans_save_amount, MoneyFormat.format(it)) } ?: stringResource(R.string.loans_save), vm::saveBill, enabled = draft.canSave)
     }
 
     if (pickDate) {
@@ -322,14 +324,15 @@ internal fun BillEditorSheet(draft: BillDraft, state: LoansUiState, vm: LoansVie
 }
 
 /** What saving will do with the money, in plain words, so the split is never a surprise. */
+@Composable
 private fun shareCaption(draft: BillDraft): String {
     val mine = draft.mine
     val owed = draft.owed
     return when {
-        mine == null -> "That isn't an amount."
-        draft.total != null && owed == null -> "Your share can't be the whole bill. Add it in quick add instead."
-        owed != null && !mine.isZero -> "${MoneyFormat.format(mine)} is spending now, and the others owe you ${MoneyFormat.format(owed)}."
-        else -> "Leave it empty if you don't know yet. Whatever isn't paid back can be marked as yours later."
+        mine == null -> stringResource(R.string.loans_not_an_amount)
+        draft.total != null && owed == null -> stringResource(R.string.loans_share_not_whole)
+        owed != null && !mine.isZero -> stringResource(R.string.loans_share_spending_now, MoneyFormat.format(mine), MoneyFormat.format(owed))
+        else -> stringResource(R.string.loans_share_leave_empty)
     }
 }
 
@@ -344,7 +347,7 @@ internal fun PaySheet(draft: PayDraft, state: LoansUiState, vm: LoansViewModel) 
     var pickDate by remember { mutableStateOf(false) }
 
     SheetFrame(vm::closeSheet) {
-        EditorTitle(if (iOwe) "Pay back ${first.debt.counterparty}" else "${first.debt.counterparty} paid back", onRemove = if (canRemove) ({ confirmRemove = true }) else null) {
+        EditorTitle(stringResource(if (iOwe) R.string.loans_pay_back_named else R.string.loans_named_paid_back, first.debt.counterparty), onRemove = if (canRemove) ({ confirmRemove = true }) else null) {
             CategoryTile("handshake", 0xFF8A94A3)
         }
         if (draft.isSingle) {
@@ -355,23 +358,23 @@ internal fun PaySheet(draft: PayDraft, state: LoansUiState, vm: LoansViewModel) 
                 val amount = MoneyFormat.format(draft.amountFor(balance))
                 val where = state.categoryPath(balance.debt.categoryId)
                 val line = when {
-                    where != null && iOwe -> "$amount as an expense in $where"
-                    iOwe -> "$amount as a debt payment, not spending"
-                    else -> "$amount back into your account, not income"
+                    where != null && iOwe -> stringResource(R.string.loans_as_expense_in, amount, where)
+                    iOwe -> stringResource(R.string.loans_as_debt_payment, amount)
+                    else -> stringResource(R.string.loans_back_into_account, amount)
                 }
                 Text(line, style = BtTheme.type.caption, color = c.textSecondary)
             }
         }
-        EditorField(if (iOwe) "From" else "Into") { AccountChips(state, draft.accountId) { id -> vm.updatePay { copy(accountId = id) } } }
-        EditorField("Date") { DateChip(draft.date, state.today) { pickDate = true } }
-        val action = if (iOwe) "Pay" else "Add"
-        PrimaryButton(if (total != null) "$action ${MoneyFormat.format(total)}" else action, vm::confirmPay, enabled = draft.canPay)
+        EditorField(if (iOwe) stringResource(R.string.loans_from) else stringResource(R.string.loans_into)) { AccountChips(state, draft.accountId) { id -> vm.updatePay { copy(accountId = id) } } }
+        EditorField(stringResource(R.string.loans_date)) { DateChip(draft.date, state.today) { pickDate = true } }
+        val action = if (iOwe) stringResource(R.string.loans_pay) else stringResource(R.string.loans_add)
+        PrimaryButton(if (total != null) stringResource(R.string.loans_action_amount, action, MoneyFormat.format(total)) else action, vm::confirmPay, enabled = draft.canPay)
         if (draft.canMarkShare && total != null) {
             // What nobody is sending back: the user's own part of the bill.
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                BtChip("${MoneyFormat.format(total)} is my share", selected = false, onClick = vm::markShare)
+                BtChip(stringResource(R.string.loans_is_my_share, MoneyFormat.format(total)), selected = false, onClick = vm::markShare)
                 Text(
-                    "Spending in ${state.categoryPath(first.debt.categoryId).orEmpty()}, on the day of the bill, from the account that paid it.",
+                    stringResource(R.string.loans_share_spending_explained, state.categoryPath(first.debt.categoryId).orEmpty()),
                     style = BtTheme.type.caption,
                     color = c.textSecondary,
                 )
@@ -385,10 +388,10 @@ internal fun PaySheet(draft: PayDraft, state: LoansUiState, vm: LoansViewModel) 
     if (confirmRemove) {
         AlertDialog(
             onDismissRequest = { confirmRemove = false },
-            title = { Text("Remove this debt?") },
-            text = { Text("For one added by mistake. Any money it moved goes back too.") },
-            confirmButton = { TextButton(onClick = { confirmRemove = false; vm.removeDebt(first.debt) }) { Text("Remove") } },
-            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.loans_remove_debt_q)) },
+            text = { Text(stringResource(R.string.loans_remove_debt_text)) },
+            confirmButton = { TextButton(onClick = { confirmRemove = false; vm.removeDebt(first.debt) }) { Text(stringResource(R.string.loans_remove)) } },
+            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.loans_cancel)) } },
         )
     }
 }
@@ -401,18 +404,17 @@ internal fun RenameSheet(rename: LoansSheet.Rename, state: LoansUiState, vm: Loa
     // Someone else already called this: their debts come together, which is how a second spelling is folded in.
     val joining = state.knownNames.firstOrNull { it.equals(rename.text.trim(), ignoreCase = true) && !it.equals(rename.from.trim(), ignoreCase = true) }
     SheetFrame(vm::closeSheet) {
-        EditorTitle("Change the name") { CategoryTile("handshake", 0xFF8A94A3) }
-        BtTextField(rename.text, "Name", vm::updateRename, keyboardOptions = NameKeyboard)
+        EditorTitle(stringResource(R.string.loans_change_the_name)) { CategoryTile("handshake", 0xFF8A94A3) }
+        BtTextField(rename.text, stringResource(R.string.loans_name), vm::updateRename, keyboardOptions = NameKeyboard)
         Text(
             buildString {
-                append(if (count == 1) "Changes it on the debt with ${rename.from}" else "Changes it on all $count debts with ${rename.from}")
-                append(", and in the notes of what was paid back.")
-                if (joining != null) append(" They join $joining's, as one person.")
+                append(pluralStringResource(R.plurals.loans_rename_changes, count, count, rename.from))
+                if (joining != null) append(" " + stringResource(R.string.loans_rename_join, joining))
             },
             style = BtTheme.type.caption,
             color = c.textSecondary,
         )
-        PrimaryButton("Save", vm::saveRename, enabled = rename.canSave)
+        PrimaryButton(stringResource(R.string.loans_save), vm::saveRename, enabled = rename.canSave)
     }
 }
 

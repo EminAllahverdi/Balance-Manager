@@ -48,6 +48,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -88,11 +90,11 @@ private fun PlaceRow(icon: String, title: String, caption: String?, onClick: () 
 }
 
 internal val AccountType.label: String
-    get() = when (this) {
-        AccountType.DEBIT_CARD -> "Debit card"
-        AccountType.CREDIT_CARD -> "Credit card"
-        AccountType.CASH -> "Cash"
-        AccountType.SAVINGS -> "Savings"
+    @Composable get() = when (this) {
+        AccountType.DEBIT_CARD -> stringResource(R.string.accounts_debit_card)
+        AccountType.CREDIT_CARD -> stringResource(R.string.accounts_credit_card)
+        AccountType.CASH -> stringResource(R.string.accounts_cash)
+        AccountType.SAVINGS -> stringResource(R.string.accounts_savings)
     }
 
 @Composable
@@ -101,9 +103,9 @@ private fun ArchivedHeader(count: Int, open: Boolean, onToggle: () -> Unit) {
     BtCard(Modifier.clip(BtShapes.md).clickable(onClick = onToggle)) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CategoryTile("inventory_2", TRANSFER_TILE)
-            Text("Archived", style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.accounts_archived), style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
             Text("$count", style = BtTheme.type.caption, color = c.textSecondary)
-            Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, if (open) "Hide archived accounts" else "Show archived accounts", tint = c.textSecondary)
+            Icon(if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, if (open) stringResource(R.string.accounts_hide_archived) else stringResource(R.string.accounts_show_archived), tint = c.textSecondary)
         }
     }
 }
@@ -135,8 +137,8 @@ fun AccountsRoute(
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Accounts", style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
-                BtIconButton(Icons.Rounded.Add, "Add account", viewModel::newAccount)
+                Text(stringResource(R.string.accounts_accounts), style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
+                BtIconButton(Icons.Rounded.Add, stringResource(R.string.accounts_add_account), viewModel::newAccount)
             }
         }
         item { TotalCard(state, money(state.total), onTransfer, viewModel::openAdjust) }
@@ -144,8 +146,8 @@ fun AccountsRoute(
             AccountCard(balance, isDefault = balance.account.id == state.defaultAccountId, amount = money(balance.balance), vm = viewModel)
         }
         // What's owed and what's coming round again sit together, below the balances they come out of.
-        item(key = "loans") { PlaceRow("handshake", "Loans & debts", caption = null, onOpenLoans) }
-        item(key = "recurring") { PlaceRow("event_repeat", "Recurring payments", state.recurringSummary, onOpenRecurring) }
+        item(key = "loans") { PlaceRow("handshake", stringResource(R.string.accounts_loans_debts), caption = null, onOpenLoans) }
+        item(key = "recurring") { PlaceRow("event_repeat", stringResource(R.string.accounts_recurring_payments), state.recurringSummary ?: stringResource(R.string.accounts_none_yet), onOpenRecurring) }
         if (state.archived.isNotEmpty()) {
             item(key = "archived") { ArchivedHeader(state.archived.size, archivedOpen) { archivedOpen = !archivedOpen } }
             if (archivedOpen) items(state.archived, key = { "a${it.id}" }) { account -> ArchivedRow(account, viewModel, onDeleteArchived) }
@@ -155,12 +157,12 @@ fun AccountsRoute(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     // Only the last few here, so the page stays light; the rest are one tap away.
                     Row(Modifier.padding(top = 4.dp, start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Overline("Recent transfers", Modifier.weight(1f))
+                        Overline(stringResource(R.string.accounts_recent_transfers), Modifier.weight(1f))
                         Box(
                             Modifier.heightIn(min = 44.dp).clip(BtShapes.full).clickable(role = Role.Button, onClick = onSeeAllTransfers).padding(horizontal = 8.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("See all", style = BtTheme.type.label, color = c.accentText)
+                            Text(stringResource(R.string.accounts_see_all), style = BtTheme.type.label, color = c.accentText)
                         }
                     }
                     BtCard {
@@ -198,14 +200,14 @@ private fun TotalCard(state: AccountsUiState, total: String, onTransfer: () -> U
     BtCard(shape = BtShapes.lg, bordered = true) {
         Column {
             Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Overline(if (count == 1) "Total · 1 account" else "Total · $count accounts")
+                Overline(pluralStringResource(R.plurals.accounts_total_accounts, count, count))
                 FittedAmount(total, BtTheme.type.amountDisplay.copy(fontSize = 34.sp, lineHeight = 40.sp))
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                BoxAction("Transfer", Icons.Rounded.SwapHoriz, enabled = state.canTransfer, onClick = onTransfer, modifier = Modifier.weight(1f))
+                BoxAction(stringResource(R.string.accounts_transfer), Icons.Rounded.SwapHoriz, enabled = state.canTransfer, onClick = onTransfer, modifier = Modifier.weight(1f))
                 Box(Modifier.width(1.dp).fillMaxHeight().padding(vertical = 10.dp).background(c.borderDefault))
-                BoxAction("Adjust balance", Icons.Rounded.Tune, enabled = true, onClick = onAdjust, modifier = Modifier.weight(1f))
+                BoxAction(stringResource(R.string.accounts_adjust_balance), Icons.Rounded.Tune, enabled = true, onClick = onAdjust, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -230,7 +232,7 @@ private fun BoxAction(text: String, icon: ImageVector, enabled: Boolean, onClick
 /**
  * One account: its name, what kind it is and its card's digits, and the balance. A star says which one new expenses start
  * on, and tapping another moves it there. What it counts in is set in its editor and only shown here: a small widget mark
- * when it's on the widget, and a dimmed balance with "not in the total" when it isn't counted.
+ * when it's on the widget, and a dimmed balance with stringResource(R.string.accounts_not_in_total) when it isn't counted.
  */
 @Composable
 private fun AccountCard(balance: AccountBalance, isDefault: Boolean, amount: String, vm: AccountsViewModel) {
@@ -238,7 +240,7 @@ private fun AccountCard(balance: AccountBalance, isDefault: Boolean, amount: Str
     val account = balance.account
     BtCard {
         Row(
-            Modifier.fillMaxWidth().clickable(onClickLabel = "Edit ${account.name}") { vm.edit(account) }.padding(start = 14.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
+            Modifier.fillMaxWidth().clickable(onClickLabel = stringResource(R.string.accounts_edit_named, account.name)) { vm.edit(account) }.padding(start = 14.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -249,10 +251,10 @@ private fun AccountCard(balance: AccountBalance, isDefault: Boolean, amount: Str
                     val details = listOfNotNull(
                         account.type.label,
                         account.cardEnding.takeIf { it.isNotBlank() }?.let { "•••• $it" },
-                        "not in the total".takeUnless { account.includeInTotal },
+                        stringResource(R.string.accounts_not_in_total).takeUnless { account.includeInTotal },
                     )
                     Text(details.joinToString(" · "), style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                    if (account.showOnWidget) Icon(Icons.Rounded.Widgets, "On the widget", tint = c.textMuted, modifier = Modifier.size(14.dp))
+                    if (account.showOnWidget) Icon(Icons.Rounded.Widgets, stringResource(R.string.accounts_on_widget), tint = c.textMuted, modifier = Modifier.size(14.dp))
                 }
             }
             Text(amount, style = BtTheme.type.amountMedium, color = if (account.includeInTotal) c.textPrimary else c.textMuted, maxLines = 1)
@@ -279,12 +281,12 @@ private fun StarButton(name: String, isDefault: Boolean, onClick: () -> Unit) {
         Modifier
             .size(44.dp)
             .clip(BtShapes.full)
-            .clickable(enabled = !isDefault, role = Role.Button, onClickLabel = "Make $name the default", onClick = onClick),
+            .clickable(enabled = !isDefault, role = Role.Button, onClickLabel = stringResource(R.string.accounts_make_default, name), onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             if (isDefault) Icons.Rounded.Star else Icons.Rounded.StarOutline,
-            if (isDefault) "$name is the default" else null,
+            if (isDefault) stringResource(R.string.accounts_is_default, name) else null,
             tint = tint,
             modifier = Modifier.size(22.dp).scale(scale.value),
         )
@@ -305,10 +307,10 @@ private fun DefaultChangeBar(change: DefaultChange, onUndo: () -> Unit, onDone: 
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(Icons.Rounded.Star, null, tint = c.accentText, modifier = Modifier.size(20.dp))
-        Text("New expenses start on ${change.account.name}", style = BtTheme.type.body, color = c.textPrimary, modifier = Modifier.weight(1f).padding(vertical = 14.dp))
+        Text(stringResource(R.string.accounts_new_expenses_start, change.account.name), style = BtTheme.type.body, color = c.textPrimary, modifier = Modifier.weight(1f).padding(vertical = 14.dp))
         if (change.previousId != null) {
             Box(Modifier.heightIn(min = 44.dp).clip(BtShapes.full).clickable(role = Role.Button, onClick = onUndo).padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
-                Text("Undo", style = BtTheme.type.label, color = c.accentText)
+                Text(stringResource(R.string.accounts_undo), style = BtTheme.type.label, color = c.accentText)
             }
         }
     }
@@ -322,8 +324,8 @@ private fun ArchivedRow(account: Account, vm: AccountsViewModel, onDelete: (Long
     BtCard {
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(account.name, style = BtTheme.type.body, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-            ArchivedAction("Restore", c.accentText) { vm.restore(account) }
-            ArchivedAction("Delete", c.moneyExpense) { onDelete(account.id) }
+            ArchivedAction(stringResource(R.string.accounts_restore), c.accentText) { vm.restore(account) }
+            ArchivedAction(stringResource(R.string.accounts_delete), c.moneyExpense) { onDelete(account.id) }
         }
     }
 }

@@ -64,10 +64,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.eminallahverdi.balance.core.common.DateLabels
+import com.eminallahverdi.balance.core.designsystem.R
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.Category
@@ -75,8 +78,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneOffset
-import java.time.format.TextStyle as JavaTextStyle
-import java.util.Locale
 import kotlin.math.abs
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
@@ -115,9 +116,9 @@ const val MONTH_PAGES = 600
 @Composable
 fun MonthTitle(month: YearMonth, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = BtTheme.colors
-    val label = month.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH) + if (month.year != YearMonth.now().year) " ${month.year}" else ""
+    val label = DateLabels.monthTitle(month)
     Row(
-        modifier.clip(BtShapes.sm).clickable(role = Role.Button, onClickLabel = "Pick a month", onClick = onClick),
+        modifier.clip(BtShapes.sm).clickable(role = Role.Button, onClickLabel = stringResource(R.string.ds_pick_a_month), onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -133,9 +134,9 @@ fun MonthPicker(selected: YearMonth?, onSelect: (YearMonth) -> Unit) {
     var year by rememberSaveable { mutableIntStateOf((selected ?: now).year) }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-        YearStep(Icons.Rounded.ChevronLeft, "Previous year", enabled = year > now.year - YEARS_BACK) { year-- }
+        YearStep(Icons.Rounded.ChevronLeft, stringResource(R.string.ds_previous_year), enabled = year > now.year - YEARS_BACK) { year-- }
         Text(year.toString(), style = BtTheme.type.titleMedium, color = BtTheme.colors.textPrimary, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
-        YearStep(Icons.Rounded.ChevronRight, "Next year", enabled = year < now.year) { year++ }
+        YearStep(Icons.Rounded.ChevronRight, stringResource(R.string.ds_next_year), enabled = year < now.year) { year++ }
     }
     (1..12).map { YearMonth.of(year, it) }.chunked(MONTHS_PER_ROW).forEach { row ->
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -166,7 +167,7 @@ private fun MonthCell(month: YearMonth, selected: Boolean, enabled: Boolean, onC
             .clickable(enabled = enabled, role = Role.RadioButton, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(month.month.getDisplayName(JavaTextStyle.SHORT, Locale.ENGLISH), style = BtTheme.type.label, color = if (selected) c.accentOn else c.textPrimary)
+        Text(DateLabels.monthShort(month.month), style = BtTheme.type.label, color = if (selected) c.accentOn else c.textPrimary)
     }
 }
 
@@ -206,9 +207,9 @@ fun BtDatePickerDialog(selected: LocalDate, onPick: (LocalDate) -> Unit, onClose
             TextButton(onClick = {
                 state.selectedDateMillis?.let { onPick(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) }
                 onClose()
-            }) { Text("OK") }
+            }) { Text(stringResource(R.string.ds_ok)) }
         },
-        dismissButton = { TextButton(onClick = onClose) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.ds_cancel)) } },
     ) { DatePicker(state = state) }
 }
 
@@ -257,7 +258,7 @@ private fun TimePanel(title: String, minuteOfDay: Int, onPick: (Int) -> Unit, on
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(title, style = BtTheme.type.titleMedium, color = c.textPrimary, modifier = Modifier.weight(1f))
-            BtIconButton(Icons.Rounded.Close, "Close", onClose)
+            BtIconButton(Icons.Rounded.Close, stringResource(R.string.ds_close), onClose)
         }
         Box(contentAlignment = Alignment.Center) {
             Box(Modifier.fillMaxWidth().height(WheelRowHeight).clip(BtShapes.md).background(c.bgSurfaceRaised))
@@ -267,7 +268,7 @@ private fun TimePanel(title: String, minuteOfDay: Int, onPick: (Int) -> Unit, on
                 TimeWheel(MINUTES_IN_HOUR, minute, { minute = it }, Alignment.CenterStart, Modifier.weight(1f))
             }
         }
-        PrimaryButton("Save", onClick = {
+        PrimaryButton(stringResource(R.string.ds_save), onClick = {
             onPick(hour * MINUTES_IN_HOUR + minute)
             onClose()
         })

@@ -6,6 +6,9 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.common.IoDispatcher
+import com.eminallahverdi.balance.core.common.UiText
+import com.eminallahverdi.balance.core.common.pluralText
+import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
@@ -58,7 +61,7 @@ data class ExportDraft(val span: ExportSpan?, val from: LocalDate, val to: Local
 data class ImportUiState(
     val preview: ImportPreview? = null,
     val hasMapping: Boolean = false,
-    val message: String? = null,
+    val message: UiText? = null,
 )
 
 @HiltViewModel
@@ -72,13 +75,13 @@ class SettingsViewModel @Inject constructor(
     @IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
 
-    private val exportResult = MutableStateFlow<String?>(null)
+    private val exportResult = MutableStateFlow<UiText?>(null)
     private val importing = MutableStateFlow(ImportUiState())
     private var backupFile: Uri? = null
     private var mappingFile: Uri? = null
 
     /** What the last export came to, for its row. */
-    val exportMessage: StateFlow<String?> = exportResult
+    val exportMessage: StateFlow<UiText?> = exportResult
     val importState: StateFlow<ImportUiState> = importing
 
     val state: StateFlow<SettingsUiState> = combine(
@@ -134,9 +137,8 @@ class SettingsViewModel @Inject constructor(
             val entries = transactions.observeDetails(range).first()
             val saved = runCatching { context.contentResolver.openOutputStream(file)?.use { it.write(csvBytes(entries)) } != null }.getOrDefault(false)
             exportResult.value = when {
-                !saved -> "Couldn't save the file"
-                entries.size == 1 -> "1 entry saved"
-                else -> "${entries.size} entries saved"
+                !saved -> uiText(R.string.settings_couldnt_save_file)
+                else -> pluralText(R.plurals.settings_entries_saved, entries.size, entries.size)
             }
         }
     }
@@ -176,21 +178,21 @@ class SettingsViewModel @Inject constructor(
 
     private fun loadPreview() {
         val backup = backupFile ?: return
-        importing.update { it.copy(message = "Reading the backup…") }
+        importing.update { it.copy(message = uiText(R.string.settings_reading_backup)) }
         viewModelScope.launch {
             runCatching { importer.prepare(backup, mappingFile) }
                 .onSuccess { preview -> importing.value = ImportUiState(preview, hasMapping = mappingFile != null) }
-                .onFailure { importing.update { it.copy(message = "Couldn't read that file") } }
+                .onFailure { importing.update { it.copy(message = uiText(R.string.settings_couldnt_read_file)) } }
         }
     }
 
     /** Nothing changes before this, and the database rolls back if it fails partway. */
     fun runImport() {
         val plan = importing.value.preview?.plan ?: return
-        importing.value = ImportUiState(message = "Importing…")
+        importing.value = ImportUiState(message = uiText(R.string.settings_importing))
         viewModelScope.launch {
             val done = runCatching { importer.import(plan) }.isSuccess
-            importing.value = ImportUiState(message = if (done) "${plan.entries.size} entries imported" else "The import failed, so nothing changed")
+            importing.value = ImportUiState(message = if (done) pluralText(R.plurals.settings_entries_imported, plan.entries.size, plan.entries.size) else uiText(R.string.settings_import_failed))
         }
     }
 

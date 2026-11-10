@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -50,6 +51,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
@@ -58,10 +61,13 @@ import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.eminallahverdi.balance.core.common.AppLanguage
 import com.eminallahverdi.balance.core.common.DateLabels
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.common.askToUnlock
 import com.eminallahverdi.balance.core.common.canUnlockDevice
+import com.eminallahverdi.balance.core.common.findActivity
 import com.eminallahverdi.balance.core.datastore.ThemePreference
 import com.eminallahverdi.balance.core.datastore.WidgetBalanceMode
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
@@ -73,6 +79,7 @@ import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PrimaryButton
 import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
+import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.importer.moneymanager.ImportPreview
@@ -90,7 +97,7 @@ fun SettingsRoute(
         SettingsList(state, viewModel, onBack, onOpenCatalog, onOpenConfirm, onPickTime = { pickingTime = true })
         BtTimePickerSheet(
             visible = pickingTime,
-            title = "Reminder time",
+            title = stringResource(R.string.settings_reminder_time),
             minuteOfDay = state.preferences.eveningReminderMinute,
             onPick = viewModel::setEveningReminderMinute,
             onClose = { pickingTime = false },
@@ -114,39 +121,42 @@ private fun SettingsList(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
-            Text("Settings", style = BtTheme.type.titleLarge, color = BtTheme.colors.textPrimary)
+            BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.settings_back), onBack)
+            Text(stringResource(R.string.settings_settings), style = BtTheme.type.titleLarge, color = BtTheme.colors.textPrimary)
         }
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             // The default account is set on Accounts, and the eye on Home hides amounts: neither repeats here.
-            Section("General") {
-                SettingRow(Icons.Rounded.Palette, "Theme") {
+            Section(stringResource(R.string.settings_general)) {
+                SettingRow(Icons.Rounded.Palette, stringResource(R.string.settings_theme)) {
                     SegmentedToggle(
-                        options = listOf("Dark", "Light", "System"),
+                        options = listOf(stringResource(R.string.settings_dark), stringResource(R.string.settings_light), stringResource(R.string.settings_system)),
                         selected = themes.indexOf(state.preferences.theme),
                         onSelect = { viewModel.setTheme(themes[it]) },
                     )
                 }
                 Divider()
+                LanguageRow()
+                Divider()
                 SettingRow(
                     icon = Icons.Rounded.Category,
-                    title = "Categories & people",
-                    caption = "${state.categoryCount} categories · ${state.peopleCount} people",
+                    title = stringResource(R.string.settings_categories_people),
+                    caption = pluralStringResource(R.plurals.settings_categories, state.categoryCount, state.categoryCount) + " · " +
+                        pluralStringResource(R.plurals.settings_people, state.peopleCount, state.peopleCount),
                     onClick = onOpenCatalog,
                 ) { Chevron() }
             }
-            Section("Privacy") {
+            Section(stringResource(R.string.settings_privacy)) {
                 AppLockRow(state, viewModel)
                 Divider()
                 WidgetBalanceRow(state, viewModel)
             }
-            Section("Reminders") {
+            Section(stringResource(R.string.settings_reminders)) {
                 BankNotificationRows(state, viewModel, onOpenConfirm)
                 Divider()
                 EveningReminderRows(state, viewModel, onPickTime)
             }
             BackupSection()
-            Section("Data") {
+            Section(stringResource(R.string.settings_data)) {
                 ExportRow(viewModel)
                 Divider()
                 ImportRow(viewModel)
@@ -169,21 +179,48 @@ private fun Context.appVersion(): String {
     return "${applicationInfo.loadLabel(packageManager)} ${info.versionName} (${PackageInfoCompat.getLongVersionCode(info)})"
 }
 
+/** Which language the app speaks. It changes at once, and nothing on screen starts again. */
+@Composable
+private fun LanguageRow() {
+    val context = LocalContext.current
+    val language by Language.flow.collectAsStateWithLifecycle()
+    var open by remember { mutableStateOf(false) }
+    SettingRow(icon = Icons.Rounded.Translate, title = stringResource(R.string.settings_language), onClick = { open = true }) {
+        Text(language.label(), style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+        Chevron()
+    }
+    if (open) {
+        ChoiceSheet(stringResource(R.string.settings_language), onClose = { open = false }) { choose ->
+            AppLanguage.entries.forEach { option ->
+                OptionRow(text = option.label(), selected = option == language, onClick = { choose { Language.set(context, option) } })
+            }
+        }
+    }
+}
+
+/** A language by its own name, so it can be found by someone who can't read the one showing now. */
+@Composable
+private fun AppLanguage.label(): String = when (this) {
+    AppLanguage.SYSTEM -> stringResource(R.string.settings_follow_phone)
+    AppLanguage.ENGLISH -> "English"
+    AppLanguage.AZERBAIJANI -> "Azərbaycanca"
+}
+
 @Composable
 private fun WidgetBalanceRow(state: SettingsUiState, vm: SettingsViewModel) {
     var open by remember { mutableStateOf(false) }
     val preferences = state.preferences
     SettingRow(
         icon = Icons.Rounded.VisibilityOff,
-        title = "Widget balance",
-        caption = "How the home-screen balance is shown",
+        title = stringResource(R.string.settings_widget_balance),
+        caption = stringResource(R.string.settings_widget_balance_caption),
         onClick = { open = true },
     ) {
         Text(preferences.widgetBalanceMode.label(preferences.widgetRevealSeconds), style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
         Chevron()
     }
     if (open) {
-        ChoiceSheet("Widget balance", onClose = { open = false }) { choose ->
+        ChoiceSheet(stringResource(R.string.settings_widget_balance), onClose = { open = false }) { choose ->
             WidgetBalanceMode.entries.forEach { mode ->
                 OptionRow(
                     text = mode.label(preferences.widgetRevealSeconds),
@@ -199,28 +236,30 @@ private fun WidgetBalanceRow(state: SettingsUiState, vm: SettingsViewModel) {
 /** Changing this asks for the fingerprint or PIN first, so no one can turn it off on an unlocked phone, or lock themselves out. */
 @Composable
 private fun AppLockRow(state: SettingsUiState, vm: SettingsViewModel) {
-    val activity = LocalContext.current as FragmentActivity
+    val activity = LocalContext.current.findActivity() as FragmentActivity
     val on = state.preferences.appLockEnabled
+    val turnOn = stringResource(R.string.settings_turn_on_app_lock)
+    val turnOff = stringResource(R.string.settings_turn_off_app_lock)
     var needsScreenLock by remember { mutableStateOf(false) }
     val change = { enabled: Boolean ->
         when {
-            activity.canUnlockDevice() -> activity.askToUnlock(if (enabled) "Turn on app lock" else "Turn off app lock", onUnlocked = { vm.setAppLock(enabled) })
+            activity.canUnlockDevice() -> activity.askToUnlock(if (enabled) turnOn else turnOff, onUnlocked = { vm.setAppLock(enabled) })
             enabled -> needsScreenLock = true
             else -> vm.setAppLock(false)
         }
     }
     SettingRow(
         icon = Icons.Rounded.Fingerprint,
-        title = "App lock",
-        caption = "Fingerprint or your phone's PIN when opening the app",
+        title = stringResource(R.string.settings_app_lock),
+        caption = stringResource(R.string.settings_app_lock_caption),
         onClick = { change(!on) },
     ) { BtSwitch(on, change) }
     if (needsScreenLock) {
         AlertDialog(
             onDismissRequest = { needsScreenLock = false },
-            title = { Text("Set a screen lock first") },
-            text = { Text("App lock uses your phone's fingerprint or PIN. Set one up in your phone's settings, then turn this on.") },
-            confirmButton = { TextButton(onClick = { needsScreenLock = false }) { Text("OK") } },
+            title = { Text(stringResource(R.string.settings_set_screen_lock)) },
+            text = { Text(stringResource(R.string.settings_set_screen_lock_text)) },
+            confirmButton = { TextButton(onClick = { needsScreenLock = false }) { Text(stringResource(R.string.settings_ok)) } },
         )
     }
 }
@@ -231,8 +270,8 @@ private fun ExportRow(vm: SettingsViewModel) {
     val export by vm.export.collectAsStateWithLifecycle()
     SettingRow(
         icon = Icons.Rounded.Download,
-        title = "Export CSV",
-        caption = message ?: "Entries between two dates, to save or share",
+        title = stringResource(R.string.settings_export_csv),
+        caption = message?.text() ?: stringResource(R.string.settings_export_caption),
         onClick = vm::openExport,
     ) { Chevron() }
     export?.let { ExportSheet(it, vm) }
@@ -246,21 +285,21 @@ private fun ImportRow(vm: SettingsViewModel) {
     val pickMapping = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { file -> file?.let(vm::chooseMapping) }
     SettingRow(
         icon = Icons.Rounded.Upload,
-        title = "Import from Money Manager",
-        caption = state.message ?: "Carry on from a backup of your old app",
+        title = stringResource(R.string.settings_import_mm),
+        caption = state.message?.text() ?: stringResource(R.string.settings_import_mm_caption),
         onClick = { pickBackup.launch(arrayOf("*/*")) },
     ) { Chevron() }
     val preview = state.preview ?: return
-    ChoiceSheet("Import from Money Manager", onClose = vm::closeImport) { choose ->
+    ChoiceSheet(stringResource(R.string.settings_import_mm), onClose = vm::closeImport) { choose ->
         ImportSummary(preview)
         OptionRow(
-            text = "Mapping file",
+            text = stringResource(R.string.settings_mapping_file),
             selected = state.hasMapping,
             onClick = { pickMapping.launch(arrayOf("*/*")) },
-            caption = "Optional: how your categories and tags become these",
+            caption = stringResource(R.string.settings_mapping_caption),
         )
-        Text("This replaces the accounts, entries, loans and reminders now in the app.", style = BtTheme.type.caption, color = BtTheme.colors.statusWarning)
-        PrimaryButton("Replace and import", onClick = { choose(vm::runImport) }, modifier = Modifier.fillMaxWidth())
+        Text(stringResource(R.string.settings_import_replaces), style = BtTheme.type.caption, color = BtTheme.colors.statusWarning)
+        PrimaryButton(stringResource(R.string.settings_replace_and_import), onClick = { choose(vm::runImport) }, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -270,17 +309,17 @@ private fun ImportSummary(preview: ImportPreview) {
     val plan = preview.plan
     val years = plan.entries.map { it.date.year }
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        if (years.isNotEmpty()) Text("${plan.entries.size} entries, ${years.min()} to ${years.max()}", style = BtTheme.type.bodyStrong, color = c.textPrimary)
-        Text("Accounts: " + plan.accounts.joinToString(", ") { it.name }, style = BtTheme.type.caption, color = c.textSecondary)
+        if (years.isNotEmpty()) Text(stringResource(R.string.settings_entries_years, pluralStringResource(R.plurals.settings_entries, plan.entries.size, plan.entries.size), years.min(), years.max()), style = BtTheme.type.bodyStrong, color = c.textPrimary)
+        Text(stringResource(R.string.settings_accounts_list, plan.accounts.joinToString(", ") { it.name }), style = BtTheme.type.caption, color = c.textSecondary)
         if (preview.newCategories.isNotEmpty()) {
-            Text("New categories: " + preview.newCategories.joinToString(", "), style = BtTheme.type.caption, color = c.textSecondary)
+            Text(stringResource(R.string.settings_new_categories, preview.newCategories.joinToString(", ")), style = BtTheme.type.caption, color = c.textSecondary)
         }
         if (plan.differences.isEmpty()) {
-            Text("Every account's balance matches the backup", style = BtTheme.type.caption, color = c.moneyIncome)
+            Text(stringResource(R.string.settings_balances_match), style = BtTheme.type.caption, color = c.moneyIncome)
         }
         plan.differences.forEach {
             val entries = MoneyFormat.format(Money(it.fromEntries), signed = true)
-            Text("${it.account} would be $entries, not ${MoneyFormat.format(Money(it.inBackup), signed = true)}", style = BtTheme.type.caption, color = c.moneyExpense)
+            Text(stringResource(R.string.settings_balance_differs, it.account, entries, MoneyFormat.format(Money(it.inBackup), signed = true)), style = BtTheme.type.caption, color = c.moneyExpense)
         }
     }
 }
@@ -306,23 +345,23 @@ private fun BankNotificationRows(state: SettingsUiState, vm: SettingsViewModel, 
     val appNames = preferences.bankApps.map(context::appLabel).sorted().joinToString(", ")
     SettingRow(
         icon = Icons.Rounded.NotificationsActive,
-        title = "Bank notifications",
+        title = stringResource(R.string.settings_bank_notifications_title),
         caption = when {
-            !on -> "Turn bank payments into ready-made entries"
-            !hasAccess -> "Needs notification access"
-            appNames.isEmpty() -> "Pick your bank apps"
-            else -> "$appNames · ${state.toConfirm} to confirm"
+            !on -> stringResource(R.string.settings_bank_off)
+            !hasAccess -> stringResource(R.string.settings_needs_access)
+            appNames.isEmpty() -> stringResource(R.string.settings_pick_bank_apps)
+            else -> stringResource(R.string.settings_bank_apps_waiting, appNames, state.toConfirm)
         },
         onClick = { if (on && !hasAccess) explaining = true else setEnabled(!on) },
     ) { BtSwitch(on, setEnabled) }
     if (on) {
         Divider()
-        SettingRow(icon = Icons.Rounded.AccountBalance, title = "Bank apps", onClick = { pickingApps = true }) {
+        SettingRow(icon = Icons.Rounded.AccountBalance, title = stringResource(R.string.settings_bank_apps), onClick = { pickingApps = true }) {
             Text("${preferences.bankApps.size}", style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
             Chevron()
         }
         Divider()
-        SettingRow(icon = Icons.Rounded.Notifications, title = "To confirm", onClick = onOpenConfirm) {
+        SettingRow(icon = Icons.Rounded.Notifications, title = stringResource(R.string.settings_to_confirm), onClick = onOpenConfirm) {
             Text("${state.toConfirm}", style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
             Chevron()
         }
@@ -330,27 +369,24 @@ private fun BankNotificationRows(state: SettingsUiState, vm: SettingsViewModel, 
     if (explaining) {
         AlertDialog(
             onDismissRequest = { explaining = false },
-            title = { Text("Allow notification access") },
+            title = { Text(stringResource(R.string.settings_allow_access)) },
             text = {
-                Text(
-                    "Balance needs Android's notification access to see payments from your bank apps. It reads only the apps " +
-                        "you pick, nothing leaves your phone, and entries wait for you to confirm them.",
-                )
+                Text(stringResource(R.string.settings_allow_access_text))
             },
             confirmButton = {
                 TextButton(onClick = {
                     explaining = false
                     context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                }) { Text("Open settings") }
+                }) { Text(stringResource(R.string.settings_open_settings)) }
             },
-            dismissButton = { TextButton(onClick = { explaining = false }) { Text("Not now") } },
+            dismissButton = { TextButton(onClick = { explaining = false }) { Text(stringResource(R.string.settings_not_now)) } },
         )
     }
     if (pickingApps) {
         // Several can be picked, so choosing leaves the sheet open, and it closes by tapping away.
-        ChoiceSheet("Bank apps", onClose = { pickingApps = false }) { _ ->
+        ChoiceSheet(stringResource(R.string.settings_bank_apps), onClose = { pickingApps = false }) { _ ->
             Text(
-                "Apps appear here once they've sent a notification. Only the ones you tick are read.",
+                stringResource(R.string.settings_bank_apps_hint),
                 style = BtTheme.type.caption,
                 color = BtTheme.colors.textSecondary,
             )
@@ -382,32 +418,33 @@ private fun EveningReminderRows(state: SettingsUiState, vm: SettingsViewModel, o
     }
     SettingRow(
         icon = Icons.Rounded.Bedtime,
-        title = "Evening reminder",
-        caption = "If nothing was added that day",
+        title = stringResource(R.string.settings_evening_reminder),
+        caption = stringResource(R.string.settings_evening_reminder_caption),
         onClick = { setEnabled(!preferences.eveningReminderEnabled) },
     ) { BtSwitch(preferences.eveningReminderEnabled, setEnabled) }
     if (preferences.eveningReminderEnabled) {
         Divider()
-        SettingRow(icon = Icons.Rounded.Schedule, title = "Reminder time", onClick = onPickTime) {
+        SettingRow(icon = Icons.Rounded.Schedule, title = stringResource(R.string.settings_reminder_time), onClick = onPickTime) {
             Text(DateLabels.timeOfDay(preferences.eveningReminderMinute), style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
             Chevron()
         }
     }
 }
 
+@Composable
 private fun WidgetBalanceMode.label(revealSeconds: Int): String = when (this) {
-    WidgetBalanceMode.ALWAYS_SHOW -> "Always show"
-    WidgetBalanceMode.ALWAYS_HIDE -> "Always hide"
-    WidgetBalanceMode.TAP_TO_SHOW -> "Tap to show · $revealSeconds s"
-    WidgetBalanceMode.FINGERPRINT -> "Fingerprint to show"
+    WidgetBalanceMode.ALWAYS_SHOW -> stringResource(R.string.settings_always_show)
+    WidgetBalanceMode.ALWAYS_HIDE -> stringResource(R.string.settings_always_hide)
+    WidgetBalanceMode.TAP_TO_SHOW -> stringResource(R.string.settings_tap_to_show_seconds, revealSeconds)
+    WidgetBalanceMode.FINGERPRINT -> stringResource(R.string.settings_fingerprint_to_show)
 }
 
 private val WidgetBalanceMode.explanation: String
-    get() = when (this) {
-        WidgetBalanceMode.ALWAYS_SHOW -> "Balance is always visible."
-        WidgetBalanceMode.ALWAYS_HIDE -> "Never shown on the home screen."
-        WidgetBalanceMode.TAP_TO_SHOW -> "Tap to show, then it hides again."
-        WidgetBalanceMode.FINGERPRINT -> "Touch opens a small fingerprint prompt."
+    @Composable get() = when (this) {
+        WidgetBalanceMode.ALWAYS_SHOW -> stringResource(R.string.settings_always_show_explained)
+        WidgetBalanceMode.ALWAYS_HIDE -> stringResource(R.string.settings_always_hide_explained)
+        WidgetBalanceMode.TAP_TO_SHOW -> stringResource(R.string.settings_tap_to_show_explained)
+        WidgetBalanceMode.FINGERPRINT -> stringResource(R.string.settings_fingerprint_explained)
     }
 
 @Composable

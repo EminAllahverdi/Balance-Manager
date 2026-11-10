@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_show_hide_amounts">Məbləğləri göstər və ya gizlət</string>
+    <string name="home_settings">Ayarlar</string>
+    <string name="home_month">Ay</string>
+    <string name="home_total_balance">Ümumi balans</string>
+    <string name="home_month_summary">Ayın xülasəsi</string>
+    <string name="home_spent_this_month">Bu ay xərclənib</string>
+    <string name="home_spent">Xərclənib</string>
+    <string name="home_income">Gəlir</string>
+    <string name="home_show_the_balance">Balansı göstər</string>
+    <string name="home_show_pie">Dairəvi diaqramı göstər</string>
+    <string name="home_spending">Xərclər</string>
+    <string name="home_category">Kateqoriya</string>
+    <string name="home_person">Şəxs</string>
+    <string name="home_nothing_spent_first">Bu ay hələ xərc yoxdur. İlk xərci əlavə etmək üçün + düyməsinə toxunun.</string>
+    <string name="home_nothing_spent_month">Bu ay xərc olmayıb.</string>
+    <string name="home_expenses">Xərclər</string>
+    <string name="home_tap_eye_income">Gəliri görmək üçün gözə toxunun</string>
+    <string name="home_no_income_month">Bu ay gəlir olmayıb</string>
+    <string name="home_nothing_spent_short">Bu ay xərc olmayıb</string>
+    <string name="home_the_rest">Qalanı</string>
+    <string name="home_no_spending_month">Bu ay xərc yoxdur</string>
+    <string name="home_backup_sign_in">Nüsxə üçün yenidən daxil olun</string>
+    <string name="home_not_backed_up">Hələ nüsxə çıxarılmayıb</string>
+    <string name="home_not_backed_up_since">%1$s tarixindən bəri nüsxə yoxdur</string>
+    <string name="home_n_to_confirm">Təsdiq üçün %1$d</string>
+    <string name="home_income_amount">Gəlir %1$s</string>
+    <string name="home_spent_amount">Xərc %1$s</string>
+    <string name="home_see_all_for">%1$s üçün hamısı</string>
+    <plurals name="home_payments_due">
+        <item quantity="one">%d ödənişin vaxtı çatıb</item>
+        <item quantity="other">%d ödənişin vaxtı çatıb</item>
+    </plurals>
+    <plurals name="home_categories">
+        <item quantity="one">%d kateqoriya</item>
+        <item quantity="other">%d kateqoriya</item>
+    </plurals>
+</resources>

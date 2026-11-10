@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ds_selected">Selected</string>
+    <string name="ds_own_colour_selected">Your own colour, selected</string>
+    <string name="ds_pick_any_colour">Pick any colour</string>
+    <string name="ds_your_own_colour">Your own colour</string>
+    <string name="ds_strength">Strength</string>
+    <string name="ds_lightness">Lightness</string>
+    <string name="ds_on_dark">On Dark</string>
+    <string name="ds_on_light">On Light</string>
+    <string name="ds_use_this_colour">Use this colour</string>
+    <string name="ds_hue_degrees">Hue, %1$d degrees</string>
+    <string name="ds_slider_percent">%1$s, %2$d percent</string>
+    <string name="ds_remove">Remove</string>
+    <string name="ds_pick_a_month">Pick a month</string>
+    <string name="ds_previous_year">Previous year</string>
+    <string name="ds_next_year">Next year</string>
+    <string name="ds_ok">OK</string>
+    <string name="ds_cancel">Cancel</string>
+    <string name="ds_close">Close</string>
+    <string name="ds_save">Save</string>
+    <string name="ds_borrowed_from">Borrowed from %1$s</string>
+    <string name="ds_paid_back_to">Paid back to %1$s</string>
+    <string name="ds_lent_to">Lent to %1$s</string>
+    <string name="ds_paid_back_by">Paid back by %1$s</string>
+    <string name="ds_your_share">Your share</string>
+    <string name="ds_paid_for">Paid for %1$s</string>
+</resources>

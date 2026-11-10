@@ -38,6 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -53,6 +55,7 @@ import com.eminallahverdi.balance.core.designsystem.component.FittedAmount
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
 import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
+import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.component.toColor
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
@@ -90,8 +93,8 @@ fun InsightsRoute(embedded: Boolean = false, onOpenGroceries: () -> Unit = {}, v
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (embedded) Spacer(Modifier.weight(1f)) else Text("Insights", style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
-                SegmentedToggle(listOf("Week", "Month", "Year"), state.period.ordinal, { viewModel.setPeriod(InsightPeriod.entries[it]) })
+                if (embedded) Spacer(Modifier.weight(1f)) else Text(stringResource(R.string.insights_insights), style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
+                SegmentedToggle(listOf(stringResource(R.string.insights_week), stringResource(R.string.insights_month), stringResource(R.string.insights_year)), state.period.ordinal, { viewModel.setPeriod(InsightPeriod.entries[it]) })
             }
         }
         val overview = state.overview ?: return@LazyColumn
@@ -101,10 +104,10 @@ fun InsightsRoute(embedded: Boolean = false, onOpenGroceries: () -> Unit = {}, v
         if (overview.changes.isNotEmpty()) {
             item {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Overline("Biggest changes", Modifier.weight(1f))
+                    Overline(stringResource(R.string.insights_biggest_changes), Modifier.weight(1f))
                     if (overview.changes.size > TOP_CHANGES) {
                         Text(
-                            if (showAll) "Top $TOP_CHANGES" else "All categories",
+                            if (showAll) stringResource(R.string.insights_top_n, TOP_CHANGES) else stringResource(R.string.insights_all_categories),
                             style = BtTheme.type.caption,
                             color = c.accentText,
                             modifier = Modifier.clip(BtShapes.sm).clickable(role = Role.Button) { showAll = !showAll }.padding(horizontal = 8.dp, vertical = 14.dp),
@@ -133,10 +136,10 @@ private fun ChartCard(period: InsightPeriod, overview: InsightOverview, vm: Insi
     BtCard(bordered = true) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Overline("Spending by person · ${period.periodName(overview.selected.range)}")
+                Overline(stringResource(R.string.insights_spending_by_person, period.periodName(overview.selected.range).text()))
                 Text(MoneyFormat.format(overview.spent), style = BtTheme.type.amountLarge, color = c.textPrimary)
                 Text(
-                    comparison(overview.change, period.periodName(overview.previousRange)),
+                    comparison(overview.change, period.periodName(overview.previousRange)).text(),
                     style = BtTheme.type.caption,
                     color = changeColor(overview.change, neutral = c.textSecondary),
                 )
@@ -233,13 +236,13 @@ private fun Legend(overview: InsightOverview) {
 private fun Stats(state: InsightsUiState, overview: InsightOverview) {
     val c = BtTheme.colors
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Stat("Daily average", MoneyFormat.format(overview.dailyAverage), c.textPrimary, if (overview.days == 1) "1 day" else "${overview.days} days", Modifier.weight(1f))
+        Stat(stringResource(R.string.insights_daily_average), MoneyFormat.format(overview.dailyAverage), c.textPrimary, pluralStringResource(R.plurals.insights_days, overview.days, overview.days), Modifier.weight(1f))
         // Income − spending gives the income away, so the eye covers it.
         Stat(
-            title = state.period.savedLabel(overview.isCurrent),
+            title = stringResource(state.period.savedLabel(overview.isCurrent)),
             value = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(overview.saved, signed = true),
             color = if (state.hideAmounts) c.textPrimary else if (overview.saved.isNegative) c.moneyExpense else c.moneyIncome,
-            caption = "Income − spending",
+            caption = stringResource(R.string.insights_income_minus_spending),
             modifier = Modifier.weight(1f),
         )
     }
@@ -271,7 +274,7 @@ private fun ChangeRow(item: CategoryChange, previous: String) {
             Text(MoneyFormat.format(item.amount), style = BtTheme.type.amountSmall.copy(fontSize = 15.sp, lineHeight = 20.sp), color = c.textPrimary)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 Icon(if (item.change.minor > 0) Icons.Rounded.NorthEast else Icons.Rounded.SouthEast, null, tint = tint, modifier = Modifier.size(14.dp))
-                Text("${signedChange(item.change)} vs $previous", style = BtTheme.type.caption, color = tint)
+                Text(stringResource(R.string.insights_versus, signedChange(item.change), previous), style = BtTheme.type.caption, color = tint)
             }
         }
     }
@@ -289,8 +292,8 @@ private fun GroceriesRow(onClick: () -> Unit) {
         ) {
             CategoryTile("shopping_cart", 0xFF5DCAA5)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Groceries", style = BtTheme.type.bodyStrong, color = c.textPrimary)
-                Text("What it went on, from your receipts", style = BtTheme.type.caption, color = c.textSecondary)
+                Text(stringResource(R.string.insights_groceries), style = BtTheme.type.bodyStrong, color = c.textPrimary)
+                Text(stringResource(R.string.insights_groceries_caption), style = BtTheme.type.caption, color = c.textSecondary)
             }
             Icon(Icons.Rounded.ChevronRight, null, tint = c.textSecondary)
         }

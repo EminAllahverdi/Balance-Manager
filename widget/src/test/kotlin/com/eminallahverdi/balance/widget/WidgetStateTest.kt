@@ -34,7 +34,7 @@ class WidgetStateTest {
     @Test fun `balance counts only accounts shown on the widget`() {
         val state = balance(WidgetBalanceMode.ALWAYS_SHOW)
         assertThat(state.amount).isEqualTo("₼150.50")
-        assertThat(state.caption).isEqualTo("Card + Cash")
+        assertThat(state.caption).isEqualTo(BalanceCaption.Accounts("Card + Cash"))
     }
 
     @Test fun `a negative balance keeps its sign`() {
@@ -47,21 +47,21 @@ class WidgetStateTest {
             assertThat(balance(mode).revealed).isFalse()
             assertThat(balance(mode).amount).isEqualTo(MoneyFormat.HIDDEN)
         }
-        assertThat(balance(WidgetBalanceMode.TAP_TO_SHOW).caption).isEqualTo("Tap to show")
-        assertThat(balance(WidgetBalanceMode.FINGERPRINT).caption).isEqualTo("Touch to show")
+        assertThat(balance(WidgetBalanceMode.TAP_TO_SHOW).caption).isEqualTo(BalanceCaption.TapToShow)
+        assertThat(balance(WidgetBalanceMode.FINGERPRINT).caption).isEqualTo(BalanceCaption.TouchToShow)
     }
 
     @Test fun `a reveal shows the amount and counts down`() {
         val state = balance(WidgetBalanceMode.FINGERPRINT, secondsLeft = 4)
         assertThat(state.revealed).isTrue()
         assertThat(state.amount).isEqualTo("₼150.50")
-        assertThat(state.caption).isEqualTo("Hides in 4 s")
+        assertThat(state.caption).isEqualTo(BalanceCaption.HidesIn(4))
     }
 
     @Test fun `always hide wins over a reveal still running`() {
         val state = balance(WidgetBalanceMode.ALWAYS_HIDE, secondsLeft = 4)
         assertThat(state.amount).isEqualTo(MoneyFormat.HIDDEN)
-        assertThat(state.caption).isEqualTo("Hidden")
+        assertThat(state.caption).isEqualTo(BalanceCaption.Hidden)
     }
 
     @Test fun `an ordinary balance stays at full size`() {
@@ -85,12 +85,12 @@ class WidgetStateTest {
         val items = listOf(details(TransactionKind.EXPENSE, 12_40), details(TransactionKind.EXPENSE, 4_40), details(TransactionKind.INCOME, 500_00), details(TransactionKind.TRANSFER, 20_00))
         val state = todayWidgetState(today, items, emptyList(), DarkBtColors)
         assertThat(state.spent).isEqualTo(Money(16_80))
-        assertThat(state.caption).isEqualTo("spent · 2 entries")
+        assertThat(state.entries).isEqualTo(2)
     }
 
-    @Test fun `one entry reads as singular`() {
+    @Test fun `one expense counts once`() {
         val state = todayWidgetState(today, listOf(details(TransactionKind.EXPENSE, 1_00)), emptyList(), DarkBtColors)
-        assertThat(state.caption).isEqualTo("spent · 1 entry")
+        assertThat(state.entries).isEqualTo(1)
     }
 
     @Test fun `one-tap categories are the first four active expense categories`() {

@@ -48,4 +48,19 @@ class StarterTemplateTest {
         assertThat(template.categoryNames).doesNotContain("Hotel")
         assertThat(template.categoryNames).contains("Taxi")
     }
+
+    @Test fun `in Azerbaijani every name is translated, and the owner's stays as typed`() {
+        val template = StarterTemplate.household("Alex", azerbaijani = true)
+        assertThat(template.people.map { it.name }).containsExactly("Alex", "Ailə").inOrder()
+        assertThat(template.accounts.map { it.name }).containsExactly("Kart", "Nağd").inOrder()
+        assertThat(template.categoryNames).containsAtLeast("Ərzaq", "Taksi", "Yanacaq", "Dərnəklər", "Aktiv istirahət")
+        assertThat(template.categoryNames.toSet()).containsNoneOf("Groceries", "Taxi", "Fuel")
+        assertThat(StarterTemplate.simple(azerbaijani = true).categories.map { it.name }).contains("Kommunal xidmətlər")
+    }
+
+    @Test fun `what's left out is found by its English key in either language`() {
+        val template = StarterTemplate.household(azerbaijani = true).without(setOf("Travel"))
+        assertThat(template.categories.map { it.name }).doesNotContain("Səyahət")
+        assertThat(template.categories.first { it.name == "Ərzaq" }.key).isEqualTo("Groceries")
+    }
 }

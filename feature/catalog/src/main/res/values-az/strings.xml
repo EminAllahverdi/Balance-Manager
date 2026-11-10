@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="catalog_save">Yadda saxla</string>
+    <string name="catalog_remove_named">%1$s silinsin?</string>
+    <string name="catalog_remove_text">İstifadə olunubsa, arxivə düşür və tarixçəniz olduğu kimi qalır.</string>
+    <string name="catalog_remove">Sil</string>
+    <string name="catalog_cancel">Ləğv et</string>
+    <string name="catalog_new_category">Yeni kateqoriya</string>
+    <string name="catalog_edit_category">Kateqoriyaya düzəliş</string>
+    <string name="catalog_new_sub_category">Yeni alt kateqoriya</string>
+    <string name="catalog_edit_sub_category">Alt kateqoriyaya düzəliş</string>
+    <string name="catalog_name">Ad</string>
+    <string name="catalog_for_whom">Kimin üçün</string>
+    <string name="catalog_same_as_category">Kateqoriyadakı kimi</string>
+    <string name="catalog_no_default">Seçilməyib</string>
+    <string name="catalog_icon">İkon</string>
+    <string name="catalog_colour">Rəng</string>
+    <string name="catalog_new_person">Yeni şəxs</string>
+    <string name="catalog_edit_person">Şəxsə düzəliş</string>
+    <string name="catalog_photo">Şəkil</string>
+    <string name="catalog_choose_photo">Şəkil seç</string>
+    <string name="catalog_remove_photo">Şəkli sil</string>
+    <string name="catalog_back">Geri</string>
+    <string name="catalog_categories">Kateqoriyalar</string>
+    <string name="catalog_expense">Xərc</string>
+    <string name="catalog_income">Gəlir</string>
+    <string name="catalog_people">Şəxslər</string>
+    <string name="catalog_add_sub_category">Alt kateqoriya əlavə et</string>
+    <string name="catalog_archived">Arxiv</string>
+    <string name="catalog_restore">Bərpa et</string>
+    <string name="catalog_drag_to_reorder">Sıranı dəyişmək üçün sürüşdürün</string>
+    <plurals name="catalog_sub_categories">
+        <item quantity="one">%d alt kateqoriya</item>
+        <item quantity="other">%d alt kateqoriya</item>
+    </plurals>
+</resources>

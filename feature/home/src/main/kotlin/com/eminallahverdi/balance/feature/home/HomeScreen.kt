@@ -47,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -67,6 +69,7 @@ import com.eminallahverdi.balance.core.designsystem.component.PersonAvatar
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
 import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
 import com.eminallahverdi.balance.core.designsystem.component.SplitBar
+import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.CategorySpending
@@ -114,13 +117,13 @@ fun HomeRoute(
             }
         }
         Row(Modifier.align(Alignment.TopEnd).padding(end = 16.dp, top = HEADER_TOP).height(HEADER_ROW), verticalAlignment = Alignment.CenterVertically) {
-            BtIconButton(if (state.hideAmounts) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, "Show or hide amounts", viewModel::toggleHideAmounts)
+            BtIconButton(if (state.hideAmounts) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, stringResource(R.string.home_show_hide_amounts), viewModel::toggleHideAmounts)
             Spacer(Modifier.width(8.dp))
-            BtIconButton(Icons.Rounded.Settings, "Settings", onOpenSettings)
+            BtIconButton(Icons.Rounded.Settings, stringResource(R.string.home_settings), onOpenSettings)
         }
     }
     if (pickingMonth) {
-        ChoiceSheet("Month", onClose = { pickingMonth = false }) { choose ->
+        ChoiceSheet(stringResource(R.string.home_month), onClose = { pickingMonth = false }) { choose ->
             MonthPicker(monthOf(pager.currentPage)) { month -> choose { scope.launch { pager.animateScrollToPage(pageOf(month)) } } }
         }
     }
@@ -151,7 +154,7 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                             // Balances are what you have today, so they'd be wrong beside a past month's figures.
                             if (isCurrent) {
-                                Overline("Total balance")
+                                Overline(stringResource(R.string.home_total_balance))
                                 Text(balance(state.total), style = BtTheme.type.amountDisplay, color = c.textPrimary)
                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     items(state.balances, key = { it.account.id }) { b ->
@@ -169,17 +172,17 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
                                 Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
                             } else {
                                 // Keeps the figures below the chart button.
-                                Overline("Month summary")
+                                Overline(stringResource(R.string.home_month_summary))
                             }
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Stat(if (isCurrent) "Spent this month" else "Spent", money(summary?.spent ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingDown, c.moneyExpense, Modifier.weight(1f))
-                                Stat("Income", income(summary?.income ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingUp, c.moneyIncome, Modifier.weight(1f))
+                                Stat(if (isCurrent) stringResource(R.string.home_spent_this_month) else stringResource(R.string.home_spent), money(summary?.spent ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingDown, c.moneyExpense, Modifier.weight(1f))
+                                Stat(stringResource(R.string.home_income), income(summary?.income ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingUp, c.moneyIncome, Modifier.weight(1f))
                             }
                         }
                     }
                     BtIconButton(
                         icon = if (state.showChart) Icons.Rounded.AccountBalanceWallet else Icons.Rounded.PieChart,
-                        contentDescription = if (state.showChart) "Show the balance" else "Show a pie chart",
+                        contentDescription = if (state.showChart) stringResource(R.string.home_show_the_balance) else stringResource(R.string.home_show_pie),
                         onClick = { vm.setShowChart(!state.showChart) },
                         modifier = Modifier.align(Alignment.TopEnd).padding(top = 10.dp, end = 10.dp),
                     )
@@ -188,13 +191,13 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
         }
         val backupWarning = state.backupWarning
         if (isCurrent && backupWarning != null) {
-            item(key = "backup") { HomeNotice(Icons.Rounded.CloudOff, backupWarning, onOpenSettings) }
+            item(key = "backup") { HomeNotice(Icons.Rounded.CloudOff, backupWarning.text(), onOpenSettings) }
         }
         if (isCurrent && state.toConfirm > 0) {
-            item(key = "confirm") { HomeNotice(Icons.Rounded.Notifications, "${state.toConfirm} to confirm", onOpenConfirm) }
+            item(key = "confirm") { HomeNotice(Icons.Rounded.Notifications, stringResource(R.string.home_n_to_confirm, state.toConfirm), onOpenConfirm) }
         }
         if (isCurrent && state.duePayments > 0) {
-            item(key = "due") { HomeNotice(Icons.Rounded.EventRepeat, if (state.duePayments == 1) "1 payment due" else "${state.duePayments} payments due", onOpenRecurring) }
+            item(key = "due") { HomeNotice(Icons.Rounded.EventRepeat, pluralStringResource(R.plurals.home_payments_due, state.duePayments, state.duePayments), onOpenRecurring) }
         }
         val people = summary?.byPerson.orEmpty().filter { it.total.minor > 0 }
         if (people.isNotEmpty()) {
@@ -216,8 +219,8 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
         }
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Spending", style = BtTheme.type.titleMedium, color = c.textPrimary, modifier = Modifier.weight(1f))
-                SegmentedToggle(listOf("Category", "Person"), state.view.ordinal, { vm.setView(HomeView.entries[it]) })
+                Text(stringResource(R.string.home_spending), style = BtTheme.type.titleMedium, color = c.textPrimary, modifier = Modifier.weight(1f))
+                SegmentedToggle(listOf(stringResource(R.string.home_category), stringResource(R.string.home_person)), state.view.ordinal, { vm.setView(HomeView.entries[it]) })
             }
         }
         val loaded = summary
@@ -225,7 +228,7 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
             // Still loading: an empty message here would flash on every swipe.
         } else if (loaded.spent.isZero) {
             item {
-                val message = if (isCurrent) "Nothing spent this month yet. Tap + to add your first expense." else "Nothing spent this month."
+                val message = if (isCurrent) stringResource(R.string.home_nothing_spent_first) else stringResource(R.string.home_nothing_spent_month)
                 Text(message, style = BtTheme.type.body, color = c.textMuted, modifier = Modifier.padding(vertical = 24.dp))
             }
         } else if (state.view == HomeView.CATEGORY) {
@@ -275,22 +278,22 @@ private fun MonthChart(summary: MonthSummary?, income: Boolean, hideAmounts: Boo
     val amount = if (hidden) MoneyFormat.HIDDEN else MoneyFormat.format(total)
     val fallback = c.textMuted.toArgb().toLong()
     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        SegmentedToggle(listOf("Expenses", "Income"), if (income) 1 else 0, { onSelect(it == 1) })
+        SegmentedToggle(listOf(stringResource(R.string.home_expenses), stringResource(R.string.home_income)), if (income) 1 else 0, { onSelect(it == 1) })
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             DonutChart(
                 slices = slices.map { (it.category?.color ?: fallback) to it.amount.minor },
-                description = (if (income) "Income " else "Spent ") + amount,
+                description = stringResource(if (income) R.string.home_income_amount else R.string.home_spent_amount, amount),
                 modifier = Modifier.size(CHART_SIZE),
             ) {
                 Column(Modifier.padding(horizontal = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     FittedAmount(amount, BtTheme.type.amountSmall)
-                    Text(if (income) "Income" else "Spent", style = BtTheme.type.caption, color = c.textMuted)
+                    Text(if (income) stringResource(R.string.home_income) else stringResource(R.string.home_spent), style = BtTheme.type.caption, color = c.textMuted)
                 }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 when {
-                    hidden -> Text("Tap the eye to show income", style = BtTheme.type.caption, color = c.textMuted)
-                    slices.isEmpty() -> Text(if (income) "No income this month" else "Nothing spent this month", style = BtTheme.type.caption, color = c.textMuted)
+                    hidden -> Text(stringResource(R.string.home_tap_eye_income), style = BtTheme.type.caption, color = c.textMuted)
+                    slices.isEmpty() -> Text(if (income) stringResource(R.string.home_no_income_month) else stringResource(R.string.home_nothing_spent_short), style = BtTheme.type.caption, color = c.textMuted)
                     else -> slices.forEach { SliceRow(it, fallback) }
                 }
             }
@@ -303,7 +306,7 @@ private fun SliceRow(slice: PieSlice, fallback: Long) {
     val c = BtTheme.colors
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         PersonDot(slice.category?.color ?: fallback, 8.dp)
-        Text(slice.category?.name ?: "The rest", style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Text(slice.category?.name ?: stringResource(R.string.home_the_rest), style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         Text(if (slice.percent == 0L) "<1%" else "${slice.percent}%", style = BtTheme.type.caption, color = c.textPrimary)
     }
 }
@@ -348,7 +351,7 @@ private fun PersonRow(item: PersonSpending, expanded: Boolean, money: (Money) ->
                 Column(Modifier.weight(1f)) {
                     Text(item.person.name, style = BtTheme.type.bodyStrong, color = c.textPrimary)
                     val count = item.byCategory.size
-                    Text(if (count == 0) "No spending this month" else if (count == 1) "1 category" else "$count categories", style = BtTheme.type.caption, color = c.textMuted)
+                    Text(if (count == 0) stringResource(R.string.home_no_spending_month) else pluralStringResource(R.plurals.home_categories, count, count), style = BtTheme.type.caption, color = c.textMuted)
                 }
                 Text(money(item.total), style = BtTheme.type.amountMedium, color = c.textPrimary)
                 Icon(if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = c.textMuted)
@@ -372,7 +375,7 @@ private fun PersonRow(item: PersonSpending, expanded: Boolean, money: (Money) ->
                 }
                 if (item.byCategory.isNotEmpty()) {
                     Text(
-                        "See all for ${item.person.name}",
+                        stringResource(R.string.home_see_all_for, item.person.name),
                         style = BtTheme.type.label,
                         color = c.accentText,
                         modifier = Modifier.fillMaxWidth().clip(BtShapes.sm).clickable(role = Role.Button) { onOpen(null) }.padding(vertical = 12.dp),

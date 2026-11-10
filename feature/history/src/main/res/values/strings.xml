@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_nothing_matches">Nothing matches these filters.</string>
+    <string name="history_no_transfers_yet">No transfers yet.</string>
+    <string name="history_no_transfers_in">No transfers in %1$s.</string>
+    <string name="history_nothing_yet_first">Nothing here yet. Tap + to add your first expense.</string>
+    <string name="history_nothing_this_month">Nothing this month yet. Tap + to add an expense.</string>
+    <string name="history_nothing_in">Nothing in %1$s.</string>
+    <string name="history_transfer">Transfer</string>
+    <string name="history_balance_adjustment">Balance adjustment</string>
+    <string name="history_transaction">Transaction</string>
+    <string name="history_remove_payment_q">Remove this payment?</string>
+    <string name="history_remove_payment_text">The debt and the account\'s balance change back by this amount. This can\'t be undone.</string>
+    <string name="history_remove_adjustment_q">Remove this adjustment?</string>
+    <string name="history_remove_adjustment_text">The account\'s balance changes back by this amount. This can\'t be undone.</string>
+    <string name="history_delete_transaction_q">Delete this transaction?</string>
+    <string name="history_delete_transaction_text">It\'s removed from your history and balances. This can\'t be undone.</string>
+    <string name="history_remove">Remove</string>
+    <string name="history_delete">Delete</string>
+    <string name="history_month">Month</string>
+    <string name="history_person">Person</string>
+    <string name="history_category">Category</string>
+    <string name="history_account">Account</string>
+    <string name="history_all_time">All time</string>
+    <string name="history_everyone">Everyone</string>
+    <string name="history_all_accounts">All accounts</string>
+    <string name="history_all_categories">All categories</string>
+    <string name="history_expense">Expense</string>
+    <string name="history_income">Income</string>
+    <string name="history_cancel">Cancel</string>
+    <string name="history_history">History</string>
+    <string name="history_transfers">Transfers</string>
+    <string name="history_back">Back</string>
+    <string name="history_search_hint">Search merchant, note or amount</string>
+    <string name="history_clear_search">Clear search</string>
+    <plurals name="history_transfers">
+        <item quantity="one">%d transfer</item>
+        <item quantity="other">%d transfers</item>
+    </plurals>
+    <plurals name="history_transactions">
+        <item quantity="one">%d transaction</item>
+        <item quantity="other">%d transactions</item>
+    </plurals>
+</resources>

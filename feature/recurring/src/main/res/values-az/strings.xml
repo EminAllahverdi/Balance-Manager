@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recurring_payment_reminders">Ödəniş xatırlatmaları</string>
+    <string name="recurring_payment_is_due">%1$s ödənişinin vaxtı çatıb</string>
+    <string name="recurring_tap_to_log">%1$s · Qeyd etmək üçün toxunun</string>
+    <string name="recurring_weekly">Həftəlik</string>
+    <string name="recurring_monthly">Aylıq</string>
+    <string name="recurring_yearly">İllik</string>
+    <string name="recurring_back">Geri</string>
+    <string name="recurring_payments">Müntəzəm ödənişlər</string>
+    <string name="recurring_new_payment">Yeni ödəniş</string>
+    <string name="recurring_hint">Abunəlikləri, kirayəni və ya kredit ödənişlərini əlavə edin. Tarixi çatanda siyahınızda yoxdursa, xatırlatma gələcək və onu bir toxunuşla qeyd edə biləcəksiniz.</string>
+    <string name="recurring_add_a_payment">Ödəniş əlavə et</string>
+    <string name="recurring_due">Vaxtı çatıb</string>
+    <string name="recurring_upcoming">Qarşıdakılar</string>
+    <string name="recurring_skip">Keç</string>
+    <string name="recurring_add">Əlavə et</string>
+    <string name="recurring_edit_payment">Ödənişə düzəliş</string>
+    <string name="recurring_name_like_spotify">Ad, məsələn Spotify</string>
+    <string name="recurring_category">Kateqoriya</string>
+    <string name="recurring_sub_category">Alt kateqoriya</string>
+    <string name="recurring_for_whom">Kimin üçün</string>
+    <string name="recurring_from">Hansı hesabdan</string>
+    <string name="recurring_repeats">Təkrarlanır</string>
+    <string name="recurring_next_payment">Növbəti ödəniş</string>
+    <string name="recurring_save">Yadda saxla</string>
+    <string name="recurring_remove_named">%1$s silinsin?</string>
+    <string name="recurring_remove_payment_text">Xatırlatmalar dayanacaq. Bunun üçün qeyd etdiyiniz əməliyyatlar tarixçədə qalacaq.</string>
+    <string name="recurring_remove">Sil</string>
+    <string name="recurring_cancel">Ləğv et</string>
+    <plurals name="recurring_payments_due">
+        <item quantity="one">%d ödənişin vaxtı çatıb</item>
+        <item quantity="other">%d ödənişin vaxtı çatıb</item>
+    </plurals>
+    <plurals name="recurring_about_a_month">
+        <item quantity="one">Təxminən bir ayda · %d ödəniş</item>
+        <item quantity="other">Təxminən bir ayda · %d ödəniş</item>
+    </plurals>
+</resources>

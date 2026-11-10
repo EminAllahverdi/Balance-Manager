@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recurring_payment_reminders">Payment reminders</string>
+    <string name="recurring_payment_is_due">%1$s is due</string>
+    <string name="recurring_tap_to_log">%1$s · Tap to log it</string>
+    <string name="recurring_weekly">Weekly</string>
+    <string name="recurring_monthly">Monthly</string>
+    <string name="recurring_yearly">Yearly</string>
+    <string name="recurring_back">Back</string>
+    <string name="recurring_payments">Recurring payments</string>
+    <string name="recurring_new_payment">New payment</string>
+    <string name="recurring_hint">Add subscriptions, rent or loan payments. You get a reminder if one isn\'t in your list by its date, ready to log with a tap.</string>
+    <string name="recurring_add_a_payment">Add a payment</string>
+    <string name="recurring_due">Due</string>
+    <string name="recurring_upcoming">Upcoming</string>
+    <string name="recurring_skip">Skip</string>
+    <string name="recurring_add">Add</string>
+    <string name="recurring_edit_payment">Edit payment</string>
+    <string name="recurring_name_like_spotify">Name, like Spotify</string>
+    <string name="recurring_category">Category</string>
+    <string name="recurring_sub_category">Sub-category</string>
+    <string name="recurring_for_whom">For whom</string>
+    <string name="recurring_from">From</string>
+    <string name="recurring_repeats">Repeats</string>
+    <string name="recurring_next_payment">Next payment</string>
+    <string name="recurring_save">Save</string>
+    <string name="recurring_remove_named">Remove %1$s?</string>
+    <string name="recurring_remove_payment_text">The reminders stop. Entries you logged for it stay in your history.</string>
+    <string name="recurring_remove">Remove</string>
+    <string name="recurring_cancel">Cancel</string>
+    <plurals name="recurring_payments_due">
+        <item quantity="one">%d payment due</item>
+        <item quantity="other">%d payments due</item>
+    </plurals>
+    <plurals name="recurring_about_a_month">
+        <item quantity="one">About a month · %d payment</item>
+        <item quantity="other">About a month · %d payments</item>
+    </plurals>
+</resources>

@@ -2,6 +2,9 @@ package com.eminallahverdi.balance.feature.confirm
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.eminallahverdi.balance.core.common.UiText
+import com.eminallahverdi.balance.core.common.rawText
+import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.PendingItem
@@ -38,19 +41,20 @@ data class ConfirmRow(
     val canConfirm: Boolean get() = account != null && (if (isTransfer) toAccount != null else category != null)
 
     /** "Groceries · Bravo", "Subscriptions · Apps · Spotify", or just the merchant until it has a category. */
-    val title: String
+    val title: UiText
         get() {
-            if (isTransfer) return "Cash withdrawal"
+            if (isTransfer) return uiText(R.string.confirm_cash_withdrawal)
             val merchant = item.guess.merchantName.ifBlank { null }
-            val fallback = if (item.entry.kind == TransactionKind.INCOME) "Money received" else "Bank payment"
-            return listOfNotNull(parent?.name, category?.name, merchant).distinct().joinToString(" · ").ifBlank { fallback }
+            val names = listOfNotNull(parent?.name, category?.name, merchant).distinct()
+            if (names.isNotEmpty()) return rawText(names.joinToString(" · "))
+            return uiText(if (item.entry.kind == TransactionKind.INCOME) R.string.confirm_money_received else R.string.confirm_bank_payment)
         }
 
-    val caption: String
+    val caption: List<UiText>
         get() = when {
-            isTransfer -> if (toAccount == null) "Pick an account to move it to" else "${account?.name} → ${toAccount.name}"
-            category == null -> "Pick a category"
-            else -> listOfNotNull("Suggested".takeIf { item.guess.isSuggested }, person?.name, account?.name).joinToString(" · ")
+            isTransfer -> listOf(if (toAccount == null) uiText(R.string.confirm_pick_account_to_move) else rawText("${account?.name} → ${toAccount.name}"))
+            category == null -> listOf(uiText(R.string.confirm_pick_a_category))
+            else -> listOfNotNull(uiText(R.string.confirm_suggested).takeIf { item.guess.isSuggested }, person?.name?.let(::rawText), account?.name?.let(::rawText))
         }
 }
 

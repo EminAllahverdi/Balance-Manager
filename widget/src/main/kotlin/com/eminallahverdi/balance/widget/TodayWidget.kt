@@ -57,9 +57,7 @@ internal data class TodayWidgetState(
     val spent: Money,
     val entries: Int,
     val categories: List<Category>,
-) {
-    val caption: String get() = if (entries == 1) "spent · 1 entry" else "spent · $entries entries"
-}
+)
 
 /** The one-tap categories are the first ones in the user's own order, so dragging them in Categories changes the widget. */
 internal fun todayWidgetState(date: LocalDate, items: List<TransactionDetails>, categories: List<Category>, colors: BtColors): TodayWidgetState {
@@ -105,13 +103,13 @@ private fun TodayContent(state: TodayWidgetState) {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(MoneyFormat.format(state.spent), style = widgetText(c.textPrimary, 26.sp), maxLines = 1)
                         Spacer(GlanceModifier.width(8.dp))
-                        Text(state.caption, GlanceModifier.padding(bottom = 4.dp), style = widgetText(c.textSecondary, 12.sp), maxLines = 1)
+                        Text(widgetPlural(R.plurals.widget_spent_entries, state.entries, state.entries), GlanceModifier.padding(bottom = 4.dp), style = widgetText(c.textSecondary, 12.sp), maxLines = 1)
                     }
                 }
                 Box(
                     GlanceModifier.size(52.dp).cornerRadius(18.dp).background(ColorProvider(c.accentFill)).clickable(quickAddAction(context, TransactionKind.EXPENSE)),
                     contentAlignment = Alignment.Center,
-                ) { WidgetIcon(Icons.Rounded.Add, c.accentOn, 30.dp, "Add expense") }
+                ) { WidgetIcon(Icons.Rounded.Add, c.accentOn, 30.dp, widgetString(R.string.widget_add_expense)) }
             }
             Spacer(GlanceModifier.defaultWeight())
             Row(GlanceModifier.fillMaxWidth()) {

@@ -51,6 +51,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
@@ -69,6 +71,7 @@ import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
 import com.eminallahverdi.balance.core.designsystem.component.SplitBar
+import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.designsystem.theme.TILE_TINT
@@ -76,12 +79,8 @@ import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
-private val MONTH = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
-
-internal fun YearMonth?.label(): String = this?.format(MONTH) ?: "All time"
+internal fun YearMonth.label(): String = DateLabels.monthTitle(this, withYear = true)
 
 /**
  * Every transaction, narrowed by search and filters. [onOpen] opens one to edit or delete.
@@ -111,7 +110,7 @@ fun HistoryRoute(onOpen: (Long) -> Unit, onBack: (() -> Unit)? = null, viewModel
         ) {
             if (state.days.isEmpty()) {
                 item {
-                    Text(state.filter.emptyMessage(YearMonth.now()), style = BtTheme.type.body, color = BtTheme.colors.textMuted, modifier = Modifier.padding(vertical = 24.dp))
+                    Text(state.filter.emptyMessage(YearMonth.now()).text(), style = BtTheme.type.body, color = BtTheme.colors.textMuted, modifier = Modifier.padding(vertical = 24.dp))
                 }
             } else {
                 item(key = "summary") { Summary(state) }
@@ -136,15 +135,15 @@ fun rememberRowActions(onOpen: (Long) -> Unit, onRemove: (Long) -> Unit, hideAmo
         val removal = row.removal(hideAmounts)
         AlertDialog(
             onDismissRequest = { removing = null },
-            title = { Text(removal.title) },
+            title = { Text(stringResource(removal.title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(removal.named, fontWeight = FontWeight.SemiBold)
-                    Text(removal.consequence)
+                    Text(removal.named.map { it.text() }.joinToString(" · "), fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(removal.consequence))
                 }
             },
-            confirmButton = { TextButton(onClick = { removing = null; onRemove(row.transaction.id) }) { Text(removal.action) } },
-            dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { removing = null; onRemove(row.transaction.id) }) { Text(stringResource(removal.action)) } },
+            dismissButton = { TextButton(onClick = { removing = null }) { Text(stringResource(R.string.history_cancel)) } },
         )
     }
     val open by rememberUpdatedState(onOpen)
@@ -165,16 +164,16 @@ fun rememberRowActions(onOpen: (Long) -> Unit, onRemove: (Long) -> Unit, hideAmo
 private fun Header(state: HistoryUiState, onBack: (() -> Unit)?) {
     val filter = state.filter
     val title = when {
-        onBack == null -> "History"
-        filter.kind == TransactionKind.TRANSFER -> "Transfers"
-        else -> state.categories.firstOrNull { it.id == filter.categoryId }?.name ?: state.people.firstOrNull { it.id == filter.personId }?.name ?: "History"
+        onBack == null -> stringResource(R.string.history_history)
+        filter.kind == TransactionKind.TRANSFER -> stringResource(R.string.history_transfers)
+        else -> state.categories.firstOrNull { it.id == filter.categoryId }?.name ?: state.people.firstOrNull { it.id == filter.personId }?.name ?: stringResource(R.string.history_history)
     }
     Row(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (onBack != null) BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
+        if (onBack != null) BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.history_back), onBack)
         Text(title, style = BtTheme.type.titleLarge, color = BtTheme.colors.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
@@ -196,7 +195,7 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
     ) {
         Icon(Icons.Rounded.Search, null, tint = c.textMuted, modifier = Modifier.size(22.dp))
         Box(Modifier.weight(1f)) {
-            if (query.isEmpty()) Text("Search merchant, note or amount", style = BtTheme.type.body, color = c.textMuted, maxLines = 1)
+            if (query.isEmpty()) Text(stringResource(R.string.history_search_hint), style = BtTheme.type.body, color = c.textMuted, maxLines = 1)
             BasicTextField(
                 value = query,
                 onValueChange = onChange,
@@ -209,7 +208,7 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
         }
         if (query.isNotEmpty()) {
             Box(Modifier.size(40.dp).clip(BtShapes.full).clickable(role = Role.Button) { onChange("") }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.Close, "Clear search", tint = c.textSecondary, modifier = Modifier.size(20.dp))
+                Icon(Icons.Rounded.Close, stringResource(R.string.history_clear_search), tint = c.textSecondary, modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -224,24 +223,24 @@ private fun Filters(state: HistoryUiState, onOpen: (FilterSheet) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         FilterChip(
-            label = filter.month.label(),
+            label = filter.month?.label() ?: stringResource(R.string.history_all_time),
             active = false,
             onClick = { onOpen(FilterSheet.MONTH) },
             leading = { Icon(Icons.Rounded.CalendarMonth, null, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(16.dp)) },
         )
         FilterChip(
-            label = person?.name ?: "Person",
+            label = person?.name ?: stringResource(R.string.history_person),
             active = person != null,
             onClick = { onOpen(FilterSheet.PERSON) },
             leading = person?.let { p -> { PersonDot(p.color) } },
         )
         FilterChip(
-            label = state.categories.firstOrNull { it.id == filter.categoryId }?.name ?: "Category",
+            label = state.categories.firstOrNull { it.id == filter.categoryId }?.name ?: stringResource(R.string.history_category),
             active = filter.categoryId != null,
             onClick = { onOpen(FilterSheet.CATEGORY) },
         )
         FilterChip(
-            label = state.accounts.firstOrNull { it.id == filter.accountId }?.name ?: "Account",
+            label = state.accounts.firstOrNull { it.id == filter.accountId }?.name ?: stringResource(R.string.history_account),
             active = filter.accountId != null,
             onClick = { onOpen(FilterSheet.ACCOUNT) },
         )
@@ -265,14 +264,13 @@ private fun Summary(state: HistoryUiState) {
     val filter = state.filter
     val parts = listOfNotNull(
         when {
-            filter.kind == TransactionKind.TRANSFER -> if (state.count == 1) "1 transfer" else "${state.count} transfers"
-            state.count == 1 -> "1 transaction"
-            else -> "${state.count} transactions"
+            filter.kind == TransactionKind.TRANSFER -> pluralStringResource(R.plurals.history_transfers, state.count, state.count)
+            else -> pluralStringResource(R.plurals.history_transactions, state.count, state.count)
         },
         state.people.firstOrNull { it.id == filter.personId }?.name,
         state.categories.firstOrNull { it.id == filter.categoryId }?.name,
         state.accounts.firstOrNull { it.id == filter.accountId }?.name,
-        filter.month?.format(DateTimeFormatter.ofPattern("MMMM", Locale.ENGLISH)) ?: "All time",
+        filter.month?.let { DateLabels.monthName(it.atDay(1)) } ?: stringResource(R.string.history_all_time),
     )
     BtCard(bordered = true) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -316,6 +314,7 @@ private const val SWIPE_THRESHOLD = 0.4f
 private fun TransactionRow(row: TransactionDetails, hideAmounts: Boolean, actions: RowActions) {
     val tappable = row.isEditable || row.isRemovable
     val current by rememberUpdatedState(row)
+    val deleteLabel = stringResource(R.string.history_delete)
     // The row springs back as the question opens, and only goes once the answer is yes.
     val swipe = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -326,7 +325,7 @@ private fun TransactionRow(row: TransactionDetails, hideAmounts: Boolean, action
     )
     SwipeToDismissBox(
         state = swipe,
-        backgroundContent = { SwipeBehind(if (row.isEditable) "Delete" else "Remove") },
+        backgroundContent = { SwipeBehind(if (row.isEditable) stringResource(R.string.history_delete) else stringResource(R.string.history_remove)) },
         enableDismissFromStartToEnd = false,
         gesturesEnabled = tappable,
     ) {
@@ -334,7 +333,7 @@ private fun TransactionRow(row: TransactionDetails, hideAmounts: Boolean, action
             row,
             hideAmounts,
             Modifier.clickable(enabled = tappable) { actions.tap(row) }.semantics {
-                if (tappable) customActions = listOf(CustomAccessibilityAction("Delete") { actions.remove(current); true })
+                if (tappable) customActions = listOf(CustomAccessibilityAction(deleteLabel) { actions.remove(current); true })
             },
         )
     }
@@ -367,8 +366,8 @@ private fun RowContent(row: TransactionDetails, hideAmounts: Boolean, modifier: 
     ) {
         CategoryTile(row.category?.icon ?: style?.icon ?: fallbackIcon, row.category?.color ?: style?.color ?: 0xFF8A94A3)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(row.title, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(row.meta, style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(row.title.text(), style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(row.meta.map { it.text() }.joinToString(" · "), style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(

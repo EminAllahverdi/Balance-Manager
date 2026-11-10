@@ -71,6 +71,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
@@ -169,10 +170,10 @@ fun QuickAddRoute(onClose: () -> Unit, onVoice: (() -> Unit)? = null, viewModel:
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete this transaction?") },
-            text = { Text("It's removed from your history and balances. This can't be undone.") },
-            confirmButton = { TextButton(onClick = { confirmDelete = false; viewModel.delete() }) { Text("Delete") } },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.quickadd_delete_transaction_q)) },
+            text = { Text(stringResource(R.string.quickadd_delete_transaction_text)) },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; viewModel.delete() }) { Text(stringResource(R.string.quickadd_delete)) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.quickadd_cancel)) } },
         )
     }
     if (showCalendar) {
@@ -185,9 +186,9 @@ fun QuickAddRoute(onClose: () -> Unit, onVoice: (() -> Unit)? = null, viewModel:
                 TextButton(onClick = {
                     pickerState.selectedDateMillis?.let { viewModel.setDate(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) }
                     showCalendar = false
-                }) { Text("Use date") }
+                }) { Text(stringResource(R.string.quickadd_use_date)) }
             },
-            dismissButton = { TextButton(onClick = { showCalendar = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showCalendar = false }) { Text(stringResource(R.string.quickadd_cancel)) } },
         ) { DatePicker(state = pickerState) }
     }
 }
@@ -196,11 +197,11 @@ fun QuickAddRoute(onClose: () -> Unit, onVoice: (() -> Unit)? = null, viewModel:
 private fun EditHeader(onDelete: () -> Unit) {
     val c = BtTheme.colors
     Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 6.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("Edit transaction", style = BtTheme.type.titleMedium, color = c.textPrimary, modifier = Modifier.weight(1f))
+        Text(stringResource(R.string.quickadd_edit_transaction), style = BtTheme.type.titleMedium, color = c.textPrimary, modifier = Modifier.weight(1f))
         Box(
             Modifier.heightIn(min = 44.dp).clip(BtShapes.full).clickable(role = Role.Button, onClick = onDelete).padding(horizontal = 12.dp),
             contentAlignment = Alignment.Center,
-        ) { Text("Delete", style = BtTheme.type.label, color = c.moneyExpense) }
+        ) { Text(stringResource(R.string.quickadd_delete), style = BtTheme.type.label, color = c.moneyExpense) }
     }
 }
 
@@ -224,7 +225,7 @@ internal fun KindToggle(state: QuickAddUiState, vm: QuickAddViewModel) {
     val new = state.editing == null && state.pending == null && state.payment == null
     val kinds = listOfNotNull(TransactionKind.EXPENSE, TransactionKind.INCOME, TransactionKind.TRANSFER, TransactionKind.DEBT.takeIf { new })
     SegmentedToggle(
-        options = kinds.map { kind -> if (kind == TransactionKind.DEBT) "Debt" else kind.name.lowercase().replaceFirstChar(Char::titlecase) },
+        options = kinds.map { kind -> stringResource(kind.tab) },
         selected = kinds.indexOf(state.kind),
         onSelect = { vm.setKind(kinds[it]) },
         fill = true,
@@ -239,14 +240,14 @@ private fun CategoryStep(state: QuickAddUiState, vm: QuickAddViewModel, onVoice:
     Column(modifier.verticalScroll(rememberScrollState())) {
         Row(verticalAlignment = Alignment.Bottom) {
             Box(Modifier.weight(1f)) { KindToggle(state, vm) }
-            onVoice?.let { BtIconButton(Icons.Rounded.Mic, "Add by voice", it, Modifier.padding(end = 16.dp)) }
+            onVoice?.let { BtIconButton(Icons.Rounded.Mic, stringResource(R.string.quickadd_add_by_voice), it, Modifier.padding(end = 16.dp)) }
         }
         // The bank's ready-made entries come first: the payment just made is usually one of them.
         if (state.debt == null) WaitingFromBank(state, vm)
         val frequent = state.frequent
         if (frequent.isNotEmpty()) {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
-                Overline("Frequent", Modifier.padding(bottom = 8.dp))
+                Overline(stringResource(R.string.quickadd_frequent), Modifier.padding(bottom = 8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     frequent.forEach { item -> FrequentChip(item, vm, Modifier.weight(1f)) }
                     repeat(FREQUENT_MERCHANTS - frequent.size) { Spacer(Modifier.weight(1f)) }
@@ -254,7 +255,7 @@ private fun CategoryStep(state: QuickAddUiState, vm: QuickAddViewModel, onVoice:
             }
         }
         Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 10.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Overline("All categories", Modifier.weight(1f))
+            Overline(stringResource(R.string.quickadd_all_categories), Modifier.weight(1f))
             // A bank notification being edited already has its amount.
             state.amount?.let { Text(MoneyFormat.format(it), style = BtTheme.type.amountSmall, color = BtTheme.colors.textSecondary) }
         }
@@ -356,15 +357,15 @@ private fun EntryHeader(state: QuickAddUiState, vm: QuickAddViewModel, showAccou
     val income = state.kind == TransactionKind.INCOME
     Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Row(
-            Modifier.weight(1f).heightIn(min = 44.dp).clip(BtShapes.md).clickable(role = Role.Button, onClickLabel = "Change category", onClick = vm::showCategories),
+            Modifier.weight(1f).heightIn(min = 44.dp).clip(BtShapes.md).clickable(role = Role.Button, onClickLabel = stringResource(R.string.quickadd_change_category), onClick = vm::showCategories),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             state.category?.let { CategoryTile(it.icon, it.color) }
-            Text(state.category?.name ?: "Pick a category", style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            Text(state.category?.name ?: stringResource(R.string.quickadd_pick_a_category), style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             Icon(Icons.Rounded.ExpandMore, null, tint = c.textSecondary, modifier = Modifier.size(18.dp))
         }
-        if (showAccount) AccountPicker(label = if (income) "To" else "From", accounts = state.accounts, selected = state.account, onSelect = vm::selectAccount)
+        if (showAccount) AccountPicker(label = if (income) stringResource(R.string.quickadd_to) else stringResource(R.string.quickadd_from), accounts = state.accounts, selected = state.account, onSelect = vm::selectAccount)
     }
 }
 
@@ -382,6 +383,15 @@ private fun AmountLine(state: QuickAddUiState) {
     }
 }
 
+/** The tab a kind of entry has in quick add. */
+private val TransactionKind.tab: Int
+    get() = when (this) {
+        TransactionKind.EXPENSE -> R.string.quickadd_expense
+        TransactionKind.INCOME -> R.string.quickadd_income
+        TransactionKind.TRANSFER -> R.string.quickadd_transfer
+        else -> R.string.quickadd_debt
+    }
+
 @Composable
 internal fun AccountPicker(label: String, accounts: List<Account>, selected: Account?, onSelect: (Long) -> Unit) {
     var open by remember { mutableStateOf(false) }
@@ -390,12 +400,12 @@ internal fun AccountPicker(label: String, accounts: List<Account>, selected: Acc
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Rounded.AccountBalanceWallet, null, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(4.dp))
-            Text(selected?.name ?: "Account", style = BtTheme.type.bodyStrong, color = BtTheme.colors.textPrimary)
+            Text(selected?.name ?: stringResource(R.string.quickadd_account), style = BtTheme.type.bodyStrong, color = BtTheme.colors.textPrimary)
             Icon(Icons.Rounded.ExpandMore, null, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
         }
     }
     if (open) {
-        ChoiceSheet("$label account", onClose = { open = false }) { choose ->
+        ChoiceSheet(stringResource(R.string.quickadd_label_account, label), onClose = { open = false }) { choose ->
             accounts.forEach { a ->
                 OptionRow(
                     text = a.name,
@@ -411,10 +421,10 @@ internal fun AccountPicker(label: String, accounts: List<Account>, selected: Acc
 @Composable
 private fun TransferAccounts(state: QuickAddUiState, vm: QuickAddViewModel) {
     Row(Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(Modifier.weight(1f)) { AccountPicker("From", state.accounts, state.account, vm::selectAccount) }
+        Box(Modifier.weight(1f)) { AccountPicker(stringResource(R.string.quickadd_from), state.accounts, state.account, vm::selectAccount) }
         Icon(Icons.Rounded.ArrowForward, null, tint = BtTheme.colors.textSecondary)
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-            AccountPicker("To", state.accounts.filter { it.id != state.accountId }, state.accounts.firstOrNull { it.id == state.toAccountId }, vm::selectToAccount)
+            AccountPicker(stringResource(R.string.quickadd_to), state.accounts.filter { it.id != state.accountId }, state.accounts.firstOrNull { it.id == state.toAccountId }, vm::selectToAccount)
         }
     }
 }
@@ -422,7 +432,7 @@ private fun TransferAccounts(state: QuickAddUiState, vm: QuickAddViewModel) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SubCategories(state: QuickAddUiState, vm: QuickAddViewModel) {
-    Section("Sub-category") {
+    Section(stringResource(R.string.quickadd_sub_category)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             state.subCategories.forEach { sub ->
                 BtChip(sub.name, sub.id == state.subCategoryId, { vm.selectSubCategory(sub.id) }, outlined = true)
@@ -434,12 +444,12 @@ private fun SubCategories(state: QuickAddUiState, vm: QuickAddViewModel) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Merchants(state: QuickAddUiState, vm: QuickAddViewModel) {
-    Section("Merchant") {
+    Section(stringResource(R.string.quickadd_merchant)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             state.merchantChips.forEach { name ->
                 BtChip(name, name.equals(state.merchant.trim(), ignoreCase = true), { vm.toggleMerchant(name) }, Modifier.widthIn(max = 160.dp), outlined = true)
             }
-            IconChip(Icons.Rounded.Edit, "Type a merchant", selected = state.typing == QuickAddText.MERCHANT) { vm.startTyping(QuickAddText.MERCHANT) }
+            IconChip(Icons.Rounded.Edit, stringResource(R.string.quickadd_type_a_merchant), selected = state.typing == QuickAddText.MERCHANT) { vm.startTyping(QuickAddText.MERCHANT) }
         }
     }
 }
@@ -447,7 +457,7 @@ private fun Merchants(state: QuickAddUiState, vm: QuickAddViewModel) {
 @Composable
 private fun ForWhom(state: QuickAddUiState, vm: QuickAddViewModel) {
     val c = BtTheme.colors
-    Section("For whom") {
+    Section(stringResource(R.string.quickadd_for_whom)) {
         Row(Modifier.fillMaxWidth()) {
             state.people.forEach { p ->
                 val on = p.id == state.personId
@@ -471,9 +481,9 @@ private fun DateAndNote(state: QuickAddUiState, vm: QuickAddViewModel, onOpenCal
     val today = LocalDate.now()
     val yesterday = today.minusDays(1)
     val older = state.date != today && state.date != yesterday
-    Section("Date and note") {
+    Section(stringResource(R.string.quickadd_date_and_note)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            BtChip("Today", state.date == today, { vm.setDate(today) }, outlined = true)
+            BtChip(stringResource(R.string.quickadd_today), state.date == today, { vm.setDate(today) }, outlined = true)
             if (older) {
                 BtChip(
                     DateLabels.relative(state.date),
@@ -483,11 +493,11 @@ private fun DateAndNote(state: QuickAddUiState, vm: QuickAddViewModel, onOpenCal
                     outlined = true,
                 )
             } else {
-                BtChip("Yesterday", state.date == yesterday, { vm.setDate(yesterday) }, outlined = true)
-                IconChip(Icons.Rounded.CalendarMonth, "Pick an older date", selected = false, onClick = onOpenCalendar)
+                BtChip(stringResource(R.string.quickadd_yesterday), state.date == yesterday, { vm.setDate(yesterday) }, outlined = true)
+                IconChip(Icons.Rounded.CalendarMonth, stringResource(R.string.quickadd_pick_older_date), selected = false, onClick = onOpenCalendar)
             }
             BtChip(
-                text = state.note.ifBlank { "Note" },
+                text = state.note.ifBlank { stringResource(R.string.quickadd_note) },
                 selected = state.note.isNotBlank(),
                 onClick = { vm.startTyping(QuickAddText.NOTE) },
                 modifier = Modifier.weight(1f, fill = false),
@@ -577,7 +587,7 @@ private fun TextBar(typing: QuickAddText, state: QuickAddUiState, vm: QuickAddVi
                 state.merchantMatches.forEach { name -> BtChip(name, selected = false, onClick = { vm.pickMerchant(name) }) }
                 if (state.isNewMerchant) {
                     BtChip(
-                        "Add “${state.merchant.trim()}”",
+                        stringResource(R.string.quickadd_add_quoted, state.merchant.trim()),
                         selected = false,
                         onClick = vm::stopTyping,
                         leading = { Icon(Icons.Rounded.Add, null, tint = c.textSecondary, modifier = Modifier.size(18.dp)) },
@@ -594,7 +604,7 @@ private fun TextBar(typing: QuickAddText, state: QuickAddUiState, vm: QuickAddVi
             ) {
                 Icon(when { isMerchant -> Icons.Rounded.Storefront; isName -> Icons.Rounded.Person; else -> Icons.AutoMirrored.Rounded.Notes }, null, tint = c.textMuted, modifier = Modifier.size(20.dp))
                 Box(Modifier.weight(1f)) {
-                    if (field.text.isEmpty()) Text(when { isMerchant -> "Shop or service"; isName -> if (state.debt?.type == DebtType.PAID_FOR_OTHERS) "Names, like Sam and Alex" else "Name"; else -> "Add a note" }, style = BtTheme.type.body, color = c.textMuted, maxLines = 1)
+                    if (field.text.isEmpty()) Text(when { isMerchant -> stringResource(R.string.quickadd_shop_or_service); isName -> if (state.debt?.type == DebtType.PAID_FOR_OTHERS) stringResource(R.string.quickadd_names_like) else stringResource(R.string.quickadd_name); else -> stringResource(R.string.quickadd_add_a_note) }, style = BtTheme.type.body, color = c.textMuted, maxLines = 1)
                     BasicTextField(
                         value = field,
                         onValueChange = ::change,
@@ -613,7 +623,7 @@ private fun TextBar(typing: QuickAddText, state: QuickAddUiState, vm: QuickAddVi
                     Box(
                         Modifier.size(width = 40.dp, height = 44.dp).clip(CircleShape).clickable(role = Role.Button) { change(TextFieldValue()) },
                         contentAlignment = Alignment.Center,
-                    ) { Icon(Icons.Rounded.Close, "Clear", tint = c.textMuted, modifier = Modifier.size(18.dp)) }
+                    ) { Icon(Icons.Rounded.Close, stringResource(R.string.quickadd_clear), tint = c.textMuted, modifier = Modifier.size(18.dp)) }
                 } else {
                     Spacer(Modifier.width(4.dp))
                 }
@@ -625,7 +635,7 @@ private fun TextBar(typing: QuickAddText, state: QuickAddUiState, vm: QuickAddVi
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Icon(Icons.Rounded.Check, null, tint = if (state.canSave) c.accentOn else c.textMuted, modifier = Modifier.size(20.dp))
-                Text("Save", style = BtTheme.type.bodyStrong, color = if (state.canSave) c.accentOn else c.textMuted)
+                Text(stringResource(R.string.quickadd_save), style = BtTheme.type.bodyStrong, color = if (state.canSave) c.accentOn else c.textMuted)
             }
         }
     }
@@ -647,7 +657,7 @@ private fun Keypad(state: QuickAddUiState, vm: QuickAddViewModel) {
                                 .clickable(role = Role.Button) { if (k == '<') vm.backspace() else vm.key(k) },
                             contentAlignment = Alignment.Center,
                         ) {
-                            if (k == '<') Icon(Icons.AutoMirrored.Rounded.Backspace, "Delete", tint = c.textPrimary)
+                            if (k == '<') Icon(Icons.AutoMirrored.Rounded.Backspace, stringResource(R.string.quickadd_delete), tint = c.textPrimary)
                             else Text(k.toString(), style = BtTheme.type.amountLarge.copy(fontSize = 24.sp), color = c.textPrimary)
                         }
                     }
@@ -667,7 +677,7 @@ private fun Keypad(state: QuickAddUiState, vm: QuickAddViewModel) {
                 verticalArrangement = Arrangement.Center,
             ) {
                 Icon(Icons.Rounded.Check, null, tint = if (state.canSave) c.accentOn else c.textMuted, modifier = Modifier.size(28.dp))
-                Text("Save", style = BtTheme.type.bodyStrong, color = if (state.canSave) c.accentOn else c.textMuted)
+                Text(stringResource(R.string.quickadd_save), style = BtTheme.type.bodyStrong, color = if (state.canSave) c.accentOn else c.textMuted)
             }
         }
     }

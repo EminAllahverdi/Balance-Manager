@@ -1,8 +1,10 @@
 package com.eminallahverdi.balance
 
 import android.app.Application
+import android.content.Context
 import com.eminallahverdi.balance.core.backup.NightlyBackup
 import com.eminallahverdi.balance.core.backup.applyPendingRestore
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.data.FirstRun
 import com.eminallahverdi.balance.feature.recurring.PaymentReminders
 import com.eminallahverdi.balance.widget.WidgetRefresher
@@ -16,6 +18,12 @@ class BalanceApplication : Application() {
     @Inject lateinit var reminders: PaymentReminders
     @Inject lateinit var eveningReminder: EveningReminder
     @Inject lateinit var nightlyBackup: NightlyBackup
+
+    /** The language picked in Settings, read before anything else, so widgets and notifications speak it too. */
+    override fun attachBaseContext(base: Context) {
+        Language.load(base)
+        super.attachBaseContext(Language.wrap(base))
+    }
 
     override fun onCreate() {
         // Before Hilt: nothing may have the database or settings open while a restore swaps them in.

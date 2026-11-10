@@ -22,9 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import com.eminallahverdi.balance.core.designsystem.R
 import com.eminallahverdi.balance.core.designsystem.icon.BtIcons
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
@@ -39,7 +41,7 @@ fun EditorTitle(title: String, onRemove: (() -> Unit)? = null, preview: @Composa
             Box(
                 Modifier.heightIn(min = 44.dp).clip(BtShapes.full).clickable(role = Role.Button, onClick = onRemove).padding(horizontal = 12.dp),
                 contentAlignment = Alignment.Center,
-            ) { Text("Remove", style = BtTheme.type.label, color = BtTheme.colors.moneyExpense) }
+            ) { Text(stringResource(R.string.ds_remove), style = BtTheme.type.label, color = BtTheme.colors.moneyExpense) }
         }
     }
 }

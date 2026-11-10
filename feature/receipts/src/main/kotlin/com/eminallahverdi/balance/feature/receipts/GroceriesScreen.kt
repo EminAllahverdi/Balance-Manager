@@ -62,12 +62,16 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.common.DateLabels
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.common.MoneyFormat
+import com.eminallahverdi.balance.core.common.findActivity
 import com.eminallahverdi.balance.core.data.ReceiptRepository
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
@@ -81,6 +85,7 @@ import com.eminallahverdi.balance.core.designsystem.component.MonthTitle
 import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PrimaryButton
+import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.component.toColor
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
@@ -97,10 +102,10 @@ import com.eminallahverdi.balance.core.model.sum
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.launch
-
 
 /**
  * What groceries came to this month, against the months before, and what they went on, from the receipts scanned.
@@ -126,8 +131,8 @@ fun GroceriesRoute(onBack: (() -> Unit)?, onAddExpense: (ReceiptEntry) -> Unit, 
         Column(Modifier.fillMaxSize()) {
             if (onBack != null) {
                 Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
-                    Text("Groceries", style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
+                    BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.receipts_back), onBack)
+                    Text(stringResource(R.string.receipts_groceries), style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
                 }
             }
             HorizontalPager(pager, Modifier.fillMaxSize(), key = { it }) { page ->
@@ -150,16 +155,16 @@ fun GroceriesRoute(onBack: (() -> Unit)?, onAddExpense: (ReceiptEntry) -> Unit, 
                         item(key = "items") { TopItemsCard(report) }
                     }
                     if (shown.receipts.isNotEmpty()) {
-                        item(key = "receipts") { Overline("Receipts", Modifier.padding(start = 4.dp, top = 4.dp)) }
+                        item(key = "receipts") { Overline(stringResource(R.string.receipts_receipts), Modifier.padding(start = 4.dp, top = 4.dp)) }
                         items(shown.receipts, key = { it.id }) { receipt -> ReceiptRow(receipt) { viewModel.openReceipt(receipt) } }
                     }
                 }
             }
         }
-        FloatingAddButton("Add a receipt", viewModel::startScan, Modifier.align(Alignment.BottomEnd).then(if (onBack != null) Modifier.navigationBarsPadding() else Modifier).padding(16.dp))
+        FloatingAddButton(stringResource(R.string.receipts_add_receipt), viewModel::startScan, Modifier.align(Alignment.BottomEnd).then(if (onBack != null) Modifier.navigationBarsPadding() else Modifier).padding(16.dp))
     }
     if (pickingMonth) {
-        ChoiceSheet("Month", onClose = { pickingMonth = false }) { choose ->
+        ChoiceSheet(stringResource(R.string.receipts_month), onClose = { pickingMonth = false }) { choose ->
             MonthPicker(monthOf(pager.currentPage)) { month -> choose { scope.launch { pager.animateScrollToPage(pageOf(month)) } } }
         }
     }
@@ -176,7 +181,7 @@ private fun Change(now: Money, before: Money?) {
         when {
             change > 0 -> "+$change%"
             change < 0 -> "−${-change}%"
-            else -> "same"
+            else -> stringResource(R.string.receipts_same)
         },
         style = BtTheme.type.caption,
         color = when {
@@ -192,10 +197,10 @@ private fun SpentCard(report: GroceryReport, categoryName: String?) {
     val c = BtTheme.colors
     BtCard(bordered = true) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Overline(categoryName?.let { "Spent on $it" } ?: "No groceries category found")
+            Overline(categoryName?.let { stringResource(R.string.receipts_spent_on, it) } ?: stringResource(R.string.receipts_no_groceries_category))
             FittedAmount(MoneyFormat.format(report.spent), BtTheme.type.amountLarge)
-            CompareRow("Last month", report.lastMonth, report.spent)
-            REPORT_SPANS.forEach { span -> CompareRow("$span-month average", report.averages[span], report.spent) }
+            CompareRow(stringResource(R.string.receipts_last_month), report.lastMonth, report.spent)
+            REPORT_SPANS.forEach { span -> CompareRow(stringResource(R.string.receipts_month_average, span), report.averages[span], report.spent) }
         }
     }
 }
@@ -215,8 +220,8 @@ private fun HintCard() {
     val c = BtTheme.colors
     BtCard {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("What did it go on?", style = BtTheme.type.bodyStrong, color = c.textPrimary)
-            Text("Add the receipts from your grocery shopping, and this shows what you spent most on, by item and by kind, against the months before.", style = BtTheme.type.caption, color = c.textSecondary)
+            Text(stringResource(R.string.receipts_what_did_it_go_on), style = BtTheme.type.bodyStrong, color = c.textPrimary)
+            Text(stringResource(R.string.receipts_hint), style = BtTheme.type.caption, color = c.textSecondary)
         }
     }
 }
@@ -227,13 +232,13 @@ private fun GroupsCard(report: GroceryReport) {
     val largest = report.groups.maxOfOrNull { it.amount.minor }?.takeIf { it > 0 } ?: 1L
     BtCard {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Overline("${MoneyFormat.format(report.itemsTotal)} from ${if (report.receipts == 1) "1 receipt" else "${report.receipts} receipts"}")
+            Overline(pluralStringResource(R.plurals.receipts_total_from_receipts, report.receipts, report.receipts, MoneyFormat.format(report.itemsTotal)))
             report.groups.forEach { spend ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     GroupTile(spend.group)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(spend.group.label, style = BtTheme.type.body, color = c.textPrimary, modifier = Modifier.weight(1f))
+                            Text(spend.group.title(), style = BtTheme.type.body, color = c.textPrimary, modifier = Modifier.weight(1f))
                             Text(MoneyFormat.format(spend.amount), style = BtTheme.type.amountSmall, color = c.textPrimary)
                         }
                         Box(Modifier.fillMaxWidth().height(6.dp).clip(BtShapes.full).background(c.bgSurfaceHigh)) {
@@ -252,13 +257,13 @@ private fun TopItemsCard(report: GroceryReport) {
     val c = BtTheme.colors
     BtCard {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Overline("Most spent on")
+            Overline(stringResource(R.string.receipts_most_spent_on))
             report.topItems.forEachIndexed { i, item ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("${i + 1}", style = BtTheme.type.caption, color = c.textMuted, modifier = Modifier.size(width = 18.dp, height = 18.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(item.name, style = BtTheme.type.body, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text("×${quantityLabel(item.quantityMilli)} · ${if (item.times == 1) "once" else "${item.times} times"}", style = BtTheme.type.caption, color = c.textSecondary)
+                        Text("×${quantityLabel(item.quantityMilli)} · " + pluralStringResource(R.plurals.receipts_times, item.times, item.times), style = BtTheme.type.caption, color = c.textSecondary)
                     }
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(MoneyFormat.format(item.amount), style = BtTheme.type.amountSmall, color = c.textPrimary)
@@ -305,7 +310,7 @@ private fun ReceiptRow(receipt: Receipt, onClick: () -> Unit) {
             GroupTile(ItemGroup.OTHER)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(receipt.store, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${DateLabels.relative(receipt.date)} · ${if (receipt.items.size == 1) "1 item" else "${receipt.items.size} items"}", style = BtTheme.type.caption, color = c.textSecondary)
+                Text("${DateLabels.relative(receipt.date)} · " + pluralStringResource(R.plurals.receipts_items, receipt.items.size, receipt.items.size), style = BtTheme.type.caption, color = c.textSecondary)
             }
             Text(MoneyFormat.format(receipt.total), style = BtTheme.type.amountSmall, color = c.textPrimary)
         }
@@ -324,7 +329,7 @@ private fun ItemLine(item: ReceiptItem, onRemove: (() -> Unit)? = null) {
         Text(MoneyFormat.format(item.total), style = BtTheme.type.amountSmall, color = c.textPrimary)
         if (onRemove != null) {
             Box(Modifier.size(36.dp).clip(BtShapes.full).clickable(onClick = onRemove), contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.Close, "Leave out ${item.name}", tint = c.textMuted, modifier = Modifier.size(18.dp))
+                Icon(Icons.Rounded.Close, stringResource(R.string.receipts_leave_out, item.name), tint = c.textMuted, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -339,7 +344,7 @@ private fun ScanFlow(scan: ScanState, vm: GroceriesViewModel, onAddExpense: (Rec
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) vm.readPhoto(uri) else vm.closeScan() }
     fun scanCode() {
         val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
-        GmsBarcodeScanning.getClient(context, options).startScan()
+        GmsBarcodeScanning.getClient(context.findActivity() ?: context, options).startScan()
             .addOnSuccessListener { code -> vm.lookUp(code.rawValue.orEmpty()) }
             .addOnCanceledListener { vm.closeScan() }
             .addOnFailureListener { vm.typeId() }
@@ -350,19 +355,19 @@ private fun ScanFlow(scan: ScanState, vm: GroceriesViewModel, onAddExpense: (Rec
     }
     when (scan) {
         ScanState.Idle -> Unit
-        ScanState.Choosing -> ChoiceSheet("Add a receipt", onClose = vm::closeScan) { _ ->
-            OptionRow("Scan its QR code", selected = false, onClick = ::scanCode, caption = "Gets the receipt from the tax service, every item on it")
-            OptionRow("Type its fiscal ID", selected = false, onClick = vm::typeId, caption = "The 12 letters and digits under the QR code")
-            OptionRow("Read a photo of it", selected = false, onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, caption = "For one the tax service doesn't have yet")
+        ScanState.Choosing -> ChoiceSheet(stringResource(R.string.receipts_add_receipt), onClose = vm::closeScan) { _ ->
+            OptionRow(stringResource(R.string.receipts_scan_qr), selected = false, onClick = ::scanCode, caption = stringResource(R.string.receipts_scan_qr_caption))
+            OptionRow(stringResource(R.string.receipts_type_fiscal), selected = false, onClick = vm::typeId, caption = stringResource(R.string.receipts_type_fiscal_caption))
+            OptionRow(stringResource(R.string.receipts_read_photo), selected = false, onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, caption = stringResource(R.string.receipts_read_photo_caption))
         }
         ScanState.TypingId -> {
             var typed by rememberSaveable { mutableStateOf("") }
             AlertDialog(
                 onDismissRequest = vm::closeScan,
-                title = { Text("Fiscal ID") },
-                text = { BtTextField(typed, "12 letters and digits", { typed = it.trim() }) },
-                confirmButton = { TextButton(onClick = { vm.lookUp(typed) }, enabled = typed.length >= 12) { Text("Look up") } },
-                dismissButton = { TextButton(onClick = vm::closeScan) { Text("Cancel") } },
+                title = { Text(stringResource(R.string.receipts_fiscal_id)) },
+                text = { BtTextField(typed, stringResource(R.string.receipts_twelve_characters), { typed = it.trim() }) },
+                confirmButton = { TextButton(onClick = { vm.lookUp(typed) }, enabled = typed.length >= 12) { Text(stringResource(R.string.receipts_look_up)) } },
+                dismissButton = { TextButton(onClick = vm::closeScan) { Text(stringResource(R.string.receipts_cancel)) } },
             )
         }
         is ScanState.Working -> AlertDialog(
@@ -371,29 +376,29 @@ private fun ScanFlow(scan: ScanState, vm: GroceriesViewModel, onAddExpense: (Rec
             text = {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     CircularProgressIndicator(Modifier.size(24.dp), color = BtTheme.colors.accentFill, strokeWidth = 3.dp)
-                    Text(scan.message)
+                    Text(scan.message.text())
                 }
             },
         )
         is ScanState.Problem -> AlertDialog(
             onDismissRequest = vm::closeScan,
-            title = { Text("Couldn't add it") },
-            text = { Text(scan.message) },
+            title = { Text(stringResource(R.string.receipts_couldnt_add)) },
+            text = { Text(scan.message.text()) },
             confirmButton = {
                 val fiscalId = scan.fiscalId
-                if (fiscalId != null) TextButton(onClick = { openCheckPage(fiscalId) }) { Text("Open its page") } else TextButton(onClick = vm::closeScan) { Text("OK") }
+                if (fiscalId != null) TextButton(onClick = { openCheckPage(fiscalId) }) { Text(stringResource(R.string.receipts_open_its_page)) } else TextButton(onClick = vm::closeScan) { Text(stringResource(R.string.receipts_ok)) }
             },
-            dismissButton = { TextButton(onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) { Text("Use a photo") } },
+            dismissButton = { TextButton(onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) { Text(stringResource(R.string.receipts_use_a_photo)) } },
         )
         is ScanState.Review -> ReviewSheet(scan, vm)
         is ScanState.Saved -> if (scan.needsEntry) {
             val receipt = scan.receipt
             AlertDialog(
                 onDismissRequest = vm::closeScan,
-                title = { Text("Add it as an expense?") },
-                text = { Text("${MoneyFormat.format(receipt.total)} at ${receipt.store}, ${DateLabels.relative(receipt.date).inSentence()}, isn't in your entries yet.") },
-                confirmButton = { TextButton(onClick = { onAddExpense(vm.entryFor(receipt)); vm.closeScan() }) { Text("Add expense") } },
-                dismissButton = { TextButton(onClick = vm::closeScan) { Text("Not now") } },
+                title = { Text(stringResource(R.string.receipts_add_as_expense_q)) },
+                text = { Text(stringResource(R.string.receipts_not_in_entries, MoneyFormat.format(receipt.total), receipt.store, receipt.date.inSentence())) },
+                confirmButton = { TextButton(onClick = { onAddExpense(vm.entryFor(receipt)); vm.closeScan() }) { Text(stringResource(R.string.receipts_add_expense)) } },
+                dismissButton = { TextButton(onClick = vm::closeScan) { Text(stringResource(R.string.receipts_not_now)) } },
             )
         } else {
             // Already in the entries: nothing to ask.
@@ -410,25 +415,25 @@ private fun ReviewSheet(review: ScanState.Review, vm: GroceriesViewModel) {
     val itemsTotal = parsed.items.map { it.total }.sum()
     ModalBottomSheet(onDismissRequest = vm::closeScan, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = c.bgSurface) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Check the receipt", style = BtTheme.type.titleMedium, color = c.textPrimary)
+            Text(stringResource(R.string.receipts_check_receipt), style = BtTheme.type.titleMedium, color = c.textPrimary)
             review.picture?.let { picture ->
-                Image(picture.asImageBitmap(), "The receipt", Modifier.fillMaxWidth().height(140.dp).clip(BtShapes.md), contentScale = ContentScale.Crop, alignment = Alignment.TopCenter)
+                Image(picture.asImageBitmap(), stringResource(R.string.receipts_the_receipt), Modifier.fillMaxWidth().height(140.dp).clip(BtShapes.md), contentScale = ContentScale.Crop, alignment = Alignment.TopCenter)
             }
-            BtTextField(review.store, "Shop", vm::renameStore)
+            BtTextField(review.store, stringResource(R.string.receipts_shop), vm::renameStore)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(parsed.date?.let { DateLabels.relative(it) } ?: "Today", style = BtTheme.type.body, color = c.textSecondary, modifier = Modifier.weight(1f))
+                Text(parsed.date?.let { DateLabels.relative(it) } ?: stringResource(R.string.receipts_today), style = BtTheme.type.body, color = c.textSecondary, modifier = Modifier.weight(1f))
                 Text(MoneyFormat.format(parsed.total ?: itemsTotal), style = BtTheme.type.amountMedium, color = c.textPrimary)
             }
             if (!parsed.isComplete) {
                 Text(
-                    if (parsed.total == null) "No total was found, so it's what the items add up to." else "The items come to ${MoneyFormat.format(itemsTotal)}, not ${MoneyFormat.format(parsed.total!!)}. Something may have been misread or missed, like a discount.",
+                    if (parsed.total == null) stringResource(R.string.receipts_no_total) else stringResource(R.string.receipts_items_dont_add, MoneyFormat.format(itemsTotal), MoneyFormat.format(parsed.total!!)),
                     style = BtTheme.type.caption,
                     color = c.statusWarning,
                 )
             }
-            Overline(if (parsed.items.size == 1) "1 item" else "${parsed.items.size} items")
+            Overline(pluralStringResource(R.plurals.receipts_items, parsed.items.size, parsed.items.size))
             parsed.items.forEachIndexed { i, item -> ItemLine(item, onRemove = { vm.removeItem(i) }) }
-            PrimaryButton("Save receipt", vm::save, enabled = parsed.items.isNotEmpty())
+            PrimaryButton(stringResource(R.string.receipts_save_receipt), vm::save, enabled = parsed.items.isNotEmpty())
         }
     }
 }
@@ -449,20 +454,37 @@ private fun ReceiptSheet(receipt: Receipt, onClose: () -> Unit, onDelete: () -> 
             }
             receipt.items.forEach { ItemLine(it) }
             Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(BtShapes.full).clickable { confirmDelete = true }, contentAlignment = Alignment.Center) {
-                Text("Delete receipt", style = BtTheme.type.label, color = c.moneyExpense)
+                Text(stringResource(R.string.receipts_delete_receipt), style = BtTheme.type.label, color = c.moneyExpense)
             }
         }
     }
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Delete this receipt?") },
-            text = { Text("Its items leave the report. Your entries stay as they are.") },
-            confirmButton = { TextButton(onClick = { confirmDelete = false; onDelete() }) { Text("Delete") } },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.receipts_delete_receipt_q)) },
+            text = { Text(stringResource(R.string.receipts_delete_receipt_text)) },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; onDelete() }) { Text(stringResource(R.string.receipts_delete)) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.receipts_cancel)) } },
         )
     }
 }
 
-/** "Today" and "Yesterday" in lower case, for the middle of a sentence. Dates stay as they are. */
-private fun String.inSentence(): String = if (this == "Today" || this == "Yesterday") lowercase() else this
+/** stringResource(R.string.receipts_today) and "Yesterday" in lower case, for the middle of a sentence. Dates stay as they are. */
+/** "today" or "yesterday" in the middle of a sentence, and a date as it is. */
+private fun LocalDate.inSentence(today: LocalDate = LocalDate.now()): String =
+    DateLabels.relative(this, today).let { if (this >= today.minusDays(1)) it.lowercase(Language.locale) else it }
+
+@Composable
+private fun ItemGroup.title(): String = stringResource(
+    when (this) {
+        ItemGroup.DAIRY -> R.string.receipts_group_dairy
+        ItemGroup.MEAT_FISH -> R.string.receipts_group_meat_fish
+        ItemGroup.BREAD -> R.string.receipts_group_bread
+        ItemGroup.FRUIT_VEG -> R.string.receipts_group_fruit_veg
+        ItemGroup.STAPLES -> R.string.receipts_group_staples
+        ItemGroup.DRINKS -> R.string.receipts_group_drinks
+        ItemGroup.SWEETS -> R.string.receipts_group_sweets
+        ItemGroup.HOUSEHOLD -> R.string.receipts_group_household
+        ItemGroup.OTHER -> R.string.receipts_group_other
+    },
+)

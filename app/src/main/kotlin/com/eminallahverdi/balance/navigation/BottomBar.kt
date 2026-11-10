@@ -1,7 +1,7 @@
 package com.eminallahverdi.balance.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,17 +33,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.eminallahverdi.balance.R
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 
-enum class TopLevelTab(val label: String, val icon: ImageVector, val selectedIcon: ImageVector, val route: Any) {
-    HOME("Home", Icons.Outlined.Home, Icons.Rounded.Home, HomeDestination),
-    HISTORY("History", Icons.AutoMirrored.Outlined.ReceiptLong, Icons.AutoMirrored.Rounded.ReceiptLong, HistoryDestination),
-    INSIGHTS("Reports", Icons.Outlined.BarChart, Icons.Rounded.BarChart, InsightsDestination),
-    ACCOUNTS("Accounts", Icons.Outlined.AccountBalanceWallet, Icons.Rounded.AccountBalanceWallet, AccountsDestination),
+enum class TopLevelTab(@StringRes val label: Int, val icon: ImageVector, val selectedIcon: ImageVector, val route: Any) {
+    HOME(R.string.app_home, Icons.Outlined.Home, Icons.Rounded.Home, HomeDestination),
+    HISTORY(R.string.app_history, Icons.AutoMirrored.Outlined.ReceiptLong, Icons.AutoMirrored.Rounded.ReceiptLong, HistoryDestination),
+    INSIGHTS(R.string.app_reports_tab, Icons.Outlined.BarChart, Icons.Rounded.BarChart, InsightsDestination),
+    ACCOUNTS(R.string.app_accounts, Icons.Outlined.AccountBalanceWallet, Icons.Rounded.AccountBalanceWallet, AccountsDestination),
 }
 
 /** Two tabs, the centre lime add button, two tabs. The add button rises 6 dp above the bar. */
@@ -77,7 +79,7 @@ private fun TabItem(tab: TopLevelTab, selected: Boolean, onSelect: (TopLevelTab)
         Box(Modifier.clip(BtShapes.full).background(if (selected) c.bgSurfaceHigh else Color.Transparent).padding(horizontal = 16.dp, vertical = 4.dp)) {
             Icon(if (selected) tab.selectedIcon else tab.icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
         }
-        Text(tab.label, style = BtTheme.type.caption.copy(fontWeight = FontWeight.SemiBold), color = tint)
+        Text(stringResource(tab.label), style = BtTheme.type.caption.copy(fontWeight = FontWeight.SemiBold), color = tint, maxLines = 1, softWrap = false)
     }
 }
 
@@ -93,6 +95,6 @@ private fun AddButton(onClick: () -> Unit) {
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Rounded.Add, contentDescription = "Add transaction", tint = c.accentOn, modifier = Modifier.size(32.dp))
+        Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.app_add_transaction), tint = c.accentOn, modifier = Modifier.size(32.dp))
     }
 }

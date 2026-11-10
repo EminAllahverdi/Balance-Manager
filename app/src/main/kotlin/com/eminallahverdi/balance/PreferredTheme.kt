@@ -14,7 +14,7 @@ import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.designsystem.theme.BalanceTheme
 import com.eminallahverdi.balance.core.designsystem.theme.ThemeMode
 
-/** [BalanceTheme] in the mode chosen in Settings, with system bar icons that stay readable on it. */
+/** [BalanceTheme] in the mode chosen in Settings, with system bar icons that stay readable on it, in the language chosen there. */
 @Composable
 fun PreferredTheme(prefs: UserPreferencesRepository, content: @Composable () -> Unit) {
     val preferences by prefs.preferences.collectAsStateWithLifecycle(UserPreferences())
@@ -32,5 +32,5 @@ fun PreferredTheme(prefs: UserPreferencesRepository, content: @Composable () -> 
             isAppearanceLightNavigationBars = !dark
         }
     }
-    BalanceTheme(mode, content)
+    BalanceTheme(mode) { LocalizedContent(content) }
 }

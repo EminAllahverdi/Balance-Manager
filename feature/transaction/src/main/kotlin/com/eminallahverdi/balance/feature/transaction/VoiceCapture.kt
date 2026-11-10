@@ -10,6 +10,7 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -23,12 +24,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Keyboard
@@ -52,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -73,15 +73,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /** Where listening stands. Each problem says what to do about it. */
-enum class Listening(val message: String?) {
+enum class Listening(@StringRes val message: Int?) {
     STARTING(null),
     LISTENING(null),
-    NOTHING_HEARD("Didn't catch that. Tap the mic and try again."),
-    NO_PERMISSION("Cibim needs the microphone to hear you. Allow it, then tap the mic."),
-    UNAVAILABLE("This phone has no speech recognition. Type it instead."),
-    LANGUAGE_MISSING("This language isn't on the phone yet. Add it in the phone's voice typing settings, or switch language."),
-    NO_NETWORK("This language needs the internet on this phone. Connect, or switch language."),
-    FAILED("Listening stopped. Tap the mic to try again."),
+    NOTHING_HEARD(R.string.quickadd_nothing_heard),
+    NO_PERMISSION(R.string.quickadd_no_mic_permission),
+    UNAVAILABLE(R.string.quickadd_no_speech_recognition),
+    LANGUAGE_MISSING(R.string.quickadd_language_missing),
+    NO_NETWORK(R.string.quickadd_language_needs_network),
+    FAILED(R.string.quickadd_listening_failed),
 }
 
 @HiltViewModel
@@ -155,7 +155,7 @@ fun VoiceCaptureRoute(onHeard: (String, SpokenLanguage) -> Unit, onType: () -> U
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    if (status == Listening.LISTENING) "Listening…" else "Say what you spent",
+                    if (status == Listening.LISTENING) stringResource(R.string.quickadd_listening) else stringResource(R.string.quickadd_say_what_you_spent),
                     style = BtTheme.type.titleMedium,
                     color = c.textPrimary,
                     modifier = Modifier.weight(1f),
@@ -180,7 +180,7 @@ fun VoiceCaptureRoute(onHeard: (String, SpokenLanguage) -> Unit, onType: () -> U
                 }
             })
             Text(
-                status.message ?: "Amount, category, for whom, account and shop, in any order",
+                status.message?.let { stringResource(it) } ?: stringResource(R.string.quickadd_voice_hint),
                 style = BtTheme.type.caption,
                 color = if (status.message != null) c.moneyExpense else c.textSecondary,
                 textAlign = TextAlign.Center,
@@ -192,7 +192,7 @@ fun VoiceCaptureRoute(onHeard: (String, SpokenLanguage) -> Unit, onType: () -> U
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Icon(Icons.Rounded.Keyboard, null, tint = c.textSecondary, modifier = Modifier.size(18.dp))
-                Text("Type instead", style = BtTheme.type.label, color = c.textSecondary)
+                Text(stringResource(R.string.quickadd_type_instead), style = BtTheme.type.label, color = c.textSecondary)
             }
         }
     }
@@ -216,7 +216,7 @@ private fun MicButton(listening: Boolean, onClick: () -> Unit) {
     Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
         if (listening) Box(Modifier.size(96.dp).scale(scale).clip(CircleShape).background(c.accentFill.copy(alpha = 0.18f)))
         Box(
-            Modifier.size(72.dp).clip(CircleShape).background(if (listening) c.accentFill else c.bgSurfaceHigh).clickable(role = Role.Button, onClickLabel = if (listening) "Stop" else "Listen", onClick = onClick),
+            Modifier.size(72.dp).clip(CircleShape).background(if (listening) c.accentFill else c.bgSurfaceHigh).clickable(role = Role.Button, onClickLabel = if (listening) stringResource(R.string.quickadd_stop) else stringResource(R.string.quickadd_listen), onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
             Icon(if (listening) Icons.Rounded.Stop else Icons.Rounded.Mic, null, tint = if (listening) c.accentOn else c.textPrimary, modifier = Modifier.size(32.dp))

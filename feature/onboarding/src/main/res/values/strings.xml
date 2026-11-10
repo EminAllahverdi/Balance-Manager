@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_reminders_are_on">Reminders are on</string>
+    <string name="onboarding_android_needs_ok">Android needs your OK before Cibim can show them on this phone.</string>
+    <string name="onboarding_cibim_icon">Cibim icon</string>
+    <string name="onboarding_tagline">Every expense and income in your household, logged in seconds.</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_restore_drive">Restore from Google Drive</string>
+    <string name="onboarding_restore_caption">After a reinstall, or on a new phone</string>
+    <string name="onboarding_import_csv">Import a CSV file</string>
+    <string name="onboarding_import_csv_caption">Entries from a spreadsheet or another app</string>
+    <string name="onboarding_back_up_drive">Back up to Google Drive</string>
+    <string name="onboarding_backup_explained">Every night Cibim saves a copy to a hidden folder in your Google Drive that only Cibim can open. If this phone is lost or replaced, everything comes back from there.</string>
+    <string name="onboarding_has_backups">This Google account already has backups. To carry on from one, restore it instead.</string>
+    <string name="onboarding_restore_a_backup">Restore a backup</string>
+    <string name="onboarding_start_fresh">Start fresh and back up</string>
+    <string name="onboarding_turn_on_backups">Turn on backups</string>
+    <string name="onboarding_not_now">Not now</string>
+    <string name="onboarding_reminders">Reminders</string>
+    <string name="onboarding_reminders_explained">Cibim reminds you at %1$s if nothing was added that day, and when a recurring payment is due.</string>
+    <string name="onboarding_allow_notifications">Allow notifications</string>
+    <string name="onboarding_csv_needs">It needs a Date and an Amount column. Account, Category, For whom, Merchant and Note are used if they\'re there. You\'ll see what\'s in it before anything comes in.</string>
+    <string name="onboarding_choose_file">Choose file</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_import_action">Import</string>
+    <string name="onboarding_accounts_list">Accounts: %1$s</string>
+    <string name="onboarding_new_categories">New categories: %1$s</string>
+    <string name="onboarding_entries_in_year">%1$s in %2$d</string>
+    <string name="onboarding_entries_years">%1$s, %2$d to %3$d</string>
+    <string name="onboarding_step_of">%1$d of %2$d</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_who_is_it_for">Who is it for?</string>
+    <string name="onboarding_who_explained">Every expense is for someone, so you can see who the money went to.</string>
+    <string name="onboarding_your_name">Your name</string>
+    <string name="onboarding_others">Others</string>
+    <string name="onboarding_add_a_person">Add a person</string>
+    <string name="onboarding_continue_">Continue</string>
+    <string name="onboarding_shared_things">For shared things, like groceries</string>
+    <string name="onboarding_new_person">New person</string>
+    <string name="onboarding_name">Name</string>
+    <string name="onboarding_colour">Colour</string>
+    <string name="onboarding_save">Save</string>
+    <string name="onboarding_your_categories">Your categories</string>
+    <string name="onboarding_categories_explained">Tap one to leave it out. You can change all of this later.</string>
+    <string name="onboarding_template">Template</string>
+    <string name="onboarding_expense">Expense</string>
+    <string name="onboarding_income">Income</string>
+    <string name="onboarding_category_template">Category template</string>
+    <string name="onboarding_template_household">Household</string>
+    <string name="onboarding_template_household_caption">16 categories with sub-categories, for a family</string>
+    <string name="onboarding_template_simple">Simple</string>
+    <string name="onboarding_template_simple_caption">8 categories, to start small</string>
+    <string name="onboarding_couldnt_read_file">Couldn\'t read that file</string>
+    <string name="onboarding_needs_date_amount">This file needs a Date and an Amount column</string>
+    <string name="onboarding_no_entries_in_file">There are no entries in this file</string>
+    <string name="onboarding_couldnt_finish">Couldn\'t finish setting up. Try again</string>
+    <plurals name="onboarding_entries">
+        <item quantity="one">%d entry</item>
+        <item quantity="other">%d entries</item>
+    </plurals>
+    <plurals name="onboarding_lines_unreadable">
+        <item quantity="one">%d line can\'t be read and will be left out</item>
+        <item quantity="other">%d lines can\'t be read and will be left out</item>
+    </plurals>
+</resources>

@@ -1,5 +1,6 @@
 package com.eminallahverdi.balance.feature.loans
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.common.MoneyFormat
@@ -144,10 +145,10 @@ internal fun RecurringPayment.toLoanDraft(categories: List<Category>): LoanDraft
     )
 }
 
-enum class DebtKind(val label: String) {
-    PAID_FOR_ME("Paid for me"),
-    BORROWED("I borrowed"),
-    LENT("I lent"),
+enum class DebtKind(@StringRes val label: Int) {
+    PAID_FOR_ME(R.string.loans_kind_paid_for_me),
+    BORROWED(R.string.loans_kind_borrowed),
+    LENT(R.string.loans_kind_lent),
 }
 
 data class DebtDraft(

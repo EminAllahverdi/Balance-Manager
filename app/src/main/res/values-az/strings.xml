@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_add_expense">Xərc əlavə et</string>
+    <string name="app_unlock_cibim">Cibimi aç</string>
+    <string name="app_cibim_locked">Cibim kilidlidir</string>
+    <string name="app_use_fingerprint_or_pin">Barmaq izinizdən və ya telefonun PIN kodundan istifadə edin</string>
+    <string name="app_unlock">Kilidi aç</string>
+    <string name="app_add_expense">Xərc əlavə et</string>
+    <string name="app_add_by_voice">Səslə əlavə et</string>
+    <string name="app_add_income">Gəlir əlavə et</string>
+    <string name="app_transfer">Köçürmə</string>
+    <string name="app_to_confirm">Təsdiq üçün</string>
+    <string name="app_evening_reminder">Axşam xatırlatması</string>
+    <string name="app_nothing_added_today">Bu gün heç nə əlavə edilməyib</string>
+    <string name="app_tap_to_add_spent">Xərclədiyinizi əlavə etmək üçün toxunun</string>
+    <string name="app_home">Əsas</string>
+    <string name="app_history">Tarixçə</string>
+    <string name="app_reports">Hesabatlar</string>
+    <string name="app_accounts">Hesablar</string>
+    <string name="app_add_transaction">Əməliyyat əlavə et</string>
+    <string name="app_spending">Xərclər</string>
+    <string name="app_groceries">Ərzaq</string>
+    <string name="app_reports_tab">Hesabat</string>
+</resources>

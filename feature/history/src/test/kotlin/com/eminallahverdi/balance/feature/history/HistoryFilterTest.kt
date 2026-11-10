@@ -1,11 +1,15 @@
 package com.eminallahverdi.balance.feature.history
 
+import com.eminallahverdi.balance.core.common.rawText
+import com.eminallahverdi.balance.core.common.uiText
+import com.eminallahverdi.balance.core.designsystem.component.label
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.AccountType
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
 import com.eminallahverdi.balance.core.model.Debt
 import com.eminallahverdi.balance.core.model.DebtDirection
+import com.eminallahverdi.balance.core.model.DebtEntryRole
 import com.eminallahverdi.balance.core.model.Merchant
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
@@ -53,7 +57,7 @@ class HistoryFilterTest {
         assertThat(filter.kind).isEqualTo(TransactionKind.TRANSFER)
         assertThat(filter.matches(row(kind = TransactionKind.TRANSFER, category = null, parent = null, toAccount = cash))).isTrue()
         assertThat(filter.matches(row())).isFalse()
-        assertThat(filter.emptyMessage(YearMonth.now())).isEqualTo("No transfers yet.")
+        assertThat(filter.emptyMessage(YearMonth.now())).isEqualTo(uiText(R.string.history_no_transfers_yet))
     }
 
     @Test fun `a list of only transfers totals what moved`() {
@@ -72,10 +76,10 @@ class HistoryFilterTest {
 
     @Test fun `an empty list says what's actually true`() {
         val now = YearMonth.of(2026, 11)
-        assertThat(HistoryFilter(month = null).emptyMessage(now)).contains("first expense")
-        assertThat(HistoryFilter(month = now).emptyMessage(now)).isEqualTo("Nothing this month yet. Tap + to add an expense.")
-        assertThat(HistoryFilter(month = YearMonth.of(2025, 10)).emptyMessage(now)).isEqualTo("Nothing in October 2025.")
-        assertThat(HistoryFilter(month = YearMonth.of(2025, 10), personId = 1).emptyMessage(now)).isEqualTo("Nothing matches these filters.")
+        assertThat(HistoryFilter(month = null).emptyMessage(now)).isEqualTo(uiText(R.string.history_nothing_yet_first))
+        assertThat(HistoryFilter(month = now).emptyMessage(now)).isEqualTo(uiText(R.string.history_nothing_this_month))
+        assertThat(HistoryFilter(month = YearMonth.of(2025, 10)).emptyMessage(now)).isEqualTo(uiText(R.string.history_nothing_in, "October 2025"))
+        assertThat(HistoryFilter(month = YearMonth.of(2025, 10), personId = 1).emptyMessage(now)).isEqualTo(uiText(R.string.history_nothing_matches))
     }
 
     @Test fun `search finds merchant, category, note and amount`() {
@@ -134,9 +138,9 @@ class HistoryFilterTest {
     }
 
     @Test fun `rows describe themselves`() {
-        assertThat(row().title).isEqualTo("Bolt")
-        assertThat(row().meta).isEqualTo("Transport · Taxi · Card")
-        assertThat(row(kind = TransactionKind.TRANSFER, toAccount = cash).meta).isEqualTo("Card → Cash")
+        assertThat(row().title).isEqualTo(rawText("Bolt"))
+        assertThat(row().meta).containsExactly(rawText("Transport"), rawText("Taxi"), rawText("Card")).inOrder()
+        assertThat(row(kind = TransactionKind.TRANSFER, toAccount = cash).meta).containsExactly(rawText("Card → Cash"))
     }
 
     private val owed = Debt(1, "Sam", DebtDirection.I_OWE, Money(50_00), date = LocalDate.of(2026, 10, 1))
@@ -148,19 +152,19 @@ class HistoryFilterTest {
     @Test fun `debt entries say which way the money went, and neither is income or spending`() {
         val borrowed = debtRow(owed, 50_00)
         val paid = debtRow(owed, -15_00, note = "Rent")
-        assertThat(borrowed.title).isEqualTo("Borrowed from Sam")
+        assertThat(borrowed.title).isEqualTo(DebtEntryRole.BORROWED_FROM.label("Sam"))
         assertThat(borrowed.signedAmount()).isEqualTo("+₼50.00")
-        assertThat(paid.title).isEqualTo("Paid back to Sam")
+        assertThat(paid.title).isEqualTo(DebtEntryRole.PAID_BACK_TO.label("Sam"))
         assertThat(paid.signedAmount()).isEqualTo("−₼15.00")
-        assertThat(paid.meta).isEqualTo("Card · Rent")
+        assertThat(paid.meta).containsExactly(rawText("Card"), rawText("Rent")).inOrder()
         assertThat(borrowed.isSensitive).isTrue()
         assertThat(listOf(borrowed, paid).headlineTotal()).isEqualTo(Money.ZERO)
     }
 
     @Test fun `a debt paid back as an expense keeps its category and says who it went to`() {
         val paid = row(10_00, category = taxi, parent = transport).let { it.copy(transaction = it.transaction.copy(debtId = lunch.id), debt = lunch, merchant = null) }
-        assertThat(paid.title).isEqualTo("Taxi")
-        assertThat(paid.meta).isEqualTo("Transport · Taxi · Paid back to Sam · Card")
+        assertThat(paid.title).isEqualTo(rawText("Taxi"))
+        assertThat(paid.meta).containsExactly(rawText("Transport"), rawText("Taxi"), DebtEntryRole.PAID_BACK_TO.label("Sam"), rawText("Card")).inOrder()
         assertThat(paid.isEditable).isTrue()
     }
 
@@ -173,24 +177,24 @@ class HistoryFilterTest {
     @Test fun `deleting asks about the entry by name, amount and day`() {
         val today = LocalDate.of(2026, 10, 31)
         val removal = row().removal(hideAmounts = false, today = today)
-        assertThat(removal.title).isEqualTo("Delete this transaction?")
-        assertThat(removal.named).isEqualTo("Bolt · −₼7.70 · Today")
-        assertThat(removal.action).isEqualTo("Delete")
-        assertThat(row().removal(hideAmounts = false, today = today.plusDays(5)).named).isEqualTo("Bolt · −₼7.70 · Sat 31 Oct")
+        assertThat(removal.title).isEqualTo(R.string.history_delete_transaction_q)
+        assertThat(removal.named).containsExactly(rawText("Bolt"), rawText("−₼7.70"), rawText("Today")).inOrder()
+        assertThat(removal.action).isEqualTo(R.string.history_delete)
+        assertThat(row().removal(hideAmounts = false, today = today.plusDays(5)).named).containsExactly(rawText("Bolt"), rawText("−₼7.70"), rawText("Sat 31 Oct")).inOrder()
     }
 
     @Test fun `the eye hides the amount in the question as it does on the row`() {
         val today = LocalDate.of(2026, 10, 31)
-        assertThat(row().removal(hideAmounts = true, today = today).named).isEqualTo("Bolt · −₼7.70 · Today")
-        assertThat(row(50_00, TransactionKind.INCOME).removal(hideAmounts = true, today = today).named).isEqualTo("Bolt · Today")
+        assertThat(row().removal(hideAmounts = true, today = today).named).containsExactly(rawText("Bolt"), rawText("−₼7.70"), rawText("Today")).inOrder()
+        assertThat(row(50_00, TransactionKind.INCOME).removal(hideAmounts = true, today = today).named).containsExactly(rawText("Bolt"), rawText("Today")).inOrder()
     }
 
     @Test fun `a debt payment is removed, and says the debt changes back`() {
         val removal = debtRow(owed, -15_00).removal(hideAmounts = false, today = LocalDate.of(2026, 10, 31))
-        assertThat(removal.title).isEqualTo("Remove this payment?")
-        assertThat(removal.named).isEqualTo("Paid back to Sam · −₼15.00 · Today")
-        assertThat(removal.consequence).startsWith("The debt and the account's balance")
-        assertThat(removal.action).isEqualTo("Remove")
+        assertThat(removal.title).isEqualTo(R.string.history_remove_payment_q)
+        assertThat(removal.named).containsExactly(DebtEntryRole.PAID_BACK_TO.label("Sam"), rawText("−₼15.00"), rawText("Today")).inOrder()
+        assertThat(removal.consequence).isEqualTo(R.string.history_remove_payment_text)
+        assertThat(removal.action).isEqualTo(R.string.history_remove)
     }
 
     @Test fun `search finds who a debt is with`() {

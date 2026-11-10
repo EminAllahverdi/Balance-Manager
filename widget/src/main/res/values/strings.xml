@@ -1,12 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="widget_balance">Balance</string>
     <string name="widget_balance_description">Your balance, shown the way you chose in Settings, and a + to add an expense</string>
     <string name="widget_balance_voice">Balance and voice</string>
     <string name="widget_balance_voice_description">Your balance, a mic to add by voice, and a + to add by hand</string>
     <string name="widget_quick_actions">Quick actions</string>
-    <string name="widget_quick_actions_description">Add an expense, income or transfer</string>
+    <string name="widget_quick_actions_description">Add an expense, income, transfer or debt</string>
     <string name="widget_today">Today</string>
     <string name="widget_today_description">Today\'s spending and one-tap categories</string>
     <string name="widget_to_confirm">To confirm</string>
     <string name="widget_to_confirm_description">Bank payments waiting for you to confirm them</string>
+    <string name="widget_show_balance">Show balance</string>
+    <string name="widget_balance_caps">BALANCE</string>
+    <string name="widget_add_by_voice">Add by voice</string>
+    <string name="widget_add_expense">Add expense</string>
+    <string name="widget_add_expense_waiting">Add expense, %1$d from your bank</string>
+    <string name="widget_hidden">Hidden</string>
+    <string name="widget_hides_in">Hides in %1$d s</string>
+    <string name="widget_tap_to_show">Tap to show</string>
+    <string name="widget_touch_to_show">Touch to show</string>
+    <string name="widget_expense">Expense</string>
+    <string name="widget_income">Income</string>
+    <string name="widget_transfer">Transfer</string>
+    <string name="widget_debt">Debt</string>
+    <string name="widget_to_confirm_caps">TO CONFIRM</string>
+    <plurals name="widget_payments">
+        <item quantity="one">payment</item>
+        <item quantity="other">payments</item>
+    </plurals>
+    <plurals name="widget_spent_entries">
+        <item quantity="one">spent · %d entry</item>
+        <item quantity="other">spent · %d entries</item>
+    </plurals>
 </resources>

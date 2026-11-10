@@ -26,6 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -43,10 +45,10 @@ import com.eminallahverdi.balance.core.model.RecurringFrequency
 import com.eminallahverdi.balance.core.model.RecurringPayment
 
 internal val RecurringFrequency.label: String
-    get() = when (this) {
-        RecurringFrequency.WEEKLY -> "Weekly"
-        RecurringFrequency.MONTHLY -> "Monthly"
-        RecurringFrequency.YEARLY -> "Yearly"
+    @Composable get() = when (this) {
+        RecurringFrequency.WEEKLY -> stringResource(R.string.recurring_weekly)
+        RecurringFrequency.MONTHLY -> stringResource(R.string.recurring_monthly)
+        RecurringFrequency.YEARLY -> stringResource(R.string.recurring_yearly)
     }
 
 /** Reminders for what repeats. [onAddPayment] opens quick add filled in from a payment, for the user to save themselves. */
@@ -63,39 +65,39 @@ fun RecurringRoute(onBack: () -> Unit, onAddPayment: (Long) -> Unit, viewModel: 
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
-                Text("Recurring payments", style = BtTheme.type.titleLarge, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                BtIconButton(Icons.Rounded.Add, "New payment", viewModel::newPayment)
+                BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.recurring_back), onBack)
+                Text(stringResource(R.string.recurring_payments), style = BtTheme.type.titleLarge, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                BtIconButton(Icons.Rounded.Add, stringResource(R.string.recurring_new_payment), viewModel::newPayment)
             }
         }
         if (!state.loading && state.payments.isEmpty()) {
             item {
                 Text(
-                    "Add subscriptions, rent or loan payments. You get a reminder if one isn't in your list by its date, ready to log with a tap.",
+                    stringResource(R.string.recurring_hint),
                     style = BtTheme.type.body,
                     color = c.textMuted,
                     modifier = Modifier.padding(4.dp),
                 )
             }
-            item { PrimaryButton("Add a payment", viewModel::newPayment) }
+            item { PrimaryButton(stringResource(R.string.recurring_add_a_payment), viewModel::newPayment) }
         }
         if (state.payments.isNotEmpty()) {
             item {
                 val count = state.payments.size
                 Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Overline(if (count == 1) "About a month · 1 payment" else "About a month · $count payments")
+                    Overline(pluralStringResource(R.plurals.recurring_about_a_month, count, count))
                     Text(MoneyFormat.format(state.monthlyCost), style = BtTheme.type.amountLarge, color = c.textPrimary)
                 }
             }
         }
         if (state.due.isNotEmpty()) {
-            item(key = "due") { Overline("Due", Modifier.padding(top = 8.dp, start = 4.dp)) }
+            item(key = "due") { Overline(stringResource(R.string.recurring_due), Modifier.padding(top = 8.dp, start = 4.dp)) }
             items(state.due, key = { "d${it.id}" }) { payment -> DueCard(payment, state, viewModel, onAddPayment) }
         }
         if (state.upcoming.isNotEmpty()) {
             item(key = "upcoming") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Overline("Upcoming", Modifier.padding(top = 8.dp, start = 4.dp))
+                    Overline(stringResource(R.string.recurring_upcoming), Modifier.padding(top = 8.dp, start = 4.dp))
                     BtCard {
                         Column {
                             state.upcoming.forEachIndexed { i, payment ->
@@ -124,8 +126,8 @@ private fun DueCard(payment: RecurringPayment, state: RecurringUiState, vm: Recu
         Column {
             PaymentRow(payment, state, Modifier.clickable { vm.edit(payment) })
             Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                BtChip("Skip", selected = false, onClick = { vm.skip(payment) })
-                BtChip("Add", selected = true, onClick = { onAddPayment(payment.id) })
+                BtChip(stringResource(R.string.recurring_skip), selected = false, onClick = { vm.skip(payment) })
+                BtChip(stringResource(R.string.recurring_add), selected = true, onClick = { onAddPayment(payment.id) })
             }
         }
     }

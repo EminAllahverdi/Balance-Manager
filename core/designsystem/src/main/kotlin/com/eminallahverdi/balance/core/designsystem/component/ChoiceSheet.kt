@@ -25,9 +25,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.eminallahverdi.balance.core.designsystem.R
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import kotlinx.coroutines.launch
@@ -78,6 +80,6 @@ fun OptionRow(text: String, selected: Boolean, onClick: () -> Unit, caption: Str
             Text(text, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (caption != null) Text(caption, style = BtTheme.type.caption, color = c.textSecondary)
         }
-        if (selected) Icon(Icons.Rounded.Check, "Selected", tint = c.accentText, modifier = Modifier.size(20.dp))
+        if (selected) Icon(Icons.Rounded.Check, stringResource(R.string.ds_selected), tint = c.accentText, modifier = Modifier.size(20.dp))
     }
 }

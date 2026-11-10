@@ -8,6 +8,8 @@ import com.eminallahverdi.balance.core.backup.BackupTooNewException
 import com.eminallahverdi.balance.core.backup.DriveAccess
 import com.eminallahverdi.balance.core.backup.DriveAuthorization
 import com.eminallahverdi.balance.core.backup.DriveBackups
+import com.eminallahverdi.balance.core.common.UiText
+import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.datastore.BackupProblem
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.AppEnvironment
@@ -28,7 +30,7 @@ data class BackupUiState(
     val useMobileData: Boolean = false,
     val lastBackupAt: Long? = null,
     val problem: BackupProblem? = null,
-    val message: String? = null,
+    val message: UiText? = null,
     val consent: IntentSender? = null,
     /** Open while this isn't null: what can be restored from this account. */
     val backups: List<DriveBackup>? = null,
@@ -83,19 +85,19 @@ class BackupViewModel @Inject constructor(
 
     fun restore(backup: DriveBackup) {
         val access = token ?: return
-        session.update { it.copy(message = "Restoring…") }
+        session.update { it.copy(message = uiText(R.string.settings_restoring)) }
         viewModelScope.launch {
             runCatching { backups.stageRestore(access, backup) }
                 .onSuccess { session.update { it.copy(restartNeeded = true) } }
                 .onFailure { failure ->
-                    val message = if (failure is BackupTooNewException) "Update the app to restore this backup" else "Couldn't restore that backup"
+                    val message = uiText(if (failure is BackupTooNewException) R.string.settings_update_to_restore else R.string.settings_couldnt_restore)
                     session.update { it.copy(message = message) }
                 }
         }
     }
 
     private fun start(task: DriveTask) {
-        session.update { it.copy(message = "Connecting to Google…") }
+        session.update { it.copy(message = uiText(R.string.settings_connecting_google)) }
         viewModelScope.launch { continueWith(task, authorization.access()) }
     }
 
@@ -109,8 +111,8 @@ class BackupViewModel @Inject constructor(
                 waitingOnConsent = task
                 session.update { it.copy(consent = access.screen) }
             }
-            DriveAccess.NotSetUp -> session.update { it.copy(message = "Google Drive isn't set up for this version of the app") }
-            DriveAccess.Unavailable -> session.update { it.copy(message = "Couldn't reach Google") }
+            DriveAccess.NotSetUp -> session.update { it.copy(message = uiText(R.string.settings_drive_not_set_up)) }
+            DriveAccess.Unavailable -> session.update { it.copy(message = uiText(R.string.settings_couldnt_reach_google)) }
         }
     }
 
@@ -123,16 +125,16 @@ class BackupViewModel @Inject constructor(
             DriveTask.BACK_UP -> sendBackup()
             DriveTask.LIST_BACKUPS -> runCatching { backups.list(access) }
                 .onSuccess { found -> session.update { it.copy(message = null, backups = found) } }
-                .onFailure { session.update { it.copy(message = "Couldn't reach Google Drive") } }
+                .onFailure { session.update { it.copy(message = uiText(R.string.settings_couldnt_reach_drive)) } }
             DriveTask.CONNECT -> runCatching { backups.list(access) }
                 .onSuccess { found -> session.update { it.copy(message = null, existingBackups = found.size) } }
-                .onFailure { session.update { it.copy(message = "Couldn't reach Google Drive") } }
+                .onFailure { session.update { it.copy(message = uiText(R.string.settings_couldnt_reach_drive)) } }
         }
     }
 
     private suspend fun sendBackup() {
-        session.update { it.copy(message = "Backing up…") }
+        session.update { it.copy(message = uiText(R.string.settings_backing_up)) }
         val sent = backups.backUp()
-        session.update { it.copy(message = if (sent) null else "The backup didn't go through") }
+        session.update { it.copy(message = if (sent) null else uiText(R.string.settings_backup_failed)) }
     }
 }

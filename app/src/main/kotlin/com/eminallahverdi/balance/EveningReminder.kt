@@ -12,6 +12,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.eminallahverdi.balance.core.common.ApplicationScope
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.common.bookDailyWork
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
@@ -96,10 +97,11 @@ class EveningReminderWorker(context: Context, params: WorkerParameters) : Corout
 /** Never adds anything: the notification only opens quick add, for the user to log it themselves. */
 @SuppressLint("MissingPermission") // areNotificationsEnabled covers it.
 private fun showReminder(context: Context) {
+    val texts = Language.wrap(context)
     val manager = NotificationManagerCompat.from(context)
     if (!manager.areNotificationsEnabled()) return
     manager.createNotificationChannel(
-        NotificationChannelCompat.Builder(CHANNEL, NotificationManagerCompat.IMPORTANCE_DEFAULT).setName("Evening reminder").build(),
+        NotificationChannelCompat.Builder(CHANNEL, NotificationManagerCompat.IMPORTANCE_DEFAULT).setName(texts.getString(R.string.app_evening_reminder)).build(),
     )
     val add = Intent(context, QuickAddActivity::class.java)
         .setAction(Intent.ACTION_VIEW)
@@ -107,8 +109,8 @@ private fun showReminder(context: Context) {
         .putExtra(QuickAddViewModel.ARG_KIND, TransactionKind.EXPENSE.name)
     val notification = NotificationCompat.Builder(context, CHANNEL)
         .setSmallIcon(R.drawable.ic_notification_evening)
-        .setContentTitle("Nothing added today")
-        .setContentText("Tap to add what you spent")
+        .setContentTitle(texts.getString(R.string.app_nothing_added_today))
+        .setContentText(texts.getString(R.string.app_tap_to_add_spent))
         .setContentIntent(PendingIntent.getActivity(context, 0, add, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
         .setAutoCancel(true)
         .build()

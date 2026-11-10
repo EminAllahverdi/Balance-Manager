@@ -3,12 +3,16 @@ package com.eminallahverdi.balance.feature.onboarding
 import android.content.Context
 import android.net.Uri
 import android.os.Build
+import androidx.annotation.StringRes
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.backup.DriveBackups
 import com.eminallahverdi.balance.core.common.ApplicationScope
 import com.eminallahverdi.balance.core.common.IoDispatcher
+import com.eminallahverdi.balance.core.common.Language
+import com.eminallahverdi.balance.core.common.UiText
+import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.data.FirstRun
 import com.eminallahverdi.balance.core.data.StarterTemplate
 import com.eminallahverdi.balance.core.datastore.InstallPreferences
@@ -32,16 +36,20 @@ import kotlinx.coroutines.withContext
 
 private const val FAMILY_COLOUR = 0xFF8A94A3
 private const val OWNER_COLOUR = 0xFF5B9DFF
+private const val FAMILY = "family"
+
+/** The shared person's name in each of the starter template's languages, keyed by whether it's Azerbaijani. */
+private val FAMILY_NAMES = mapOf(false to "Family", true to "Ailə")
 
 enum class OnboardingStep { WELCOME, PEOPLE, CATEGORIES, BACKUP, REMINDERS, IMPORT }
 
-enum class CategoryTemplate(val label: String, val caption: String) {
-    HOUSEHOLD("Household", "16 categories with sub-categories, for a family"),
-    SIMPLE("Simple", "8 categories, to start small");
+enum class CategoryTemplate(@StringRes val label: Int, @StringRes val caption: Int) {
+    HOUSEHOLD(R.string.onboarding_template_household, R.string.onboarding_template_household_caption),
+    SIMPLE(R.string.onboarding_template_simple, R.string.onboarding_template_simple_caption);
 
-    fun build(ownerName: String): StarterTemplate = when (this) {
-        HOUSEHOLD -> StarterTemplate.household(ownerName)
-        SIMPLE -> StarterTemplate.simple(ownerName)
+    fun build(ownerName: String, azerbaijani: Boolean = false): StarterTemplate = when (this) {
+        HOUSEHOLD -> StarterTemplate.household(ownerName, azerbaijani)
+        SIMPLE -> StarterTemplate.simple(ownerName, azerbaijani)
     }
 }
 
@@ -58,7 +66,9 @@ data class OnboardingUiState(
     val asksNotifications: Boolean = false,
     val reminderMinute: Int = 21 * 60,
     val ownerName: String = "",
-    val others: List<PersonDraft> = listOf(PersonDraft("family", "Family", FAMILY_COLOUR)),
+    /** The starter template's language: the one showing, which can change on Welcome. */
+    val azerbaijani: Boolean = false,
+    val others: List<PersonDraft> = listOf(PersonDraft(FAMILY, FAMILY_NAMES.getValue(false), FAMILY_COLOUR)),
     val editor: PersonEditor? = null,
     val template: CategoryTemplate = CategoryTemplate.HOUSEHOLD,
     val dropped: Set<String> = emptySet(),
@@ -67,7 +77,7 @@ data class OnboardingUiState(
     val backUp: Boolean = false,
     val import: CsvImport? = null,
     val preview: CsvPreview? = null,
-    val message: String? = null,
+    val message: UiText? = null,
     val saving: Boolean = false,
     val finished: Boolean = false,
 ) {
@@ -81,28 +91,35 @@ data class OnboardingUiState(
             OnboardingStep.IMPORT.takeIf { importing },
         )
 
-    val progress: String get() = "${steps.indexOf(step) + 1} of ${steps.size}"
+    /** Which numbered step this is, and how many there are. */
+    val progress: Pair<Int, Int> get() = steps.indexOf(step) + 1 to steps.size
     val next: OnboardingStep? get() = steps.getOrNull(steps.indexOf(step) + 1)
     val previous: OnboardingStep get() = steps.getOrNull(steps.indexOf(step) - 1) ?: OnboardingStep.WELCOME
 
     val shownCategories: List<StarterTemplate.TemplateCategory>
-        get() = template.build(ownerName).categories.filter { it.type == if (showingIncome) CategoryType.INCOME else CategoryType.EXPENSE }
+        get() = template.build(ownerName, azerbaijani).categories.filter { it.type == if (showingIncome) CategoryType.INCOME else CategoryType.EXPENSE }
 
     /** A household with Family gone hands its categories to the owner, and what was left out stays out. */
     fun finalTemplate(): StarterTemplate =
-        template.build(ownerName.trim())
+        template.build(ownerName.trim(), azerbaijani)
             .withPeople(others.mapIndexed { i, person -> StarterTemplate.TemplatePerson(person.key, person.name.trim(), person.color, i + 1) })
             .without(dropped)
 
     /** Quick add needs a category to save to, so the last one of each kind stays. */
     fun toggled(category: StarterTemplate.TemplateCategory): OnboardingUiState {
-        val keptOfKind = template.build(ownerName).categories.count { it.type == category.type && it.name !in dropped }
+        val keptOfKind = template.build(ownerName, azerbaijani).categories.count { it.type == category.type && it.key !in dropped }
         return when {
-            category.name in dropped -> copy(dropped = dropped - category.name)
-            keptOfKind > 1 -> copy(dropped = dropped + category.name)
+            category.key in dropped -> copy(dropped = dropped - category.key)
+            keptOfKind > 1 -> copy(dropped = dropped + category.key)
             else -> this
         }
     }
+
+    /** In [azerbaijani], with Family renamed to match unless the user has named it themselves. */
+    fun inLanguage(azerbaijani: Boolean): OnboardingUiState = copy(
+        azerbaijani = azerbaijani,
+        others = others.map { if (it.key == FAMILY && it.name in FAMILY_NAMES.values) it.copy(name = FAMILY_NAMES.getValue(azerbaijani)) else it },
+    )
 
     /** The first colour nobody has yet, so people can be told apart without choosing. */
     fun nextColour(): Long = PersonPalette.firstOrNull { c -> c != OWNER_COLOUR && others.none { it.color == c } } ?: PersonPalette.first()
@@ -124,6 +141,8 @@ class OnboardingViewModel @Inject constructor(
     private var addedPeople = 0
 
     init {
+        // The template follows the language showing, which Welcome can change before anything is chosen.
+        viewModelScope.launch { Language.flow.collect { _state.update { it.inLanguage(Language.isAzerbaijani) } } }
         viewModelScope.launch {
             val allowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
             _state.update {
@@ -184,9 +203,9 @@ class OnboardingViewModel @Inject constructor(
             _state.update { s ->
                 val template = s.finalTemplate()
                 when {
-                    text == null -> s.copy(message = "Couldn't read that file")
-                    import == null -> s.copy(message = "This file needs a Date and an Amount column")
-                    import.entries.isEmpty() -> s.copy(message = "There are no entries in this file")
+                    text == null -> s.copy(message = uiText(R.string.onboarding_couldnt_read_file))
+                    import == null -> s.copy(message = uiText(R.string.onboarding_needs_date_amount))
+                    import.entries.isEmpty() -> s.copy(message = uiText(R.string.onboarding_no_entries_in_file))
                     else -> s.copy(message = null, import = import, preview = import.preview(template.accounts.map { it.name }, template.categoryNames))
                 }
             }
@@ -208,7 +227,7 @@ class OnboardingViewModel @Inject constructor(
                     if (s.backUp) appScope.launch { backups.backUp() }
                     _state.update { it.copy(finished = true) }
                 }
-                .onFailure { _state.update { it.copy(saving = false, message = "Couldn't finish setting up. Try again") } }
+                .onFailure { _state.update { it.copy(saving = false, message = uiText(R.string.onboarding_couldnt_finish)) } }
         }
     }
 }

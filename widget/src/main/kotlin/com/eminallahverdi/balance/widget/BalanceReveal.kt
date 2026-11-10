@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.glance.appwidget.updateAll
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.common.askToUnlock
 import com.eminallahverdi.balance.core.common.canUnlockDevice
 import kotlin.time.Duration.Companion.seconds
@@ -49,6 +50,9 @@ class BalanceRevealReceiver : BroadcastReceiver() {
 
 /** The small fingerprint prompt a touch on the balance opens, over the home screen. */
 class WidgetUnlockActivity : FragmentActivity() {
+    // Starts in the language picked in Settings, so nothing shows in the phone's first.
+    override fun attachBaseContext(newBase: Context) = super.attachBaseContext(Language.wrap(newBase))
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (!canUnlockDevice()) {
@@ -59,7 +63,7 @@ class WidgetUnlockActivity : FragmentActivity() {
         }
         if (savedInstanceState == null) {
             askToUnlock(
-                title = "Show balance",
+                title = getString(R.string.widget_show_balance),
                 onUnlocked = {
                     sendBroadcast(Intent(this, BalanceRevealReceiver::class.java))
                     finish()

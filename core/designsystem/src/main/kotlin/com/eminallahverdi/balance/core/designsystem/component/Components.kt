@@ -157,10 +157,11 @@ fun SegmentedToggle(options: List<String>, selected: Int, onSelect: (Int) -> Uni
                     .clip(BtShapes.full)
                     .background(if (on) c.bgSurfaceHigh else Color.Transparent)
                     .clickable(role = Role.Tab) { onSelect(i) }
-                    .padding(horizontal = 12.dp, vertical = 7.dp),
+                    // Shared out evenly, a segment gives its label more of its room: longer words, like Azerbaijani ones, stay on one line.
+                    .padding(horizontal = if (fill) 4.dp else 12.dp, vertical = 7.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(label, style = BtTheme.type.label, color = if (on) c.textPrimary else c.textMuted)
+                Text(label, style = BtTheme.type.label, color = if (on) c.textPrimary else c.textMuted, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
             }
         }
     }

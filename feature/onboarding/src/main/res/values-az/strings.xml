@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="onboarding_reminders_are_on">Xatırlatmalar aktivdir</string>
+    <string name="onboarding_android_needs_ok">Cibimin onları bu telefonda göstərməsi üçün Android sizin razılığınızı istəyir.</string>
+    <string name="onboarding_cibim_icon">Cibim ikonu</string>
+    <string name="onboarding_tagline">Ailənizin bütün xərc və gəlirləri, saniyələr içində qeyd olunur.</string>
+    <string name="onboarding_get_started">Başla</string>
+    <string name="onboarding_restore_drive">Google Drive-dan bərpa et</string>
+    <string name="onboarding_restore_caption">Tətbiqi yenidən quranda və ya yeni telefonda</string>
+    <string name="onboarding_import_csv">CSV faylını idxal et</string>
+    <string name="onboarding_import_csv_caption">Cədvəldən və ya başqa tətbiqdən əməliyyatlar</string>
+    <string name="onboarding_back_up_drive">Google Drive-da nüsxə saxla</string>
+    <string name="onboarding_backup_explained">Cibim hər gecə Google Drive-da yalnız özünün aça bildiyi gizli qovluğa nüsxə saxlayır. Telefon itsə və ya dəyişsə, hər şey oradan geri qayıdacaq.</string>
+    <string name="onboarding_has_backups">Bu Google hesabında artıq nüsxələr var. Birindən davam etmək üçün onu bərpa edin.</string>
+    <string name="onboarding_restore_a_backup">Nüsxəni bərpa et</string>
+    <string name="onboarding_start_fresh">Yenidən başla və nüsxə saxla</string>
+    <string name="onboarding_turn_on_backups">Nüsxələri aktiv et</string>
+    <string name="onboarding_not_now">İndi yox</string>
+    <string name="onboarding_reminders">Xatırlatmalar</string>
+    <string name="onboarding_reminders_explained">Həmin gün heç nə əlavə edilməyibsə və ya müntəzəm ödənişin vaxtı çatıbsa, Cibim xatırladacaq. Xatırlatma vaxtı: %1$s.</string>
+    <string name="onboarding_allow_notifications">Bildirişlərə icazə ver</string>
+    <string name="onboarding_csv_needs">Faylda Date (tarix) və Amount (məbləğ) sütunları olmalıdır. Account, Category, For whom, Merchant və Note varsa, onlardan da istifadə olunur. Nə idxal olunacağını əvvəlcədən görəcəksiniz.</string>
+    <string name="onboarding_choose_file">Fayl seç</string>
+    <string name="onboarding_skip">Keç</string>
+    <string name="onboarding_import_action">İdxal et</string>
+    <string name="onboarding_accounts_list">Hesablar: %1$s</string>
+    <string name="onboarding_new_categories">Yeni kateqoriyalar: %1$s</string>
+    <string name="onboarding_entries_in_year">%2$d: %1$s</string>
+    <string name="onboarding_entries_years">%1$s, %2$d–%3$d</string>
+    <string name="onboarding_step_of">%1$d / %2$d</string>
+    <string name="onboarding_back">Geri</string>
+    <string name="onboarding_who_is_it_for">Kimin üçündür?</string>
+    <string name="onboarding_who_explained">Hər xərc kimin üçünsə olur, beləcə pulun kimə getdiyini görəcəksiniz.</string>
+    <string name="onboarding_your_name">Adınız</string>
+    <string name="onboarding_others">Digərləri</string>
+    <string name="onboarding_add_a_person">Şəxs əlavə et</string>
+    <string name="onboarding_continue_">Davam et</string>
+    <string name="onboarding_shared_things">Ərzaq kimi ümumi xərclər üçün</string>
+    <string name="onboarding_new_person">Yeni şəxs</string>
+    <string name="onboarding_name">Ad</string>
+    <string name="onboarding_colour">Rəng</string>
+    <string name="onboarding_save">Yadda saxla</string>
+    <string name="onboarding_your_categories">Kateqoriyalarınız</string>
+    <string name="onboarding_categories_explained">Çıxarmaq üçün birinə toxunun. Bunların hamısını sonra dəyişə bilərsiniz.</string>
+    <string name="onboarding_template">Şablon</string>
+    <string name="onboarding_expense">Xərc</string>
+    <string name="onboarding_income">Gəlir</string>
+    <string name="onboarding_category_template">Kateqoriya şablonu</string>
+    <string name="onboarding_template_household">Ailəvi</string>
+    <string name="onboarding_template_household_caption">Alt kateqoriyalı 16 kateqoriya, ailə üçün</string>
+    <string name="onboarding_template_simple">Sadə</string>
+    <string name="onboarding_template_simple_caption">8 kateqoriya, sadə başlanğıc üçün</string>
+    <string name="onboarding_couldnt_read_file">Faylı oxumaq alınmadı</string>
+    <string name="onboarding_needs_date_amount">Bu faylda Date və Amount sütunları olmalıdır</string>
+    <string name="onboarding_no_entries_in_file">Bu faylda əməliyyat yoxdur</string>
+    <string name="onboarding_couldnt_finish">Quraşdırmanı bitirmək alınmadı. Yenidən cəhd edin</string>
+    <plurals name="onboarding_entries">
+        <item quantity="one">%d əməliyyat</item>
+        <item quantity="other">%d əməliyyat</item>
+    </plurals>
+    <plurals name="onboarding_lines_unreadable">
+        <item quantity="one">%d sətir oxunmur və kənarda qalacaq</item>
+        <item quantity="other">%d sətir oxunmur və kənarda qalacaq</item>
+    </plurals>
+</resources>

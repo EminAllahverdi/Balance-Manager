@@ -1,5 +1,7 @@
 package com.eminallahverdi.balance.feature.insights
 
+import com.eminallahverdi.balance.core.common.rawText
+import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.InsightPeriod
 import com.eminallahverdi.balance.core.model.Money
@@ -19,15 +21,15 @@ class InsightLabelsTest {
     }
 
     @Test fun `periods read naturally in a sentence`() {
-        assertThat(InsightPeriod.WEEK.periodName(week)).isEqualTo("week of 26 Oct")
-        assertThat(InsightPeriod.MONTH.periodName(october)).isEqualTo("October")
-        assertThat(InsightPeriod.YEAR.periodName(year)).isEqualTo("2025")
+        assertThat(InsightPeriod.WEEK.periodName(week)).isEqualTo(uiText(R.string.insights_week_of, "26 Oct"))
+        assertThat(InsightPeriod.MONTH.periodName(october)).isEqualTo(rawText("October"))
+        assertThat(InsightPeriod.YEAR.periodName(year)).isEqualTo(rawText("2025"))
     }
 
     @Test fun `saved only says this period when it is the current one`() {
-        assertThat(InsightPeriod.MONTH.savedLabel(isCurrent = true)).isEqualTo("Saved this month")
-        assertThat(InsightPeriod.YEAR.savedLabel(isCurrent = true)).isEqualTo("Saved this year")
-        assertThat(InsightPeriod.MONTH.savedLabel(isCurrent = false)).isEqualTo("Saved")
+        assertThat(InsightPeriod.MONTH.savedLabel(isCurrent = true)).isEqualTo(R.string.insights_saved_this_month)
+        assertThat(InsightPeriod.YEAR.savedLabel(isCurrent = true)).isEqualTo(R.string.insights_saved_this_year)
+        assertThat(InsightPeriod.MONTH.savedLabel(isCurrent = false)).isEqualTo(R.string.insights_saved)
     }
 
     @Test fun `changes carry their sign`() {
@@ -36,7 +38,7 @@ class InsightLabelsTest {
     }
 
     @Test fun `comparison handles no change`() {
-        assertThat(comparison(Money(-211000), "September")).isEqualTo("−₼2,110.00 vs September")
-        assertThat(comparison(Money.ZERO, "September")).isEqualTo("Same as September")
+        assertThat(comparison(Money(-211000), rawText("September"))).isEqualTo(uiText(R.string.insights_versus, "−₼2,110.00", rawText("September")))
+        assertThat(comparison(Money.ZERO, rawText("September"))).isEqualTo(uiText(R.string.insights_same_as, rawText("September")))
     }
 }

@@ -1,11 +1,13 @@
 package com.eminallahverdi.balance
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.data.FirstRun
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.SpokenLanguage
@@ -18,6 +20,9 @@ import kotlinx.coroutines.launch
 /** Translucent, like quick add: listens over the home screen, then hands what was said to quick add to check and save. */
 @AndroidEntryPoint
 class VoiceEntryActivity : ComponentActivity() {
+    // Starts in the language picked in Settings, so nothing shows in the phone's first.
+    override fun attachBaseContext(newBase: Context) = super.attachBaseContext(Language.wrap(newBase))
+
     @Inject lateinit var prefs: UserPreferencesRepository
     @Inject lateinit var firstRun: FirstRun
 

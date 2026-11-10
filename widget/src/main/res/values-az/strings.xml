@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_balance">Balans</string>
+    <string name="widget_balance_description">Ayarlarda seçdiyiniz kimi göstərilən balans və xərc əlavə etmək üçün +</string>
+    <string name="widget_balance_voice">Balans və səs</string>
+    <string name="widget_balance_voice_description">Balans, səslə əlavə etmək üçün mikrofon və əl ilə əlavə etmək üçün +</string>
+    <string name="widget_quick_actions">Sürətli əməliyyatlar</string>
+    <string name="widget_quick_actions_description">Xərc, gəlir, köçürmə və ya borc əlavə edin</string>
+    <string name="widget_today">Bu gün</string>
+    <string name="widget_today_description">Bu günün xərcləri və bir toxunuşla açılan kateqoriyalar</string>
+    <string name="widget_to_confirm">Təsdiq üçün</string>
+    <string name="widget_to_confirm_description">Təsdiqinizi gözləyən bank ödənişləri</string>
+    <string name="widget_show_balance">Balansı göstər</string>
+    <string name="widget_balance_caps">BALANS</string>
+    <string name="widget_add_by_voice">Səslə əlavə et</string>
+    <string name="widget_add_expense">Xərc əlavə et</string>
+    <string name="widget_add_expense_waiting">Xərc əlavə et, bankdan %1$d ödəniş gözləyir</string>
+    <string name="widget_hidden">Gizlidir</string>
+    <string name="widget_hides_in">%1$d san. sonra gizlənəcək</string>
+    <string name="widget_tap_to_show">Görmək üçün toxunun</string>
+    <string name="widget_touch_to_show">Barmaq izi ilə baxın</string>
+    <string name="widget_expense">Xərc</string>
+    <string name="widget_income">Gəlir</string>
+    <string name="widget_transfer">Köçürmə</string>
+    <string name="widget_debt">Borc</string>
+    <string name="widget_to_confirm_caps">TƏSDİQ ÜÇÜN</string>
+    <plurals name="widget_payments">
+        <item quantity="one">ödəniş</item>
+        <item quantity="other">ödəniş</item>
+    </plurals>
+    <plurals name="widget_spent_entries">
+        <item quantity="one">xərclənib · %d əməliyyat</item>
+        <item quantity="other">xərclənib · %d əməliyyat</item>
+    </plurals>
+</resources>

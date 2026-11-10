@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="insights_insights">Təhlil</string>
+    <string name="insights_week">Həftə</string>
+    <string name="insights_month">Ay</string>
+    <string name="insights_year">İl</string>
+    <string name="insights_biggest_changes">Ən böyük dəyişikliklər</string>
+    <string name="insights_top_n">İlk %1$d</string>
+    <string name="insights_all_categories">Bütün kateqoriyalar</string>
+    <string name="insights_spending_by_person">Şəxslər üzrə xərclər · %1$s</string>
+    <string name="insights_daily_average">Gündəlik orta</string>
+    <string name="insights_income_minus_spending">Gəlir − xərc</string>
+    <string name="insights_groceries">Ərzaq</string>
+    <string name="insights_groceries_caption">Çeklərə görə nəyə xərcləndiyi</string>
+    <string name="insights_week_of">%1$s həftəsi</string>
+    <string name="insights_saved">Qənaət</string>
+    <string name="insights_saved_this_week">Bu həftə qənaət</string>
+    <string name="insights_saved_this_month">Bu ay qənaət</string>
+    <string name="insights_saved_this_year">Bu il qənaət</string>
+    <string name="insights_same_as">%1$s ilə eyni</string>
+    <string name="insights_versus">%2$s ilə müqayisədə %1$s</string>
+    <plurals name="insights_days">
+        <item quantity="one">%d gün</item>
+        <item quantity="other">%d gün</item>
+    </plurals>
+</resources>

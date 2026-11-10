@@ -76,21 +76,21 @@ private fun BalanceVoiceContent(state: BalanceWidgetState, waiting: Int) {
     WidgetSurface(c, onClick = state.onTap(context)) {
         Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             Column(GlanceModifier.defaultWeight().padding(start = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("BALANCE", style = widgetText(c.textMuted, 11.sp, FontWeight.Bold))
+                Text(widgetString(R.string.widget_balance_caps), style = widgetText(c.textMuted, 11.sp, FontWeight.Bold))
                 Text(state.amount, style = widgetText(c.textPrimary, amountTextSize(state.amount, room, context.resources.configuration.fontScale)), maxLines = 1)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (!countingDown) {
                         StatusIcon(state)
                         Spacer(GlanceModifier.width(4.dp))
                     }
-                    Text(state.caption, style = widgetText(if (countingDown) c.accentText else c.textSecondary, 12.sp), maxLines = 1)
+                    Text(state.caption.text(), style = widgetText(if (countingDown) c.accentText else c.textSecondary, 12.sp), maxLines = 1)
                 }
             }
             Spacer(GlanceModifier.width(EDGE))
-            Key(Icons.Rounded.Mic, "Add by voice", c.accentOn, c.accentFill, voiceAction(context))
+            Key(Icons.Rounded.Mic, widgetString(R.string.widget_add_by_voice), c.accentOn, c.accentFill, voiceAction(context))
             Spacer(GlanceModifier.width(KEY_GAP))
             // The count says the bank has sent something To confirm holds: + opens with it on top.
-            Key(Icons.Rounded.Add, if (waiting > 0) "Add expense, $waiting from your bank" else "Add expense", c.accentText, c.bgSurfaceHigh, quickAddAction(context, TransactionKind.EXPENSE), badge = waiting, badgeColors = c)
+            Key(Icons.Rounded.Add, if (waiting > 0) widgetString(R.string.widget_add_expense_waiting, waiting) else widgetString(R.string.widget_add_expense), c.accentText, c.bgSurfaceHigh, quickAddAction(context, TransactionKind.EXPENSE), badge = waiting, badgeColors = c)
             Spacer(GlanceModifier.width(EDGE))
         }
     }

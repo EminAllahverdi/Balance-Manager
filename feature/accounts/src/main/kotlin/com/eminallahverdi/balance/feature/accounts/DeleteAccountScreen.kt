@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
 import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PrimaryButton
+import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.Account
@@ -70,8 +72,8 @@ fun DeleteAccountRoute(onBack: () -> Unit, onOpen: (Long) -> Unit, viewModel: De
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
-            Text("Delete ${state.account?.name.orEmpty()}", style = BtTheme.type.titleLarge, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.accounts_back), onBack)
+            Text(stringResource(R.string.accounts_delete_named, state.account?.name.orEmpty()), style = BtTheme.type.titleLarge, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
@@ -80,7 +82,7 @@ fun DeleteAccountRoute(onBack: () -> Unit, onOpen: (Long) -> Unit, viewModel: De
         ) {
             if (!state.loading) {
                 item(key = "intro") {
-                    Text(state.intro, style = BtTheme.type.body, color = c.textSecondary, modifier = Modifier.padding(horizontal = 4.dp))
+                    Text(state.intro.text(), style = BtTheme.type.body, color = c.textSecondary, modifier = Modifier.padding(horizontal = 4.dp))
                 }
             }
             if (state.payments.isNotEmpty()) item(key = "payments") { RecurringPayments(state.payments) }
@@ -89,20 +91,20 @@ fun DeleteAccountRoute(onBack: () -> Unit, onOpen: (Long) -> Unit, viewModel: De
         if (!state.loading) {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (state.isUnused) {
-                    PrimaryButton("Delete account", viewModel::deleteAccount)
+                    PrimaryButton(stringResource(R.string.accounts_delete_account), viewModel::deleteAccount)
                 } else {
-                    PrimaryButton("Move all to another account", { picking = true }, enabled = state.targets.isNotEmpty())
+                    PrimaryButton(stringResource(R.string.accounts_move_all), { picking = true }, enabled = state.targets.isNotEmpty())
                     Box(
                         Modifier.padding(top = 4.dp).heightIn(min = 48.dp).clip(BtShapes.full).clickable(role = Role.Button) { confirmingDelete = true }.padding(horizontal = 16.dp),
                         contentAlignment = Alignment.Center,
-                    ) { Text(state.deleteLabel, style = BtTheme.type.label, color = c.moneyExpense) }
+                    ) { Text(state.deleteLabel.text(), style = BtTheme.type.label, color = c.moneyExpense) }
                 }
             }
         }
     }
 
     if (picking) {
-        ChoiceSheet("Move to", onClose = { picking = false }) { choose ->
+        ChoiceSheet(stringResource(R.string.accounts_move_to), onClose = { picking = false }) { choose ->
             state.targets.forEach { account ->
                 OptionRow(text = account.name, selected = false, caption = account.type.label, onClick = { choose { target = account } })
             }
@@ -111,19 +113,19 @@ fun DeleteAccountRoute(onBack: () -> Unit, onOpen: (Long) -> Unit, viewModel: De
     target?.let { account ->
         AlertDialog(
             onDismissRequest = { target = null },
-            title = { Text(state.moveTitle(account)) },
-            text = { Text(state.moveWarning(account)) },
-            confirmButton = { TextButton(onClick = { target = null; viewModel.moveAll(account) }) { Text("Move") } },
-            dismissButton = { TextButton(onClick = { target = null }) { Text("Cancel") } },
+            title = { Text(state.moveTitle(account).text()) },
+            text = { Text(state.moveWarning(account).map { it.text() }.joinToString(" ")) },
+            confirmButton = { TextButton(onClick = { target = null; viewModel.moveAll(account) }) { Text(stringResource(R.string.accounts_move)) } },
+            dismissButton = { TextButton(onClick = { target = null }) { Text(stringResource(R.string.accounts_cancel)) } },
         )
     }
     if (confirmingDelete) {
         AlertDialog(
             onDismissRequest = { confirmingDelete = false },
-            title = { Text(state.deleteTitle) },
-            text = { Text(state.deleteWarning) },
-            confirmButton = { TextButton(onClick = { confirmingDelete = false; viewModel.deleteAccount() }) { Text("Delete", color = c.moneyExpense) } },
-            dismissButton = { TextButton(onClick = { confirmingDelete = false }) { Text("Cancel") } },
+            title = { Text(state.deleteTitle.text()) },
+            text = { Text(state.deleteWarning.map { it.text() }.joinToString(" ")) },
+            confirmButton = { TextButton(onClick = { confirmingDelete = false; viewModel.deleteAccount() }) { Text(stringResource(R.string.accounts_delete), color = c.moneyExpense) } },
+            dismissButton = { TextButton(onClick = { confirmingDelete = false }) { Text(stringResource(R.string.accounts_cancel)) } },
         )
     }
 }
@@ -132,7 +134,7 @@ fun DeleteAccountRoute(onBack: () -> Unit, onOpen: (Long) -> Unit, viewModel: De
 private fun RecurringPayments(payments: List<RecurringPayment>) {
     val c = BtTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Overline("Recurring payments", Modifier.padding(horizontal = 4.dp))
+        Overline(stringResource(R.string.accounts_recurring_payments), Modifier.padding(horizontal = 4.dp))
         BtCard {
             Column {
                 payments.forEachIndexed { i, payment ->

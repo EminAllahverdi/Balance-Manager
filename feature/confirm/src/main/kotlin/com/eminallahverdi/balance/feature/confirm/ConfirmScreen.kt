@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,7 @@ import com.eminallahverdi.balance.core.designsystem.component.BtSwitch
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
+import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.showHidden
@@ -69,9 +71,9 @@ fun ConfirmRoute(onBack: () -> Unit, onEdit: (Long) -> Unit, viewModel: ConfirmV
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
-                Text("To confirm", style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
-                if (state.waiting > 0) BtChip("${state.waiting} new", selected = false, onClick = {})
+                BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.confirm_back), onBack)
+                Text(stringResource(R.string.confirm_to_confirm), style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
+                if (state.waiting > 0) BtChip(stringResource(R.string.confirm_n_new, state.waiting), selected = false, onClick = {})
             }
         }
         item {
@@ -82,9 +84,9 @@ fun ConfirmRoute(onBack: () -> Unit, onEdit: (Long) -> Unit, viewModel: ConfirmV
         if (state.unread.isNotEmpty()) {
             item(key = "unread") {
                 Column(Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Overline("Not read")
+                    Overline(stringResource(R.string.confirm_not_read))
                     Text(
-                        "From your bank apps since Cibim last started, and kept only until it stops. Copy one to send it, with card digits and balances changed to X.",
+                        stringResource(R.string.confirm_not_read_hint),
                         style = BtTheme.type.caption,
                         color = c.textSecondary,
                     )
@@ -96,23 +98,21 @@ fun ConfirmRoute(onBack: () -> Unit, onEdit: (Long) -> Unit, viewModel: ConfirmV
     if (state.askingAutoConfirm) {
         AlertDialog(
             onDismissRequest = viewModel::declineAutoConfirm,
-            title = { Text("Add known merchants without asking?") },
+            title = { Text(stringResource(R.string.confirm_auto_confirm_q)) },
             text = {
-                Text(
-                    "Payments from merchants you've already confirmed will be added for you, with the same category, " +
-                        "person and account as last time. New merchants still wait here. You can turn this off at any time.",
-                )
+                Text(stringResource(R.string.confirm_auto_confirm_text))
             },
-            confirmButton = { TextButton(onClick = viewModel::acceptAutoConfirm) { Text("Turn on") } },
-            dismissButton = { TextButton(onClick = viewModel::declineAutoConfirm) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = viewModel::acceptAutoConfirm) { Text(stringResource(R.string.confirm_turn_on)) } },
+            dismissButton = { TextButton(onClick = viewModel::declineAutoConfirm) { Text(stringResource(R.string.confirm_cancel)) } },
         )
     }
 }
 
+@Composable
 private fun hint(state: ConfirmUiState): String = when {
-    !state.listening -> "Turn on Bank notifications in Settings, and payments from your bank apps will appear here, ready to add."
-    state.rows.isEmpty() -> "Nothing waiting. New payments from your bank apps will appear here, ready to add."
-    else -> "Read from your bank notifications. The category, person and account come from what you picked last time. Anything marked Suggested is a best guess, so check it first."
+    !state.listening -> stringResource(R.string.confirm_intro_off)
+    state.rows.isEmpty() -> stringResource(R.string.confirm_intro_empty)
+    else -> stringResource(R.string.confirm_intro_rows)
 }
 
 @Composable
@@ -144,10 +144,10 @@ private fun EntryCard(row: ConfirmRow, hideAmounts: Boolean, vm: ConfirmViewMode
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CategoryTile(tileCategory?.icon ?: if (row.isTransfer) "swap_horiz" else "notifications", tileCategory?.color ?: 0xFF8A94A3)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(row.title, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(row.title.text(), style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         row.person?.takeIf { row.category != null }?.let { PersonDot(it.color, 7.dp) }
-                        Text(row.caption, style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(row.caption.map { it.text() }.joinToString(" · "), style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
                 Text(
@@ -158,16 +158,16 @@ private fun EntryCard(row: ConfirmRow, hideAmounts: Boolean, vm: ConfirmViewMode
             }
             if (row.isWaiting) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CardButton("Edit", Icons.Rounded.Edit, false, { onEdit(entry.id) }, Modifier.weight(1f))
-                    CardButton("Skip", Icons.Rounded.Close, false, { vm.skip(entry.id) }, Modifier.weight(1f))
+                    CardButton(stringResource(R.string.confirm_edit), Icons.Rounded.Edit, false, { onEdit(entry.id) }, Modifier.weight(1f))
+                    CardButton(stringResource(R.string.confirm_skip), Icons.Rounded.Close, false, { vm.skip(entry.id) }, Modifier.weight(1f))
                     if (row.canConfirm) {
-                        CardButton("Confirm", Icons.Rounded.Check, true, { vm.confirm(entry.id) }, Modifier.weight(1.4f))
+                        CardButton(stringResource(R.string.confirm_confirm), Icons.Rounded.Check, true, { vm.confirm(entry.id) }, Modifier.weight(1.4f))
                     }
                 }
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(Icons.Rounded.CheckCircle, null, tint = c.moneyIncome, modifier = Modifier.size(18.dp))
-                    Text("Added", style = BtTheme.type.caption, color = c.textSecondary)
+                    Text(stringResource(R.string.confirm_added), style = BtTheme.type.caption, color = c.textSecondary)
                 }
             }
         }
@@ -189,7 +189,7 @@ private fun UnreadCard(unread: UnreadNotification) {
             }
             Text(unread.why, style = BtTheme.type.bodyStrong, color = c.textPrimary)
             Text(shown, style = BtTheme.type.caption.copy(fontFamily = FontFamily.Monospace), color = c.textSecondary)
-            CardButton("Copy", Icons.Rounded.ContentCopy, false, { copyReport(context, unread) }, Modifier.fillMaxWidth())
+            CardButton(stringResource(R.string.confirm_copy), Icons.Rounded.ContentCopy, false, { copyReport(context, unread) }, Modifier.fillMaxWidth())
         }
     }
 }
@@ -198,7 +198,7 @@ private fun copyReport(context: Context, unread: UnreadNotification) {
     val report = "Not read: ${unread.why}\nApp: ${unread.source}\nTitle: ${showHidden(unread.title)}\nText:\n${showHidden(unread.text)}"
     context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Bank notification", report))
     // Android 13 and up confirm a copy themselves.
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) Toast.makeText(context, context.getString(R.string.confirm_copied), Toast.LENGTH_SHORT).show()
 }
 
 @Composable
@@ -214,8 +214,8 @@ private fun AutoConfirmRow(enabled: Boolean, onChange: (Boolean) -> Unit) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(Icons.Rounded.Bolt, null, tint = c.accentText, modifier = Modifier.size(22.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Auto-confirm known merchants", style = BtTheme.type.bodyStrong, color = c.textPrimary)
-                Text("Add merchants you've confirmed before, without asking", style = BtTheme.type.caption, color = c.textSecondary)
+                Text(stringResource(R.string.confirm_auto_confirm), style = BtTheme.type.bodyStrong, color = c.textPrimary)
+                Text(stringResource(R.string.confirm_auto_confirm_caption), style = BtTheme.type.caption, color = c.textSecondary)
             }
             BtSwitch(enabled, onChange)
         }

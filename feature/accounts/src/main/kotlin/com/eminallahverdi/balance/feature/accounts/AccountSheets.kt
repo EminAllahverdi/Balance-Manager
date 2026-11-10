@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -86,11 +87,11 @@ internal fun AccountEditorSheet(editor: AccountsSheet.Editor, state: AccountsUiS
     val canRemove = !editor.isNew && state.canRemoveAccount
 
     AccountsSheetFrame(vm::closeSheet) {
-        EditorTitle(if (editor.isNew) "New account" else "Edit account", onRemove = if (canRemove) ({ confirmRemove = true }) else null) {
+        EditorTitle(if (editor.isNew) stringResource(R.string.accounts_new_account) else stringResource(R.string.accounts_edit_account), onRemove = if (canRemove) ({ confirmRemove = true }) else null) {
             CategoryTile(account.icon, account.color)
         }
-        BtTextField(account.name, "Name", { vm.update(account.copy(name = it)) })
-        EditorField("Type") {
+        BtTextField(account.name, stringResource(R.string.accounts_name), { vm.update(account.copy(name = it)) })
+        EditorField(stringResource(R.string.accounts_type)) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 AccountType.entries.forEach { type ->
                     BtChip(type.label, account.type == type, { vm.update(account.copy(type = type)) })
@@ -98,14 +99,14 @@ internal fun AccountEditorSheet(editor: AccountsSheet.Editor, state: AccountsUiS
             }
         }
         if (account.type != AccountType.CASH) {
-            EditorField("Card's last 4 digits") {
+            EditorField(stringResource(R.string.accounts_card_digits)) {
                 BtTextField(
                     value = account.cardEnding,
                     placeholder = "",
                     onChange = { vm.update(account.copy(cardEnding = it.filter(Char::isDigit).take(CARD_DIGITS))) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
-                Text("Bank notifications from this card go to this account.", style = BtTheme.type.caption, color = BtTheme.colors.textMuted)
+                Text(stringResource(R.string.accounts_card_digits_hint), style = BtTheme.type.caption, color = BtTheme.colors.textMuted)
             }
         }
         // How the account takes part: where expenses start, what Total counts, and what the balance widgets add up.
@@ -113,37 +114,37 @@ internal fun AccountEditorSheet(editor: AccountsSheet.Editor, state: AccountsUiS
             SwitchRow(
                 icon = if (editor.isDefault) Icons.Rounded.Star else Icons.Rounded.StarOutline,
                 iconTint = if (editor.isDefault) BtTheme.colors.accentText else BtTheme.colors.textSecondary,
-                title = "Default for expenses",
-                caption = if (editor.wasDefault) "New expenses start here. Make another account the default to change it" else "New expenses start on this account",
+                title = stringResource(R.string.accounts_default_for_expenses),
+                caption = if (editor.wasDefault) stringResource(R.string.accounts_default_on_caption) else stringResource(R.string.accounts_default_off_caption),
                 checked = editor.isDefault,
                 onChange = vm::setEditorDefault,
             )
             SwitchDivider()
-            SwitchRow(Icons.Rounded.Functions, BtTheme.colors.textSecondary, "Count in the total", "Part of Total here and the balance on Home", account.includeInTotal) {
+            SwitchRow(Icons.Rounded.Functions, BtTheme.colors.textSecondary, stringResource(R.string.accounts_count_in_total), stringResource(R.string.accounts_count_in_total_caption), account.includeInTotal) {
                 vm.update(account.copy(includeInTotal = it))
             }
             SwitchDivider()
-            SwitchRow(Icons.Rounded.Widgets, BtTheme.colors.textSecondary, "Show on the widget", "Added into the balance widgets", account.showOnWidget) {
+            SwitchRow(Icons.Rounded.Widgets, BtTheme.colors.textSecondary, stringResource(R.string.accounts_show_on_widget), stringResource(R.string.accounts_show_on_widget_caption), account.showOnWidget) {
                 vm.update(account.copy(showOnWidget = it))
             }
         }
-        EditorField("Icon") {
+        EditorField(stringResource(R.string.accounts_icon)) {
             IconPicker(account.color, account.icon, { vm.update(account.copy(icon = it)) }, keys = ACCOUNT_ICONS)
         }
-        EditorField("Colour") {
+        EditorField(stringResource(R.string.accounts_colour)) {
             ColourPicker(CategoryPalette, account.color, icon = account.icon) { vm.update(account.copy(color = it)) }
         }
-        PrimaryButton("Save", vm::saveEditor, enabled = account.name.isNotBlank())
+        PrimaryButton(stringResource(R.string.accounts_save), vm::saveEditor, enabled = account.name.isNotBlank())
     }
 
     // Outside the sheet: a dialog created inside it takes on the sheet's window and sticks to the bottom edge.
     if (confirmRemove) {
         AlertDialog(
             onDismissRequest = { confirmRemove = false },
-            title = { Text("Remove ${account.name}?") },
-            text = { Text("If it has transactions it's archived, so your history stays the same, and its balance leaves your total.") },
-            confirmButton = { TextButton(onClick = { confirmRemove = false; vm.removeEditing() }) { Text("Remove") } },
-            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.accounts_remove_named, account.name)) },
+            text = { Text(stringResource(R.string.accounts_remove_text)) },
+            confirmButton = { TextButton(onClick = { confirmRemove = false; vm.removeEditing() }) { Text(stringResource(R.string.accounts_remove)) } },
+            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.accounts_cancel)) } },
         )
     }
 }
@@ -176,15 +177,15 @@ internal fun AdjustBalanceSheet(draft: AccountsSheet.Adjust, state: AccountsUiSt
     val target = parseAmountInput(draft.amountText)
 
     AccountsSheetFrame(vm::closeSheet) {
-        Text("Adjust balance", style = BtTheme.type.titleMedium, color = c.textPrimary)
-        EditorField("Account") {
+        Text(stringResource(R.string.accounts_adjust_balance), style = BtTheme.type.titleMedium, color = c.textPrimary)
+        EditorField(stringResource(R.string.accounts_account)) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 state.balances.forEach { (account, _) ->
                     BtChip(account.name, account.id == draft.accountId, { vm.selectAdjustAccount(account.id) }, leading = { PersonDot(account.color) })
                 }
             }
         }
-        EditorField("Actual balance") {
+        EditorField(stringResource(R.string.accounts_actual_balance)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 BtTextField(
                     value = draft.amountText,
@@ -202,10 +203,10 @@ internal fun AdjustBalanceSheet(draft: AccountsSheet.Adjust, state: AccountsUiSt
         }
         val now = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(current, signed = true)
         val change = target?.takeUnless { state.hideAmounts }?.let { it - current }?.let { difference ->
-            (if (difference.minor > 0) " · Change +" else " · Change ") + MoneyFormat.format(difference, signed = true)
+            " · " + stringResource(R.string.accounts_change_by, (if (difference.minor > 0) "+" else "") + MoneyFormat.format(difference, signed = true))
         }.orEmpty()
-        Text("Now $now$change", style = BtTheme.type.caption, color = c.textSecondary)
-        Text("This adds a correction so the account matches your bank. It isn't counted as spending or income.", style = BtTheme.type.caption, color = c.textMuted)
-        PrimaryButton("Save balance", vm::saveAdjust, enabled = target != null)
+        Text(stringResource(R.string.accounts_now_balance, now) + change, style = BtTheme.type.caption, color = c.textSecondary)
+        Text(stringResource(R.string.accounts_adjust_hint), style = BtTheme.type.caption, color = c.textMuted)
+        PrimaryButton(stringResource(R.string.accounts_save_balance), vm::saveAdjust, enabled = target != null)
     }
 }

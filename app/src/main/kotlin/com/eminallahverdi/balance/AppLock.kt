@@ -27,11 +27,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.common.askToUnlock
 import com.eminallahverdi.balance.core.common.canUnlockDevice
+import com.eminallahverdi.balance.core.common.findActivity
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.designsystem.component.PrimaryButton
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
@@ -70,7 +72,7 @@ class AppLock @Inject constructor() {
  */
 @Composable
 fun AppLockGate(prefs: UserPreferencesRepository, lock: AppLock, content: @Composable () -> Unit) {
-    val activity = LocalContext.current as FragmentActivity
+    val activity = LocalContext.current.findActivity() as FragmentActivity
     val setting = remember(prefs) { prefs.preferences.map<_, Boolean?> { it.appLockEnabled } }
     val enabled by setting.collectAsStateWithLifecycle(null)
     LaunchedEffect(enabled) {
@@ -85,7 +87,8 @@ fun AppLockGate(prefs: UserPreferencesRepository, lock: AppLock, content: @Compo
             // Until the setting is read, so a locked app never flashes what's behind it.
             enabled == null -> Box(Modifier.fillMaxSize().background(BtTheme.colors.bgCanvas))
             enabled == true && lock.isLocked -> {
-                val unlock = { activity.askToUnlock("Unlock Cibim", lock::unlock) }
+                val title = stringResource(R.string.app_unlock_cibim)
+                val unlock = { activity.askToUnlock(title, lock::unlock) }
                 LaunchedEffect(Unit) { unlock() }
                 LockScreen(onUnlock = unlock, onBack = { activity.moveTaskToBack(true) })
             }
@@ -110,8 +113,8 @@ private fun LockScreen(onUnlock: () -> Unit, onBack: () -> Unit) {
         Box(Modifier.size(72.dp).clip(CircleShape).background(c.bgSurfaceRaised), contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.Lock, null, tint = c.textSecondary, modifier = Modifier.size(32.dp))
         }
-        Text("Cibim is locked", style = BtTheme.type.titleLarge, color = c.textPrimary)
-        Text("Use your fingerprint or your phone's PIN", style = BtTheme.type.body, color = c.textSecondary, modifier = Modifier.padding(bottom = 12.dp))
-        PrimaryButton("Unlock", onUnlock)
+        Text(stringResource(R.string.app_cibim_locked), style = BtTheme.type.titleLarge, color = c.textPrimary)
+        Text(stringResource(R.string.app_use_fingerprint_or_pin), style = BtTheme.type.body, color = c.textSecondary, modifier = Modifier.padding(bottom = 12.dp))
+        PrimaryButton(stringResource(R.string.app_unlock), onUnlock)
     }
 }

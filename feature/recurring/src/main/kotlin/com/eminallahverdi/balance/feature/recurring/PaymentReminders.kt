@@ -11,6 +11,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkerParameters
 import com.eminallahverdi.balance.core.common.ApplicationScope
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.common.bookDailyWork
 import com.eminallahverdi.balance.core.data.RecurringRepository
@@ -76,8 +77,9 @@ class PaymentReminderWorker(context: Context, params: WorkerParameters) : Corout
 private fun showReminder(context: Context, due: List<RecurringPayment>) {
     val manager = NotificationManagerCompat.from(context)
     if (due.isEmpty() || !manager.areNotificationsEnabled()) return
+    val texts = Language.wrap(context)
     manager.createNotificationChannel(
-        NotificationChannelCompat.Builder(CHANNEL, NotificationManagerCompat.IMPORTANCE_DEFAULT).setName("Payment reminders").build(),
+        NotificationChannelCompat.Builder(CHANNEL, NotificationManagerCompat.IMPORTANCE_DEFAULT).setName(texts.getString(R.string.recurring_payment_reminders)).build(),
     )
     val open = context.packageManager.getLaunchIntentForPackage(context.packageName)
         ?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -86,8 +88,8 @@ private fun showReminder(context: Context, due: List<RecurringPayment>) {
     val first = due.first()
     val notification = NotificationCompat.Builder(context, CHANNEL)
         .setSmallIcon(R.drawable.ic_notification_payment)
-        .setContentTitle(if (due.size == 1) "${first.name} is due" else "${due.size} payments due")
-        .setContentText(if (due.size == 1) "${MoneyFormat.format(first.amountDue)} · Tap to log it" else due.joinToString(", ") { it.name })
+        .setContentTitle(if (due.size == 1) texts.getString(R.string.recurring_payment_is_due, first.name) else texts.resources.getQuantityString(R.plurals.recurring_payments_due, due.size, due.size))
+        .setContentText(if (due.size == 1) texts.getString(R.string.recurring_tap_to_log, MoneyFormat.format(first.amountDue)) else due.joinToString(", ") { it.name })
         .setContentIntent(PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
         .setAutoCancel(true)
         .build()

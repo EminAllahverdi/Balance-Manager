@@ -6,6 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkerParameters
 import com.eminallahverdi.balance.core.common.ApplicationScope
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.common.bookDailyWork
 import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
@@ -58,6 +59,16 @@ class WidgetRefresher @Inject constructor(
                     QuickActionsWidget().updateAll(context)
                     TodayWidget().updateAll(context)
                 }
+        }
+        scope.launch {
+            // A language picked in Settings: every widget's words change, so all of them redraw, once.
+            Language.flow.drop(1).collect {
+                BalanceWidget().updateAll(context)
+                BalanceVoiceWidget().updateAll(context)
+                QuickActionsWidget().updateAll(context)
+                TodayWidget().updateAll(context)
+                ToConfirmWidget().updateAll(context)
+            }
         }
     }
 }

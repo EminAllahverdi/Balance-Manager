@@ -135,15 +135,15 @@ class TransactionCsvImportTest {
                 "oops,5.00,Card,,\n",
         )!!
         val preview = read.preview(accounts = listOf("Card", "Cash"), categories = listOf("Food"))
-        assertThat(preview.headline).isEqualTo("3 entries, 2021 to 2026")
+        assertThat(listOf(preview.entries, preview.firstYear, preview.lastYear)).containsExactly(3, 2021, 2026).inOrder()
         assertThat(preview.accounts).containsExactly("Card", "Cash", "Savings", "Wallet").inOrder()
         assertThat(preview.newCategories).containsExactly("Pets")
-        assertThat(preview.unreadableNote).isEqualTo("1 line can't be read and will be left out")
+        assertThat(preview.unreadable).isEqualTo(1)
     }
 
-    @Test fun `the headline reads naturally for a small file`() {
+    @Test fun `a small file counts one entry in one year`() {
         val preview = parseTransactionCsv("Date,Amount\n2026-11-01,5.00\n")!!.preview(emptyList(), emptyList())
-        assertThat(preview.headline).isEqualTo("1 entry in 2026")
-        assertThat(preview.unreadableNote).isNull()
+        assertThat(listOf(preview.entries, preview.firstYear, preview.lastYear)).containsExactly(1, 2026, 2026).inOrder()
+        assertThat(preview.unreadable).isEqualTo(0)
     }
 }

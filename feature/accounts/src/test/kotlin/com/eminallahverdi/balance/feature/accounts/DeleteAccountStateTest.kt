@@ -1,5 +1,7 @@
 package com.eminallahverdi.balance.feature.accounts
 
+import com.eminallahverdi.balance.core.common.pluralText
+import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.AccountType
 import com.eminallahverdi.balance.core.model.Money
@@ -43,56 +45,56 @@ class DeleteAccountStateTest {
 
     @Test fun `an account nothing uses says so, and a recurring payment counts as use`() {
         assertThat(state().isUnused).isTrue()
-        assertThat(state().intro).contains("Nothing uses this account")
+        assertThat(state().intro).isEqualTo(uiText(R.string.accounts_delete_intro_unused))
         assertThat(state(payments = listOf(payment("Rent"))).isUnused).isFalse()
         assertThat(state(rows = listOf(row(TransactionKind.EXPENSE, 5_00))).isUnused).isFalse()
     }
 
     @Test fun `it counts what's affected`() {
-        assertThat(state(rows = listOf(row(TransactionKind.EXPENSE, 5_00))).deleteLabel).isEqualTo("Delete account and 1 transaction")
+        assertThat(state(rows = listOf(row(TransactionKind.EXPENSE, 5_00))).deleteLabel).isEqualTo(pluralText(R.plurals.accounts_delete_account_and, 1, 1))
         val two = state(rows = listOf(row(TransactionKind.EXPENSE, 5_00), row(TransactionKind.INCOME, 6_00)))
-        assertThat(two.deleteTitle).isEqualTo("Delete Old card and 2 transactions?")
-        assertThat(two.intro).startsWith("2 transactions use this account.")
+        assertThat(two.deleteTitle).isEqualTo(pluralText(R.plurals.accounts_delete_title_rows, 2, 2, "Old card"))
+        assertThat(two.intro).isEqualTo(pluralText(R.plurals.accounts_delete_intro_rows, 2, 2))
     }
 
     @Test fun `moving says what the other account gains or loses`() {
         val gains = state(rows = listOf(row(TransactionKind.INCOME, 50_00)))
-        assertThat(gains.moveWarning(card)).isEqualTo("Card's balance changes by +₼50.00.")
+        assertThat(gains.moveWarning(card)).containsExactly(uiText(R.string.accounts_balance_changes_by, "Card", "+₼50.00"))
         val loses = state(rows = listOf(row(TransactionKind.EXPENSE, 7_70)))
-        assertThat(loses.moveWarning(card)).isEqualTo("Card's balance changes by −₼7.70.")
+        assertThat(loses.moveWarning(card)).containsExactly(uiText(R.string.accounts_balance_changes_by, "Card", "−₼7.70"))
     }
 
     @Test fun `moving an account that holds nothing changes nothing`() {
         val even = state(rows = listOf(row(TransactionKind.INCOME, 5_00), row(TransactionKind.EXPENSE, 5_00)))
-        assertThat(even.moveWarning(card)).isEqualTo("Nothing else changes.")
+        assertThat(even.moveWarning(card)).containsExactly(uiText(R.string.accounts_nothing_else_changes))
     }
 
     @Test fun `transfers with the target are called out because they go`() {
         val one = state(rows = listOf(row(TransactionKind.TRANSFER, 10_00, from = old, to = card)))
-        assertThat(one.moveWarning(card)).contains("1 transfer between Old card and Card goes")
-        assertThat(one.moveWarning(cash)).doesNotContain("transfer")
+        assertThat(one.moveWarning(card)).contains(pluralText(R.plurals.accounts_transfers_between_go, 1, 1, "Old card", "Card"))
+        assertThat(one.moveWarning(cash).map { it.id }).doesNotContain(R.plurals.accounts_transfers_between_go)
         val two = state(rows = listOf(row(TransactionKind.TRANSFER, 10_00, from = old, to = card), row(TransactionKind.TRANSFER, 10_00, from = card, to = old)))
-        assertThat(two.moveWarning(card)).isEqualTo("2 transfers between Old card and Card go, because they'd be from an account to itself.")
+        assertThat(two.moveWarning(card)).containsExactly(pluralText(R.plurals.accounts_transfers_between_go, 2, 2, "Old card", "Card"))
     }
 
     @Test fun `recurring payments are named when they move or go`() {
         val one = state(payments = listOf(payment("Rent")))
-        assertThat(one.moveWarning(card)).isEqualTo("The recurring payment Rent moves too.")
-        assertThat(one.deleteWarning).contains("The recurring payment Rent goes too.")
+        assertThat(one.moveWarning(card)).containsExactly(uiText(R.string.accounts_payment_moves_too, "Rent"))
+        assertThat(one.deleteWarning).contains(uiText(R.string.accounts_payment_goes_too, "Rent"))
         val two = state(payments = listOf(payment("Rent"), payment("Gym")))
-        assertThat(two.moveWarning(card)).isEqualTo("2 recurring payments move too.")
-        assertThat(two.deleteWarning).contains("2 recurring payments go too.")
+        assertThat(two.moveWarning(card)).containsExactly(pluralText(R.plurals.accounts_payments_move_too, 2, 2))
+        assertThat(two.deleteWarning).contains(pluralText(R.plurals.accounts_payments_go_too, 2, 2))
     }
 
     @Test fun `deleting warns about past months and balances that change`() {
         val warning = state(rows = listOf(row(TransactionKind.TRANSFER, 100_00, from = old, to = card))).deleteWarning
-        assertThat(warning).isEqualTo("Past months change. Card's balance changes by −₼100.00. This can't be undone.")
+        assertThat(warning).containsExactly(uiText(R.string.accounts_past_months_change), uiText(R.string.accounts_balance_changes_by, "Card", "−₼100.00"), uiText(R.string.accounts_cant_be_undone)).inOrder()
     }
 
     @Test fun `the eye hides balances but still says one changes`() {
         val hidden = state(rows = listOf(row(TransactionKind.TRANSFER, 100_00, from = old, to = card)), hideAmounts = true)
-        assertThat(hidden.deleteWarning).contains("Card's balance changes too.")
-        assertThat(hidden.deleteWarning).doesNotContain("₼")
-        assertThat(hidden.moveWarning(cash)).isEqualTo("Cash's balance changes too.")
+        assertThat(hidden.deleteWarning).contains(uiText(R.string.accounts_balance_changes_too, "Card"))
+        assertThat(hidden.deleteWarning.flatMap { it.args }.joinToString()).doesNotContain("₼")
+        assertThat(hidden.moveWarning(cash)).containsExactly(uiText(R.string.accounts_balance_changes_too, "Cash"))
     }
 }

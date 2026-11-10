@@ -3,6 +3,7 @@ package com.eminallahverdi.balance.feature.transaction
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.DebtPayment
@@ -634,7 +635,8 @@ internal fun QuickAddUiState.afterBack(): QuickAddUiState? = when {
 internal fun joinNames(names: List<String>): String = when (names.size) {
     0 -> ""
     1 -> names.single()
-    else -> names.dropLast(1).joinToString(", ") + " and " + names.last()
+    // "və" in Azerbaijani, which [namesIn] reads as well.
+    else -> names.dropLast(1).joinToString(", ") + (if (Language.isAzerbaijani) " və " else " and ") + names.last()
 }
 
 /** Who a paid-back share is spending for: whoever its category is usually for, or who the page has picked. */

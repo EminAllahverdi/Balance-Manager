@@ -82,7 +82,7 @@ private fun paymentFor(entry: PendingEntry, words: Set<String>, recurring: List<
 
 /** The user's own category names first, sub-categories before their parents, then the words any shopper would recognise. */
 internal fun categoryFromWords(words: Set<String>, categories: List<Category>): Category? {
-    val spendable = categories.filter { it.type == CategoryType.EXPENSE && !it.isArchived && !it.name.equals("Other", ignoreCase = true) }
+    val spendable = categories.filter { it.type == CategoryType.EXPENSE && !it.isArchived && !it.name.equals("Other", ignoreCase = true) && !it.name.equals("Digər", ignoreCase = true) }
     spendable.sortedByDescending { it.parentId != null }.firstOrNull { nameIsIn(it.name, words) }?.let { return it }
     val hint = CATEGORY_HINTS.firstOrNull { hint -> hint.words.any { word -> words.any { it.matches(word) } } } ?: return null
     return hint.names.firstNotNullOfOrNull { name -> spendable.firstOrNull { it.name.equals(name, ignoreCase = true) } }
@@ -103,25 +103,25 @@ private fun String.matches(hint: String): Boolean = if (hint.length < SHORTEST_W
 private class CategoryHint(val icon: String, val names: List<String>, val words: List<String>)
 
 /**
- * Words that give a payment away, whichever bank wrote it. Categories can be renamed, so each points at likely names
- * and then an icon. Adding a word here is all it takes to teach a new one.
+ * Words that give a payment away, whichever bank wrote it. Categories can be renamed, so each points at likely names,
+ * in both of the starter template's languages, and then an icon. Adding a word here is all it takes to teach a new one.
  */
 private val CATEGORY_HINTS = listOf(
-    CategoryHint("local_taxi", listOf("Taxi", "Transport"), listOf("yango", "bolt", "uber", "taxi", "taksi", "такси")),
-    CategoryHint("directions_bus", listOf("Public transport", "Transport"), listOf("bakikart", "metro", "avtobus", "bus")),
-    CategoryHint("local_gas_station", listOf("Fuel"), listOf("azpetrol", "socar", "lukoil", "petrol", "benzin", "yanacaq", "fuel")),
-    CategoryHint("local_cafe", listOf("Coffee shop"), listOf("coffee", "kofe", "kafe", "cafe", "starbucks", "espresso", "кофе")),
-    CategoryHint("restaurant", listOf("Delivery"), listOf("wolt", "yemeksepeti", "foody")),
-    CategoryHint("restaurant", listOf("Restaurant", "Cafe & Restaurants"), listOf("restoran", "restaurant", "pizza", "burger", "kfc", "mcdonald", "dominos", "ресторан")),
-    CategoryHint("local_pharmacy", listOf("Pharmacy", "Health"), listOf("aptek", "pharmacy", "zeytun", "derman", "аптек")),
-    CategoryHint("smartphone", listOf("Mobile top-up"), listOf("azercell", "azerfon", "bakcell", "nar")),
-    CategoryHint("apps", listOf("Apps", "Subscriptions"), listOf("spotify", "netflix", "youtube", "icloud", "apple", "google", "adobe", "openai", "chatgpt", "anthropic", "claude")),
-    CategoryHint("bolt", listOf("Electricity", "Utilities"), listOf("azerishiq", "azərişıq")),
-    CategoryHint("bolt", listOf("Gas", "Utilities"), listOf("azerigaz", "azəriqaz")),
-    CategoryHint("bolt", listOf("Water", "Utilities"), listOf("azersu", "azərsu")),
-    CategoryHint("hotel", listOf("Hotel", "Travel"), listOf("hotel", "booking", "airbnb", "otel", "отель")),
-    CategoryHint("flight", listOf("Travel"), listOf("azal", "airline", "flight", "turkish")),
-    CategoryHint("sports_esports", listOf("Cinema", "Entertainment"), listOf("cinema", "kino", "кино")),
-    CategoryHint("shopping_bag", listOf("Shopping"), listOf("trendyol", "amazon", "temu", "aliexpress", "zara", "lcwaikiki", "mango")),
-    CategoryHint("shopping_cart", listOf("Groceries"), listOf("supermarket", "market", "bravo", "araz", "neptun", "bazarstore", "oba", "grocery", "erzaq", "супермаркет", "продукт")),
+    CategoryHint("local_taxi", listOf("Taxi", "Transport", "Taksi", "Nəqliyyat"), listOf("yango", "bolt", "uber", "taxi", "taksi", "такси")),
+    CategoryHint("directions_bus", listOf("Public transport", "Transport", "İctimai nəqliyyat", "Nəqliyyat"), listOf("bakikart", "metro", "avtobus", "bus")),
+    CategoryHint("local_gas_station", listOf("Fuel", "Yanacaq"), listOf("azpetrol", "socar", "lukoil", "petrol", "benzin", "yanacaq", "fuel")),
+    CategoryHint("local_cafe", listOf("Coffee shop", "Kofe"), listOf("coffee", "kofe", "kafe", "cafe", "starbucks", "espresso", "кофе")),
+    CategoryHint("restaurant", listOf("Delivery", "Çatdırılma"), listOf("wolt", "yemeksepeti", "foody")),
+    CategoryHint("restaurant", listOf("Restaurant", "Cafe & Restaurants", "Restoran", "Kafe və restoranlar"), listOf("restoran", "restaurant", "pizza", "burger", "kfc", "mcdonald", "dominos", "ресторан")),
+    CategoryHint("local_pharmacy", listOf("Pharmacy", "Health", "Aptek", "Sağlamlıq"), listOf("aptek", "pharmacy", "zeytun", "derman", "аптек")),
+    CategoryHint("smartphone", listOf("Mobile top-up", "Mobil balans"), listOf("azercell", "azerfon", "bakcell", "nar")),
+    CategoryHint("apps", listOf("Apps", "Subscriptions", "Tətbiqlər", "Abunəliklər"), listOf("spotify", "netflix", "youtube", "icloud", "apple", "google", "adobe", "openai", "chatgpt", "anthropic", "claude")),
+    CategoryHint("bolt", listOf("Electricity", "Utilities", "İşıq", "Kommunal xidmətlər"), listOf("azerishiq", "azərişıq")),
+    CategoryHint("bolt", listOf("Gas", "Utilities", "Qaz", "Kommunal xidmətlər"), listOf("azerigaz", "azəriqaz")),
+    CategoryHint("bolt", listOf("Water", "Utilities", "Su", "Kommunal xidmətlər"), listOf("azersu", "azərsu")),
+    CategoryHint("hotel", listOf("Hotel", "Travel", "Otel", "Səyahət"), listOf("hotel", "booking", "airbnb", "otel", "отель")),
+    CategoryHint("flight", listOf("Travel", "Səyahət"), listOf("azal", "airline", "flight", "turkish")),
+    CategoryHint("sports_esports", listOf("Cinema", "Entertainment", "Kino", "Əyləncə"), listOf("cinema", "kino", "кино")),
+    CategoryHint("shopping_bag", listOf("Shopping", "Alış-veriş"), listOf("trendyol", "amazon", "temu", "aliexpress", "zara", "lcwaikiki", "mango")),
+    CategoryHint("shopping_cart", listOf("Groceries", "Ərzaq"), listOf("supermarket", "market", "bravo", "araz", "neptun", "bazarstore", "oba", "grocery", "erzaq", "супермаркет", "продукт")),
 )

@@ -9,9 +9,9 @@ class OnboardingStateTest {
     private val people = OnboardingUiState(step = OnboardingStep.PEOPLE)
 
     @Test fun `the count only includes the steps this person will see`() {
-        assertThat(people.copy(asksNotifications = true).progress).isEqualTo("1 of 4")
-        assertThat(people.copy(asksNotifications = false).progress).isEqualTo("1 of 3")
-        assertThat(people.copy(asksNotifications = true, importing = true).progress).isEqualTo("1 of 5")
+        assertThat(people.copy(asksNotifications = true).progress).isEqualTo(1 to 4)
+        assertThat(people.copy(asksNotifications = false).progress).isEqualTo(1 to 3)
+        assertThat(people.copy(asksNotifications = true, importing = true).progress).isEqualTo(1 to 5)
     }
 
     @Test fun `importing comes last, after reminders, so everything is chosen before it's written`() {
@@ -38,9 +38,17 @@ class OnboardingStateTest {
         assertThat(OnboardingUiState(step = OnboardingStep.CATEGORIES).previous).isEqualTo(OnboardingStep.PEOPLE)
     }
 
-    @Test fun `the template's captions match what it holds`() {
-        assertThat(CategoryTemplate.HOUSEHOLD.caption).startsWith("${CategoryTemplate.HOUSEHOLD.build("").categories.count { it.type == CategoryType.EXPENSE }} categories")
-        assertThat(CategoryTemplate.SIMPLE.caption).startsWith("${CategoryTemplate.SIMPLE.build("").categories.count { it.type == CategoryType.EXPENSE }} categories")
+    @Test fun `the templates hold as many categories as their captions say, in either language`() {
+        for (azerbaijani in listOf(false, true)) {
+            assertThat(CategoryTemplate.HOUSEHOLD.build("", azerbaijani).categories.count { it.type == CategoryType.EXPENSE }).isEqualTo(16)
+            assertThat(CategoryTemplate.SIMPLE.build("", azerbaijani).categories.count { it.type == CategoryType.EXPENSE }).isEqualTo(8)
+        }
+    }
+
+    @Test fun `a language picked on Welcome renames Family, unless the user named it`() {
+        assertThat(people.inLanguage(true).others.map { it.name }).containsExactly("Ailə")
+        val named = people.copy(others = listOf(PersonDraft("family", "Household", 0xFF8A94A3)))
+        assertThat(named.inLanguage(true).others.map { it.name }).containsExactly("Household")
     }
 
     @Test fun `tapping leaves a category out, and tapping again brings it back`() {

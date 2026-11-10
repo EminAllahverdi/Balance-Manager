@@ -42,17 +42,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.eminallahverdi.balance.core.common.AppLanguage
 import com.eminallahverdi.balance.core.common.DateLabels
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
+import com.eminallahverdi.balance.core.designsystem.component.BtChip
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
 import com.eminallahverdi.balance.core.designsystem.component.PrimaryButton
+import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.CsvPreview
@@ -84,7 +90,7 @@ fun OnboardingRoute(onDone: () -> Unit, viewModel: OnboardingViewModel = hiltVie
 @Composable
 fun NotificationsAskRoute(onAnswered: () -> Unit) {
     Box(Modifier.fillMaxSize().background(BtTheme.colors.bgCanvas).systemBarsPadding()) {
-        NotificationsPage("Reminders are on", "Android needs your OK before Cibim can show them on this phone.", onAnswered)
+        NotificationsPage(stringResource(R.string.onboarding_reminders_are_on), stringResource(R.string.onboarding_android_needs_ok), onAnswered)
     }
 }
 
@@ -98,18 +104,19 @@ private fun WelcomeStep(vm: OnboardingViewModel, backup: BackupViewModel = hiltV
     DriveRestoreEffects(restore, backup)
     DriveRestoreSheet(restore, backup, onChoose = backup::restore)
     Column(Modifier.fillMaxSize()) {
+        LanguageSwitch(Modifier.align(Alignment.End).padding(top = 12.dp, end = 16.dp))
         Centred {
-            Image(icon, "Cibim icon", Modifier.padding(bottom = 8.dp).size(96.dp).clip(RoundedCornerShape(24.dp)))
+            Image(icon, stringResource(R.string.onboarding_cibim_icon), Modifier.padding(bottom = 8.dp).size(96.dp).clip(RoundedCornerShape(24.dp)))
             Text("Cibim", style = BtTheme.type.titleLarge, color = c.textPrimary)
-            Text("Every expense and income in your household, logged in seconds.", style = BtTheme.type.body, color = c.textSecondary, textAlign = TextAlign.Center)
+            Text(stringResource(R.string.onboarding_tagline), style = BtTheme.type.body, color = c.textSecondary, textAlign = TextAlign.Center)
         }
         Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            PrimaryButton("Get started", { vm.start(importing = false) })
+            PrimaryButton(stringResource(R.string.onboarding_get_started), { vm.start(importing = false) })
             BtCard {
                 Column {
-                    WelcomeRow(Icons.Rounded.CloudDownload, "Restore from Google Drive", restore.message ?: "After a reinstall, or on a new phone", backup::openRestore)
+                    WelcomeRow(Icons.Rounded.CloudDownload, stringResource(R.string.onboarding_restore_drive), restore.message?.text() ?: stringResource(R.string.onboarding_restore_caption), backup::openRestore)
                     Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
-                    WelcomeRow(Icons.Rounded.UploadFile, "Import a CSV file", "Entries from a spreadsheet or another app") { vm.start(importing = true) }
+                    WelcomeRow(Icons.Rounded.UploadFile, stringResource(R.string.onboarding_import_csv), stringResource(R.string.onboarding_import_csv_caption)) { vm.start(importing = true) }
                 }
             }
         }
@@ -154,29 +161,29 @@ private fun BackupStep(state: OnboardingUiState, vm: OnboardingViewModel, backup
         StepHeader(state.progress, vm::back)
         Centred {
             Medallion(Icons.Rounded.CloudUpload)
-            Text("Back up to Google Drive", style = BtTheme.type.titleLarge, color = c.textPrimary)
+            Text(stringResource(R.string.onboarding_back_up_drive), style = BtTheme.type.titleLarge, color = c.textPrimary)
             Text(
-                "Every night Cibim saves a copy to a hidden folder in your Google Drive that only Cibim can open. If this phone is lost or replaced, everything comes back from there.",
+                stringResource(R.string.onboarding_backup_explained),
                 style = BtTheme.type.body,
                 color = c.textSecondary,
                 textAlign = TextAlign.Center,
             )
             if (hasBackups) {
-                Text("This Google account already has backups. To carry on from one, restore it instead.", style = BtTheme.type.caption, color = c.statusWarning, textAlign = TextAlign.Center)
+                Text(stringResource(R.string.onboarding_has_backups), style = BtTheme.type.caption, color = c.statusWarning, textAlign = TextAlign.Center)
             } else {
-                drive.message?.let { Text(it, style = BtTheme.type.caption, color = c.textSecondary, textAlign = TextAlign.Center) }
+                drive.message?.let { Text(it.text(), style = BtTheme.type.caption, color = c.textSecondary, textAlign = TextAlign.Center) }
             }
         }
         Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             if (hasBackups) {
-                PrimaryButton("Restore a backup", backup::openRestore)
-                QuietButton("Start fresh and back up") {
+                PrimaryButton(stringResource(R.string.onboarding_restore_a_backup), backup::openRestore)
+                QuietButton(stringResource(R.string.onboarding_start_fresh)) {
                     backup.connectionUsed()
                     vm.chooseBackup(true)
                 }
             } else {
-                PrimaryButton("Turn on backups", backup::connect)
-                QuietButton("Not now") { vm.chooseBackup(false) }
+                PrimaryButton(stringResource(R.string.onboarding_turn_on_backups), backup::connect)
+                QuietButton(stringResource(R.string.onboarding_not_now)) { vm.chooseBackup(false) }
             }
         }
     }
@@ -187,8 +194,8 @@ private fun RemindersStep(state: OnboardingUiState, vm: OnboardingViewModel) {
     Column(Modifier.fillMaxSize()) {
         StepHeader(state.progress, vm::back)
         NotificationsPage(
-            "Reminders",
-            "Cibim reminds you at ${DateLabels.timeOfDay(state.reminderMinute)} if nothing was added that day, and when a recurring payment is due.",
+            stringResource(R.string.onboarding_reminders),
+            stringResource(R.string.onboarding_reminders_explained, DateLabels.timeOfDay(state.reminderMinute)),
             vm::notificationsAnswered,
         )
     }
@@ -205,10 +212,10 @@ private fun NotificationsPage(title: String, text: String, onAnswered: () -> Uni
             Text(text, style = BtTheme.type.body, color = BtTheme.colors.textSecondary, textAlign = TextAlign.Center)
         }
         Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            PrimaryButton("Allow notifications", {
+            PrimaryButton(stringResource(R.string.onboarding_allow_notifications), {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ask.launch(Manifest.permission.POST_NOTIFICATIONS) else onAnswered()
             })
-            QuietButton("Not now", onAnswered)
+            QuietButton(stringResource(R.string.onboarding_not_now), onAnswered)
         }
     }
 }
@@ -221,24 +228,24 @@ private fun ImportStep(state: OnboardingUiState, vm: OnboardingViewModel) {
         StepHeader(state.progress, vm::back)
         Centred {
             Medallion(Icons.Rounded.UploadFile)
-            Text("Import a CSV file", style = BtTheme.type.titleLarge, color = c.textPrimary)
+            Text(stringResource(R.string.onboarding_import_csv), style = BtTheme.type.titleLarge, color = c.textPrimary)
             Text(
-                "It needs a Date and an Amount column. Account, Category, For whom, Merchant and Note are used if they're there. You'll see what's in it before anything comes in.",
+                stringResource(R.string.onboarding_csv_needs),
                 style = BtTheme.type.body,
                 color = c.textSecondary,
                 textAlign = TextAlign.Center,
             )
-            state.message?.let { Text(it, style = BtTheme.type.caption, color = c.statusWarning, textAlign = TextAlign.Center) }
+            state.message?.let { Text(it.text(), style = BtTheme.type.caption, color = c.statusWarning, textAlign = TextAlign.Center) }
         }
         Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            PrimaryButton("Choose file", { pick.launch(arrayOf("*/*")) }, enabled = !state.saving)
-            QuietButton("Skip", vm::skipImport)
+            PrimaryButton(stringResource(R.string.onboarding_choose_file), { pick.launch(arrayOf("*/*")) }, enabled = !state.saving)
+            QuietButton(stringResource(R.string.onboarding_skip), vm::skipImport)
         }
     }
     state.preview?.let { preview ->
-        ChoiceSheet("Import a CSV file", onClose = vm::closePreview) { choose ->
+        ChoiceSheet(stringResource(R.string.onboarding_import_csv), onClose = vm::closePreview) { choose ->
             ImportSummary(preview)
-            PrimaryButton("Import", { choose(vm::runImport) })
+            PrimaryButton(stringResource(R.string.onboarding_import_action), { choose(vm::runImport) })
         }
     }
 }
@@ -247,21 +254,26 @@ private fun ImportStep(state: OnboardingUiState, vm: OnboardingViewModel) {
 private fun ImportSummary(preview: CsvPreview) {
     val c = BtTheme.colors
     Column(Modifier.padding(bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(preview.headline, style = BtTheme.type.bodyStrong, color = c.textPrimary)
-        Text("Accounts: " + preview.accounts.joinToString(", "), style = BtTheme.type.caption, color = c.textSecondary)
+        val entries = pluralStringResource(R.plurals.onboarding_entries, preview.entries, preview.entries)
+        val headline = if (preview.firstYear == preview.lastYear) stringResource(R.string.onboarding_entries_in_year, entries, preview.firstYear)
+        else stringResource(R.string.onboarding_entries_years, entries, preview.firstYear, preview.lastYear)
+        Text(headline, style = BtTheme.type.bodyStrong, color = c.textPrimary)
+        Text(stringResource(R.string.onboarding_accounts_list, preview.accounts.joinToString(", ")), style = BtTheme.type.caption, color = c.textSecondary)
         if (preview.newCategories.isNotEmpty()) {
-            Text("New categories: " + preview.newCategories.joinToString(", "), style = BtTheme.type.caption, color = c.textSecondary)
+            Text(stringResource(R.string.onboarding_new_categories, preview.newCategories.joinToString(", ")), style = BtTheme.type.caption, color = c.textSecondary)
         }
-        preview.unreadableNote?.let { Text(it, style = BtTheme.type.caption, color = c.statusWarning) }
+        if (preview.unreadable > 0) {
+            Text(pluralStringResource(R.plurals.onboarding_lines_unreadable, preview.unreadable, preview.unreadable), style = BtTheme.type.caption, color = c.statusWarning)
+        }
     }
 }
 
 @Composable
-internal fun StepHeader(progress: String, onBack: () -> Unit) {
+internal fun StepHeader(progress: Pair<Int, Int>, onBack: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
+        BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.onboarding_back), onBack)
         Box(Modifier.weight(1f))
-        Text(progress, style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+        Text(stringResource(R.string.onboarding_step_of, progress.first, progress.second), style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
     }
 }
 
@@ -288,4 +300,16 @@ private fun QuietButton(text: String, onClick: () -> Unit) {
         Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(BtShapes.full).clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { Text(text, style = BtTheme.type.label, color = BtTheme.colors.textSecondary) }
+}
+
+/** English or Azerbaijani, before anything is set up, for someone who can't read the one the phone picked. */
+@Composable
+private fun LanguageSwitch(modifier: Modifier) {
+    val context = LocalContext.current
+    val chosen by Language.flow.collectAsStateWithLifecycle()
+    val azerbaijani = chosen == AppLanguage.AZERBAIJANI || (chosen == AppLanguage.SYSTEM && Language.isAzerbaijani)
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        BtChip("English", selected = !azerbaijani, onClick = { Language.set(context, AppLanguage.ENGLISH) })
+        BtChip("Azərbaycanca", selected = azerbaijani, onClick = { Language.set(context, AppLanguage.AZERBAIJANI) })
+    }
 }

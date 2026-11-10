@@ -1,7 +1,13 @@
 package com.eminallahverdi.balance.feature.history
 
+import androidx.annotation.StringRes
 import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.common.MoneyFormat
+import com.eminallahverdi.balance.core.common.UiText
+import com.eminallahverdi.balance.core.common.rawText
+import com.eminallahverdi.balance.core.common.uiText
+import com.eminallahverdi.balance.core.designsystem.component.debtNoteText
+import com.eminallahverdi.balance.core.designsystem.component.label
 import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.TransactionDetails
@@ -54,12 +60,12 @@ internal fun initialFilter(month: String?, categoryId: Long?, personId: Long?, k
 }
 
 /** What an empty list says. It only invites a first expense when there's truly nothing yet. */
-internal fun HistoryFilter.emptyMessage(now: YearMonth): String = when {
-    query.isNotBlank() || personId != null || categoryId != null || accountId != null -> "Nothing matches these filters."
-    kind == TransactionKind.TRANSFER -> if (month == null) "No transfers yet." else "No transfers in ${month.label()}."
-    month == null -> "Nothing here yet. Tap + to add your first expense."
-    month == now -> "Nothing this month yet. Tap + to add an expense."
-    else -> "Nothing in ${month.label()}."
+internal fun HistoryFilter.emptyMessage(now: YearMonth): UiText = when {
+    query.isNotBlank() || personId != null || categoryId != null || accountId != null -> uiText(R.string.history_nothing_matches)
+    kind == TransactionKind.TRANSFER -> if (month == null) uiText(R.string.history_no_transfers_yet) else uiText(R.string.history_no_transfers_in, month.label())
+    month == null -> uiText(R.string.history_nothing_yet_first)
+    month == now -> uiText(R.string.history_nothing_this_month)
+    else -> uiText(R.string.history_nothing_in, month.label())
 }
 
 /** One figure for a set of rows: what was spent, or what came in when nothing was spent, or what moved when it's only transfers. */
@@ -98,24 +104,24 @@ internal fun TransactionDetails.signedAmount(): String = when (transaction.kind)
     TransactionKind.ADJUSTMENT, TransactionKind.INTERNAL -> MoneyFormat.format(transaction.amount, signed = true)
 }
 
-internal val TransactionDetails.title: String
-    get() = debtLabel.takeIf { transaction.kind == TransactionKind.DEBT } ?: merchant?.name ?: category?.name ?: when (transaction.kind) {
-        TransactionKind.TRANSFER -> "Transfer"
-        TransactionKind.ADJUSTMENT -> "Balance adjustment"
-        else -> "Transaction"
+internal val TransactionDetails.title: UiText
+    get() = debtLabel.takeIf { transaction.kind == TransactionKind.DEBT } ?: (merchant?.name ?: category?.name)?.let(::rawText) ?: when (transaction.kind) {
+        TransactionKind.TRANSFER -> uiText(R.string.history_transfer)
+        TransactionKind.ADJUSTMENT -> uiText(R.string.history_balance_adjustment)
+        else -> uiText(R.string.history_transaction)
     }
 
 /** "Borrowed from Sam", on an entry that belongs to a debt. */
-private val TransactionDetails.debtLabel: String? get() = debt?.label(transaction)
+private val TransactionDetails.debtLabel: UiText? get() = debt?.let { it.role(transaction).label(it.counterparty) }
 
 /** "Transport · Taxi · Card", "Card → Cash" for a transfer, and who a paid-back expense went to. */
-internal val TransactionDetails.meta: String
+internal val TransactionDetails.meta: List<UiText>
     get() = if (toAccount != null) {
-        "${account.name} → ${toAccount?.name}"
+        listOf(rawText("${account.name} → ${toAccount?.name}"))
     } else if (transaction.kind == TransactionKind.DEBT) {
-        listOf(account.name, transaction.note).filter { it.isNotBlank() }.joinToString(" · ")
+        listOf(account.name, transaction.note).filter { it.isNotBlank() }.map(::debtNoteText)
     } else {
-        listOfNotNull(parentCategory?.name, category?.name, debtLabel, account.name).joinToString(" · ")
+        listOfNotNull(parentCategory?.name?.let(::rawText), category?.name?.let(::rawText), debtLabel, rawText(account.name))
     }
 
 /** Rows quick add can't open that can still be taken back. The money a debt began with goes with the debt, on its own page. */
@@ -127,15 +133,15 @@ internal val TransactionDetails.isEditable: Boolean
     get() = transaction.kind == TransactionKind.EXPENSE || transaction.kind == TransactionKind.INCOME || transaction.kind == TransactionKind.TRANSFER
 
 /** The question before an entry goes: [named] says which one, as its row does, and [consequence] what changes. */
-internal data class Removal(val title: String, val named: String, val consequence: String, val action: String)
+internal data class Removal(@StringRes val title: Int, val named: List<UiText>, @StringRes val consequence: Int, @StringRes val action: Int)
 
 /** The eye hides the amount here as it does on the row, so only spending is named with one. */
 internal fun TransactionDetails.removal(hideAmounts: Boolean, today: LocalDate = LocalDate.now()): Removal {
     val amount = signedAmount().takeUnless { hideAmounts && isSensitive }
-    val named = listOfNotNull(title, amount, DateLabels.relative(transaction.date, today)).joinToString(" · ")
+    val named = listOfNotNull(title, amount?.let(::rawText), rawText(DateLabels.relative(transaction.date, today)))
     return when (transaction.kind) {
-        TransactionKind.DEBT -> Removal("Remove this payment?", named, "The debt and the account's balance change back by this amount. This can't be undone.", "Remove")
-        TransactionKind.ADJUSTMENT -> Removal("Remove this adjustment?", named, "The account's balance changes back by this amount. This can't be undone.", "Remove")
-        else -> Removal("Delete this transaction?", named, "It's removed from your history and balances. This can't be undone.", "Delete")
+        TransactionKind.DEBT -> Removal(R.string.history_remove_payment_q, named, R.string.history_remove_payment_text, R.string.history_remove)
+        TransactionKind.ADJUSTMENT -> Removal(R.string.history_remove_adjustment_q, named, R.string.history_remove_adjustment_text, R.string.history_remove)
+        else -> Removal(R.string.history_delete_transaction_q, named, R.string.history_delete_transaction_text, R.string.history_delete)
     }
 }

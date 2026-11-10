@@ -123,9 +123,9 @@ class DebtTest {
     }
 
     @Test fun `a bill paid for others reads clearly`() {
-        assertThat(table.label(table.opening(5)!!)).isEqualTo("Paid for Sam, Alex and Kamal")
-        assertThat(table.label(table.share(Money(5_00), 5, 9))).isEqualTo("Your share")
-        assertThat(table.label(table.repayment(Money(4_00), 6, monthEnd))).isEqualTo("Paid back by Sam, Alex and Kamal")
+        assertThat(table.role(table.opening(5)!!)).isEqualTo(DebtEntryRole.PAID_FOR)
+        assertThat(table.role(table.share(Money(5_00), 5, 9))).isEqualTo(DebtEntryRole.YOUR_SHARE)
+        assertThat(table.role(table.repayment(Money(4_00), 6, monthEnd))).isEqualTo(DebtEntryRole.PAID_BACK_BY)
     }
 
     @Test fun `an even split keeps the odd qepik with you`() {
@@ -139,9 +139,9 @@ class DebtTest {
     }
 
     @Test fun `each direction of money reads clearly`() {
-        assertThat(borrowed.label(borrowed.opening(5)!!)).isEqualTo("Borrowed from Sam")
-        assertThat(borrowed.label(borrowed.repayment(Money(15_00), 5, monthEnd))).isEqualTo("Paid back to Sam")
-        assertThat(lent.label(lent.opening(5)!!)).isEqualTo("Lent to Aysel")
-        assertThat(lent.label(lent.repayment(Money(40_00), 5, monthEnd))).isEqualTo("Paid back by Aysel")
+        assertThat(borrowed.role(borrowed.opening(5)!!)).isEqualTo(DebtEntryRole.BORROWED_FROM)
+        assertThat(borrowed.role(borrowed.repayment(Money(15_00), 5, monthEnd))).isEqualTo(DebtEntryRole.PAID_BACK_TO)
+        assertThat(lent.role(lent.opening(5)!!)).isEqualTo(DebtEntryRole.LENT_TO)
+        assertThat(lent.role(lent.repayment(Money(40_00), 5, monthEnd))).isEqualTo(DebtEntryRole.PAID_BACK_BY)
     }
 }

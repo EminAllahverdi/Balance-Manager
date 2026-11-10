@@ -2,6 +2,9 @@ package com.eminallahverdi.balance.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.eminallahverdi.balance.core.common.DateLabels
+import com.eminallahverdi.balance.core.common.UiText
+import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.RecurringRepository
@@ -11,8 +14,8 @@ import com.eminallahverdi.balance.core.datastore.UserPreferences
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.AccountBalance
 import com.eminallahverdi.balance.core.model.DateRange
-import com.eminallahverdi.balance.core.model.MonthSummary
 import com.eminallahverdi.balance.core.model.Money
+import com.eminallahverdi.balance.core.model.MonthSummary
 import com.eminallahverdi.balance.core.model.SpendingCalculator
 import com.eminallahverdi.balance.core.model.isBackupOverdue
 import com.eminallahverdi.balance.core.model.sum
@@ -21,8 +24,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,8 +33,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-private val BACKUP_DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
 
 enum class HomeView { CATEGORY, PERSON }
 
@@ -51,18 +50,18 @@ data class HomeUiState(
     val showChart: Boolean = false,
     val chartIncome: Boolean = false,
     /** Set while the data isn't safely in Drive. */
-    val backupWarning: String? = null,
+    val backupWarning: UiText? = null,
 )
 
 /** Says nothing with backups off: that's a choice, and Settings shows it. */
-private fun backupWarning(p: UserPreferences, now: Instant): String? {
+private fun backupWarning(p: UserPreferences, now: Instant): UiText? {
     val last = p.lastBackupAt?.let(Instant::ofEpochMilli)
     return when {
         !p.driveBackupEnabled -> null
-        p.backupProblem == BackupProblem.SIGN_IN -> "Backup needs you to sign in"
+        p.backupProblem == BackupProblem.SIGN_IN -> uiText(R.string.home_backup_sign_in)
         !isBackupOverdue(now, last) -> null
-        last == null -> "Not backed up yet"
-        else -> "Not backed up since " + BACKUP_DAY.format(last.atZone(ZoneId.systemDefault()))
+        last == null -> uiText(R.string.home_not_backed_up)
+        else -> uiText(R.string.home_not_backed_up_since, DateLabels.dayMonth(last.atZone(ZoneId.systemDefault()).toLocalDate()))
     }
 }
 

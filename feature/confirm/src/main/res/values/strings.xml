@@ -1,4 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="bank_notifications">Balance bank notifications</string>
+    <string name="bank_notifications">Cibim bank notifications</string>
+    <string name="confirm_back">Back</string>
+    <string name="confirm_to_confirm">To confirm</string>
+    <string name="confirm_n_new">%1$d new</string>
+    <string name="confirm_not_read">Not read</string>
+    <string name="confirm_not_read_hint">From your bank apps since Cibim last started, and kept only until it stops. Copy one to send it, with card digits and balances changed to X.</string>
+    <string name="confirm_auto_confirm_q">Add known merchants without asking?</string>
+    <string name="confirm_auto_confirm_text">Payments from merchants you\'ve already confirmed will be added for you, with the same category, person and account as last time. New merchants still wait here. You can turn this off at any time.</string>
+    <string name="confirm_turn_on">Turn on</string>
+    <string name="confirm_cancel">Cancel</string>
+    <string name="confirm_intro_off">Turn on Bank notifications in Settings, and payments from your bank apps will appear here, ready to add.</string>
+    <string name="confirm_intro_empty">Nothing waiting. New payments from your bank apps will appear here, ready to add.</string>
+    <string name="confirm_intro_rows">Read from your bank notifications. The category, person and account come from what you picked last time. Anything marked Suggested is a best guess, so check it first.</string>
+    <string name="confirm_edit">Edit</string>
+    <string name="confirm_skip">Skip</string>
+    <string name="confirm_confirm">Confirm</string>
+    <string name="confirm_added">Added</string>
+    <string name="confirm_copy">Copy</string>
+    <string name="confirm_copied">Copied</string>
+    <string name="confirm_auto_confirm">Auto-confirm known merchants</string>
+    <string name="confirm_auto_confirm_caption">Add merchants you\'ve confirmed before, without asking</string>
+    <string name="confirm_cash_withdrawal">Cash withdrawal</string>
+    <string name="confirm_money_received">Money received</string>
+    <string name="confirm_bank_payment">Bank payment</string>
+    <string name="confirm_pick_account_to_move">Pick an account to move it to</string>
+    <string name="confirm_pick_a_category">Pick a category</string>
+    <string name="confirm_suggested">Suggested</string>
 </resources>

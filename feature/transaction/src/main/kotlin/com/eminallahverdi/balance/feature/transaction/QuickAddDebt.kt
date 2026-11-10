@@ -26,6 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,12 +53,12 @@ private const val DEBT_TILE = 0xFF8A94A3
 private val NEW_DEBTS = listOf(DebtType.PAID_FOR_OTHERS, DebtType.PAID_FOR_ME, DebtType.LENT, DebtType.BORROWED)
 
 internal val DebtType.label: String
-    get() = when (this) {
-        DebtType.PAID_FOR_OTHERS -> "I paid for others"
-        DebtType.PAID_FOR_ME -> "They paid for me"
-        DebtType.LENT -> "I lent"
-        DebtType.BORROWED -> "I borrowed"
-        DebtType.PAID_BACK -> "Paid back"
+    @Composable get() = when (this) {
+        DebtType.PAID_FOR_OTHERS -> stringResource(R.string.quickadd_i_paid_for_others)
+        DebtType.PAID_FOR_ME -> stringResource(R.string.quickadd_they_paid_for_me)
+        DebtType.LENT -> stringResource(R.string.quickadd_i_lent)
+        DebtType.BORROWED -> stringResource(R.string.quickadd_i_borrowed)
+        DebtType.PAID_BACK -> stringResource(R.string.quickadd_paid_back)
     }
 
 internal val DebtType.icon: String
@@ -81,15 +83,15 @@ internal fun DebtStep(state: QuickAddUiState, vm: QuickAddViewModel, onVoice: ((
     Column(modifier.verticalScroll(rememberScrollState())) {
         Row(verticalAlignment = Alignment.Bottom) {
             Box(Modifier.weight(1f)) { KindToggle(state, vm) }
-            onVoice?.let { BtIconButton(Icons.Rounded.Mic, "Add by voice", it, Modifier.padding(end = 16.dp)) }
+            onVoice?.let { BtIconButton(Icons.Rounded.Mic, stringResource(R.string.quickadd_add_by_voice), it, Modifier.padding(end = 16.dp)) }
         }
-        Overline("New", Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 10.dp))
+        Overline(stringResource(R.string.quickadd_new_debts), Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 10.dp))
         Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             NEW_DEBTS.forEach { type -> DebtKindCell(type, Modifier.weight(1f)) { vm.pickDebt(type) } }
         }
         val owed = state.owedLines
         if (owed.isNotEmpty()) {
-            Overline("Paid back", Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 8.dp))
+            Overline(stringResource(R.string.quickadd_paid_back), Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 8.dp))
             BtCard(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 20.dp), shape = BtShapes.md) {
                 Column {
                     owed.forEachIndexed { i, line ->
@@ -100,7 +102,7 @@ internal fun DebtStep(state: QuickAddUiState, vm: QuickAddViewModel, onVoice: ((
             }
         } else {
             Text(
-                "Anyone you owe, or who owes you, shows here to pay back in two taps.",
+                stringResource(R.string.quickadd_debts_hint),
                 style = BtTheme.type.caption,
                 color = c.textMuted,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 20.dp),
@@ -129,10 +131,10 @@ private fun OwedRow(line: OwedTo, onClick: () -> Unit) {
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(line.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(if (iOwe) "I owe" else "Owes me", style = BtTheme.type.caption, color = if (iOwe) c.moneyExpense else c.moneyIncome)
+            Text(if (iOwe) stringResource(R.string.quickadd_i_owe) else stringResource(R.string.quickadd_owes_me), style = BtTheme.type.caption, color = if (iOwe) c.moneyExpense else c.moneyIncome)
         }
         Text(MoneyFormat.format(line.left), style = BtTheme.type.amountSmall, color = c.textPrimary)
-        BtChip(if (iOwe) "Pay" else "Received", selected = false, onClick = onClick)
+        BtChip(if (iOwe) stringResource(R.string.quickadd_pay) else stringResource(R.string.quickadd_received), selected = false, onClick = onClick)
     }
 }
 
@@ -147,12 +149,12 @@ internal fun DebtHeader(state: QuickAddUiState, vm: QuickAddViewModel) {
     val owed = debt.owed
     val title = when {
         owed == null -> debt.type.label
-        owed.direction == DebtDirection.I_OWE -> "Pay back ${owed.name}"
-        else -> "${owed.name} paid back"
+        owed.direction == DebtDirection.I_OWE -> stringResource(R.string.quickadd_pay_back_named, owed.name)
+        else -> stringResource(R.string.quickadd_named_paid_back, owed.name)
     }
     Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Row(
-            Modifier.weight(1f).heightIn(min = 44.dp).clip(BtShapes.md).clickable(role = Role.Button, onClickLabel = "Pick another kind", onClick = vm::showDebtKinds),
+            Modifier.weight(1f).heightIn(min = 44.dp).clip(BtShapes.md).clickable(role = Role.Button, onClickLabel = stringResource(R.string.quickadd_pick_another_kind), onClick = vm::showDebtKinds),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
@@ -162,7 +164,7 @@ internal fun DebtHeader(state: QuickAddUiState, vm: QuickAddViewModel) {
         }
         if (debt.type != DebtType.PAID_FOR_ME) {
             val into = debt.type == DebtType.BORROWED || (owed != null && owed.direction == DebtDirection.OWED_TO_ME)
-            AccountPicker(label = if (into) "Into" else "From", accounts = state.accounts, selected = state.account, onSelect = vm::selectAccount)
+            AccountPicker(label = if (into) stringResource(R.string.quickadd_into) else stringResource(R.string.quickadd_from), accounts = state.accounts, selected = state.account, onSelect = vm::selectAccount)
         }
     }
 }
@@ -173,7 +175,7 @@ internal fun DebtKindLine(state: QuickAddUiState, vm: QuickAddViewModel) {
     val c = BtTheme.colors
     val debt = state.debt ?: return
     Row(
-        Modifier.padding(start = 16.dp, top = 4.dp).heightIn(min = 36.dp).clip(BtShapes.full).clickable(role = Role.Button, onClickLabel = "Pick another kind", onClick = vm::showDebtKinds).padding(horizontal = 4.dp),
+        Modifier.padding(start = 16.dp, top = 4.dp).heightIn(min = 36.dp).clip(BtShapes.full).clickable(role = Role.Button, onClickLabel = stringResource(R.string.quickadd_pick_another_kind), onClick = vm::showDebtKinds).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -188,28 +190,28 @@ internal fun DebtKindLine(state: QuickAddUiState, vm: QuickAddViewModel) {
 internal fun DebtCaption(state: QuickAddUiState) {
     val debt = state.debt ?: return
     val amount = state.amount
-    val who = debt.who.trim().ifBlank { "They" }
+    val who = debt.who.trim().ifBlank { stringResource(R.string.quickadd_they) }
     val account = state.account?.name.orEmpty()
     val text = when (debt.type) {
-        DebtType.LENT -> "Leaves $account, and isn't spending." + (amount?.let { " $who owes you ${MoneyFormat.format(it)}." }.orEmpty())
-        DebtType.BORROWED -> "Comes into $account, and isn't income."
-        DebtType.PAID_FOR_ME -> "Nothing moves now. It becomes spending in this category when you pay them back."
+        DebtType.LENT -> stringResource(R.string.quickadd_lent_leaves, account) + (amount?.let { " " + stringResource(R.string.quickadd_who_owes_you_amount, who, MoneyFormat.format(it)) }.orEmpty())
+        DebtType.BORROWED -> stringResource(R.string.quickadd_borrowed_comes_into, account)
+        DebtType.PAID_FOR_ME -> stringResource(R.string.quickadd_paid_for_me_nothing_moves)
         DebtType.PAID_FOR_OTHERS -> {
             val share = debt.share
             when {
-                amount == null || share == null -> "The whole bill leaves $account. Your share is spending, and what they send back isn't income."
-                share >= amount -> "Your share can't be the whole bill. Add it as an expense instead."
-                share.isZero -> "The whole bill leaves $account. Whatever isn't paid back can be marked as yours later."
-                else -> "${MoneyFormat.format(share)} is spending now, and they owe you ${MoneyFormat.format(amount - share)}."
+                amount == null || share == null -> stringResource(R.string.quickadd_bill_leaves, account)
+                share >= amount -> stringResource(R.string.quickadd_share_not_whole)
+                share.isZero -> stringResource(R.string.quickadd_bill_leaves_later, account)
+                else -> stringResource(R.string.quickadd_share_spending_now, MoneyFormat.format(share), MoneyFormat.format(amount - share))
             }
         }
         DebtType.PAID_BACK -> {
             val owed = debt.owed ?: return
             val over = amount != null && amount > owed.left
             when {
-                over -> "That's more than the ${MoneyFormat.format(owed.left)} left."
-                owed.direction == DebtDirection.I_OWE -> "${MoneyFormat.format(owed.left)} left to pay. The oldest is settled first."
-                else -> "${MoneyFormat.format(owed.left)} left to come back, into $account. It isn't income."
+                over -> stringResource(R.string.quickadd_more_than_left, MoneyFormat.format(owed.left))
+                owed.direction == DebtDirection.I_OWE -> stringResource(R.string.quickadd_left_to_pay_oldest, MoneyFormat.format(owed.left))
+                else -> stringResource(R.string.quickadd_left_to_come_back, MoneyFormat.format(owed.left), account)
             }
         }
     }
@@ -225,10 +227,10 @@ internal fun DebtWho(state: QuickAddUiState, vm: QuickAddViewModel) {
     val debt = state.debt ?: return
     val picked = debt.names.map { it.lowercase() }.toSet()
     val shown = (debt.names + state.knownNames.filterNot { it.lowercase() in picked }).take(WHO_CHIPS)
-    Section(if (debt.type == DebtType.PAID_FOR_OTHERS) "Who owes you" else "Who") {
+    Section(if (debt.type == DebtType.PAID_FOR_OTHERS) stringResource(R.string.quickadd_who_owes_you) else stringResource(R.string.quickadd_who)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             shown.forEach { name -> BtChip(name, name.lowercase() in picked, { vm.pickName(name) }, outlined = true) }
-            IconChip(Icons.Rounded.Edit, "Type a name", selected = state.typing == QuickAddText.NAME) { vm.startTyping(QuickAddText.NAME) }
+            IconChip(Icons.Rounded.Edit, stringResource(R.string.quickadd_type_a_name), selected = state.typing == QuickAddText.NAME) { vm.startTyping(QuickAddText.NAME) }
         }
     }
 }
@@ -240,10 +242,10 @@ private const val WHO_CHIPS = 8
 @Composable
 internal fun DebtParts(state: QuickAddUiState, vm: QuickAddViewModel) {
     val debt = state.debt ?: return
-    Section("Paid back in") {
+    Section(stringResource(R.string.quickadd_paid_back_in)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             PARTS.forEach { parts ->
-                val label = if (parts == null) "One go" else "$parts months"
+                val label = if (parts == null) stringResource(R.string.quickadd_one_go) else pluralStringResource(R.plurals.quickadd_months, parts, parts)
                 BtChip(label, debt.parts == parts || (parts == null && debt.parts == 1), { vm.setParts(parts) }, outlined = true)
             }
         }
@@ -258,10 +260,10 @@ internal fun DebtShare(state: QuickAddUiState, vm: QuickAddViewModel) {
     val amount = state.amount
     val others = debt.names.size
     val even = amount?.takeIf { others > 0 }?.let { evenShare(it, others) }
-    Section("Your share") {
+    Section(stringResource(R.string.quickadd_your_share)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            BtChip("Not yet", debt.share?.isZero == true, { vm.setShare(null) }, outlined = true)
-            if (even != null) BtChip("Split by ${others + 1}: ${MoneyFormat.format(even)}", debt.share == even, { vm.setShare(even) }, outlined = true)
+            BtChip(stringResource(R.string.quickadd_not_yet), debt.share?.isZero == true, { vm.setShare(null) }, outlined = true)
+            if (even != null) BtChip(stringResource(R.string.quickadd_split_by, others + 1, MoneyFormat.format(even)), debt.share == even, { vm.setShare(even) }, outlined = true)
         }
     }
     Spacer(Modifier.height(2.dp))

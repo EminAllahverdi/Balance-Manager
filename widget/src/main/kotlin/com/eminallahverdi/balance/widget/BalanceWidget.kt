@@ -79,13 +79,31 @@ internal data class BalanceWidgetState(
 
     val amount: String get() = if (revealed) MoneyFormat.format(total, signed = true) else MoneyFormat.HIDDEN
 
-    val caption: String get() = when {
-        mode == WidgetBalanceMode.ALWAYS_SHOW -> accounts
-        mode == WidgetBalanceMode.ALWAYS_HIDE -> "Hidden"
-        revealed -> "Hides in $secondsLeft s"
-        mode == WidgetBalanceMode.TAP_TO_SHOW -> "Tap to show"
-        else -> "Touch to show"
+    val caption: BalanceCaption get() = when {
+        mode == WidgetBalanceMode.ALWAYS_SHOW -> BalanceCaption.Accounts(accounts)
+        mode == WidgetBalanceMode.ALWAYS_HIDE -> BalanceCaption.Hidden
+        revealed -> BalanceCaption.HidesIn(secondsLeft)
+        mode == WidgetBalanceMode.TAP_TO_SHOW -> BalanceCaption.TapToShow
+        else -> BalanceCaption.TouchToShow
     }
+}
+
+/** The line under the balance: which accounts it adds up, or how to see it. */
+internal sealed interface BalanceCaption {
+    data class Accounts(val names: String) : BalanceCaption
+    data object Hidden : BalanceCaption
+    data class HidesIn(val seconds: Int) : BalanceCaption
+    data object TapToShow : BalanceCaption
+    data object TouchToShow : BalanceCaption
+}
+
+@Composable
+internal fun BalanceCaption.text(): String = when (this) {
+    is BalanceCaption.Accounts -> names
+    BalanceCaption.Hidden -> widgetString(R.string.widget_hidden)
+    is BalanceCaption.HidesIn -> widgetString(R.string.widget_hides_in, seconds)
+    BalanceCaption.TapToShow -> widgetString(R.string.widget_tap_to_show)
+    BalanceCaption.TouchToShow -> widgetString(R.string.widget_touch_to_show)
 }
 
 /** Only the accounts switched on for the widget in Accounts count here. */
@@ -131,7 +149,7 @@ private fun BalanceContent(state: BalanceWidgetState) {
         Column(GlanceModifier.fillMaxSize()) {
             // The amount sits below this row, so the + can never cover it.
             Row(GlanceModifier.fillMaxWidth()) {
-                Text("BALANCE", GlanceModifier.defaultWeight().padding(start = TEXT_START, top = 14.dp), style = widgetText(c.textMuted, 11.sp, FontWeight.Bold))
+                Text(widgetString(R.string.widget_balance_caps), GlanceModifier.defaultWeight().padding(start = TEXT_START, top = 14.dp), style = widgetText(c.textMuted, 11.sp, FontWeight.Bold))
                 AddExpenseButton(c)
             }
             Spacer(GlanceModifier.defaultWeight())
@@ -146,7 +164,7 @@ private fun BalanceContent(state: BalanceWidgetState) {
                     StatusIcon(state)
                     Spacer(GlanceModifier.width(4.dp))
                 }
-                Text(state.caption, style = widgetText(if (countingDown) c.accentText else c.textSecondary, 12.sp), maxLines = 1)
+                Text(state.caption.text(), style = widgetText(if (countingDown) c.accentText else c.textSecondary, 12.sp), maxLines = 1)
             }
         }
     }
@@ -161,7 +179,7 @@ private fun AddExpenseButton(c: BtColors) {
     ) {
         Box(GlanceModifier.padding(top = 7.dp, end = 7.dp)) {
             Box(GlanceModifier.size(30.dp).cornerRadius(11.dp).background(ColorProvider(c.bgSurfaceHigh)), contentAlignment = Alignment.Center) {
-                WidgetIcon(Icons.Rounded.Add, c.accentText, 20.dp, "Add expense")
+                WidgetIcon(Icons.Rounded.Add, c.accentText, 20.dp, widgetString(R.string.widget_add_expense))
             }
         }
     }

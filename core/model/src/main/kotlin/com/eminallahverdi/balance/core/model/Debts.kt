@@ -96,13 +96,13 @@ data class Debt(
         else -> !entry.amount.isNegative
     }
 
-    /** What a list calls an entry of this debt, so which way the money went is never in doubt. */
-    fun label(entry: Transaction): String = when {
-        direction == DebtDirection.I_OWE -> if (isRepayment(entry)) "Paid back to $counterparty" else "Borrowed from $counterparty"
-        isRepayment(entry) -> "Paid back by $counterparty"
-        !isPaidForOthers -> "Lent to $counterparty"
-        entry.kind == TransactionKind.EXPENSE -> "Your share"
-        else -> "Paid for $counterparty"
+    /** What a list calls an entry of this debt, with [counterparty], so which way the money went is never in doubt. */
+    fun role(entry: Transaction): DebtEntryRole = when {
+        direction == DebtDirection.I_OWE -> if (isRepayment(entry)) DebtEntryRole.PAID_BACK_TO else DebtEntryRole.BORROWED_FROM
+        isRepayment(entry) -> DebtEntryRole.PAID_BACK_BY
+        !isPaidForOthers -> DebtEntryRole.LENT_TO
+        entry.kind == TransactionKind.EXPENSE -> DebtEntryRole.YOUR_SHARE
+        else -> DebtEntryRole.PAID_FOR
     }
 }
 
@@ -143,3 +143,6 @@ fun evenShare(total: Money, others: Int): Money {
     val each = total.minor / (others + 1)
     return Money(total.minor - each * others)
 }
+
+/** What an entry of a debt is: "Borrowed from Sam", "Your share" and so on, in whichever language shows it. */
+enum class DebtEntryRole { BORROWED_FROM, PAID_BACK_TO, LENT_TO, PAID_BACK_BY, YOUR_SHARE, PAID_FOR }

@@ -46,9 +46,9 @@ data class AccountsUiState(
     val defaultChange: DefaultChange? = null,
     val recurring: List<RecurringPayment> = emptyList(),
 ) {
-    /** Up to three names and how many, or None yet, for the row that opens them. */
-    val recurringSummary: String
-        get() = if (recurring.isEmpty()) "None yet" else recurring.take(SUMMARY_NAMES).joinToString(", ") { it.name } + " · ${recurring.size}"
+    /** Up to three names and how many, for the row that opens them. Null when there are none yet. */
+    val recurringSummary: String?
+        get() = if (recurring.isEmpty()) null else recurring.take(SUMMARY_NAMES).joinToString(", ") { it.name } + " · ${recurring.size}"
 
     val included: List<AccountBalance> get() = balances.filter { it.account.includeInTotal }
     val total: Money get() = included.map { it.balance }.sum()

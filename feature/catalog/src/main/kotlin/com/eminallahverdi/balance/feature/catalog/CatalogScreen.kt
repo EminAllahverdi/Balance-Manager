@@ -37,6 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -64,11 +66,11 @@ fun CatalogRoute(onBack: () -> Unit, viewModel: CatalogViewModel = hiltViewModel
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
-                Text("Categories", style = BtTheme.type.titleLarge, color = BtTheme.colors.textPrimary)
+                BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.catalog_back), onBack)
+                Text(stringResource(R.string.catalog_categories), style = BtTheme.type.titleLarge, color = BtTheme.colors.textPrimary)
             }
             SegmentedToggle(
-                options = listOf("Expense", "Income", "People"),
+                options = listOf(stringResource(R.string.catalog_expense), stringResource(R.string.catalog_income), stringResource(R.string.catalog_people)),
                 selected = state.tab.ordinal,
                 onSelect = { viewModel.setTab(CatalogTab.entries[it]) },
                 fill = true,
@@ -77,7 +79,7 @@ fun CatalogRoute(onBack: () -> Unit, viewModel: CatalogViewModel = hiltViewModel
             if (state.tab == CatalogTab.PEOPLE) PeopleList(state, viewModel) else CategoryList(state, viewModel)
         }
         FloatingAddButton(
-            text = if (state.tab == CatalogTab.PEOPLE) "New person" else "New category",
+            text = if (state.tab == CatalogTab.PEOPLE) stringResource(R.string.catalog_new_person) else stringResource(R.string.catalog_new_category),
             onClick = { if (state.tab == CatalogTab.PEOPLE) viewModel.newPerson() else viewModel.newCategory() },
             modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(16.dp),
         )
@@ -140,14 +142,15 @@ private fun CategoryCard(group: CategoryGroup, expanded: Boolean, people: Map<Lo
             }
             if (expanded) {
                 group.subCategories.forEach { sub -> SubCategoryRow(sub, people[sub.defaultPersonId ?: category.defaultPersonId], vm) }
-                ActionRow(Icons.Rounded.Add, "Add sub-category") { vm.newSubCategory(group) }
-                ActionRow(Icons.Rounded.Edit, "Edit category") { vm.edit(category) }
+                ActionRow(Icons.Rounded.Add, stringResource(R.string.catalog_add_sub_category)) { vm.newSubCategory(group) }
+                ActionRow(Icons.Rounded.Edit, stringResource(R.string.catalog_edit_category)) { vm.edit(category) }
             }
         }
     }
 }
 
-private fun subCategoryCount(n: Int) = if (n == 1) "1 sub-category" else "$n sub-categories"
+@Composable
+private fun subCategoryCount(n: Int) = pluralStringResource(R.plurals.catalog_sub_categories, n, n)
 
 @Composable
 private fun SubCategoryRow(sub: Category, person: Person?, vm: CatalogViewModel) {
@@ -215,7 +218,7 @@ private fun PeopleList(state: CatalogUiState, vm: CatalogViewModel) {
 
 private fun <T> LazyListScope.archivedSection(archived: List<T>, key: (T) -> String, name: (T) -> String, onRestore: (T) -> Unit) {
     if (archived.isEmpty()) return
-    item(key = "archived") { Overline("Archived", Modifier.padding(top = 16.dp, start = 4.dp)) }
+    item(key = "archived") { Overline(stringResource(R.string.catalog_archived), Modifier.padding(top = 16.dp, start = 4.dp)) }
     items(archived, key = key) { entry ->
         BtCard {
             Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -223,7 +226,7 @@ private fun <T> LazyListScope.archivedSection(archived: List<T>, key: (T) -> Str
                 Box(
                     Modifier.height(44.dp).clip(RoundedCornerShape(10.dp)).clickable(role = Role.Button) { onRestore(entry) }.padding(horizontal = 12.dp),
                     contentAlignment = Alignment.Center,
-                ) { Text("Restore", style = BtTheme.type.label, color = BtTheme.colors.accentText) }
+                ) { Text(stringResource(R.string.catalog_restore), style = BtTheme.type.label, color = BtTheme.colors.accentText) }
             }
         }
     }
@@ -232,7 +235,7 @@ private fun <T> LazyListScope.archivedSection(archived: List<T>, key: (T) -> Str
 @Composable
 private fun DragHandle(modifier: Modifier) {
     Box(modifier.size(width = 36.dp, height = 44.dp), contentAlignment = Alignment.Center) {
-        Icon(Icons.Rounded.DragIndicator, "Drag to reorder", tint = BtTheme.colors.textMuted, modifier = Modifier.size(20.dp))
+        Icon(Icons.Rounded.DragIndicator, stringResource(R.string.catalog_drag_to_reorder), tint = BtTheme.colors.textMuted, modifier = Modifier.size(20.dp))
     }
 }
 

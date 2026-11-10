@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.eminallahverdi.balance.core.designsystem.component.BtChip
 import com.eminallahverdi.balance.core.designsystem.component.BtTextField
@@ -66,19 +67,19 @@ internal fun CatalogEditorSheet(editor: CatalogEditor, state: CatalogUiState, vm
                 is CatalogEditor.CategoryDraft -> CategoryFields(editor, state, vm, onRemove)
                 is CatalogEditor.PersonDraft -> PersonFields(editor, vm, onRemove)
             }
-            PrimaryButton("Save", vm::saveEditor, enabled = name.isNotBlank())
+            PrimaryButton(stringResource(R.string.catalog_save), vm::saveEditor, enabled = name.isNotBlank())
         }
     }
 
     if (confirmRemove) {
         AlertDialog(
             onDismissRequest = { confirmRemove = false },
-            title = { Text("Remove $name?") },
-            text = { Text("If it's been used, it's archived so your history stays the same.") },
+            title = { Text(stringResource(R.string.catalog_remove_named, name)) },
+            text = { Text(stringResource(R.string.catalog_remove_text)) },
             confirmButton = {
-                TextButton(onClick = { confirmRemove = false; vm.removeEditing() }) { Text("Remove") }
+                TextButton(onClick = { confirmRemove = false; vm.removeEditing() }) { Text(stringResource(R.string.catalog_remove)) }
             },
-            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.catalog_cancel)) } },
         )
     }
 }
@@ -88,21 +89,24 @@ internal fun CatalogEditorSheet(editor: CatalogEditor, state: CatalogUiState, vm
 private fun CategoryFields(editor: CatalogEditor.CategoryDraft, state: CatalogUiState, vm: CatalogViewModel, onRemove: (() -> Unit)?) {
     val category = editor.category
     val sub = category.isSubCategory
-    val kind = if (sub) "sub-category" else "category"
-    EditorTitle(if (editor.isNew) "New $kind" else "Edit $kind", onRemove) {
+    val title = when {
+        editor.isNew -> if (sub) R.string.catalog_new_sub_category else R.string.catalog_new_category
+        else -> if (sub) R.string.catalog_edit_sub_category else R.string.catalog_edit_category
+    }
+    EditorTitle(stringResource(title), onRemove) {
         CategoryTile(category.icon, category.color)
     }
-    BtTextField(category.name, "Name", { vm.update(category.copy(name = it)) })
-    EditorField("For whom") {
+    BtTextField(category.name, stringResource(R.string.catalog_name), { vm.update(category.copy(name = it)) })
+    EditorField(stringResource(R.string.catalog_for_whom)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            BtChip(if (sub) "Same as category" else "No default", category.defaultPersonId == null, { vm.update(category.copy(defaultPersonId = null)) })
+            BtChip(if (sub) stringResource(R.string.catalog_same_as_category) else stringResource(R.string.catalog_no_default), category.defaultPersonId == null, { vm.update(category.copy(defaultPersonId = null)) })
             state.people.forEach { person -> PersonChip(person, category, vm) }
         }
     }
-    EditorField("Icon") {
+    EditorField(stringResource(R.string.catalog_icon)) {
         IconPicker(category.color, category.icon, { vm.update(category.copy(icon = it)) })
     }
-    EditorField("Colour") {
+    EditorField(stringResource(R.string.catalog_colour)) {
         ColourPicker(CategoryPalette, category.color, icon = category.icon) { vm.update(category.copy(color = it)) }
     }
 }
@@ -121,17 +125,17 @@ private fun PersonChip(person: Person, category: Category, vm: CatalogViewModel)
 private fun PersonFields(editor: CatalogEditor.PersonDraft, vm: CatalogViewModel, onRemove: (() -> Unit)?) {
     val person = editor.person
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> uri?.let(vm::setPhoto) }
-    EditorTitle(if (editor.isNew) "New person" else "Edit person", onRemove) {
+    EditorTitle(if (editor.isNew) stringResource(R.string.catalog_new_person) else stringResource(R.string.catalog_edit_person), onRemove) {
         PersonAvatar(person)
     }
-    BtTextField(person.name, "Name", { vm.update(person.copy(name = it)) })
-    EditorField("Photo") {
+    BtTextField(person.name, stringResource(R.string.catalog_name), { vm.update(person.copy(name = it)) })
+    EditorField(stringResource(R.string.catalog_photo)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BtChip("Choose photo", false, { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
-            if (person.avatarUri != null) BtChip("Remove photo", false, vm::removePhoto)
+            BtChip(stringResource(R.string.catalog_choose_photo), false, { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
+            if (person.avatarUri != null) BtChip(stringResource(R.string.catalog_remove_photo), false, vm::removePhoto)
         }
     }
-    EditorField("Colour") {
+    EditorField(stringResource(R.string.catalog_colour)) {
         ColourPicker(PersonPalette, person.color) { vm.update(person.copy(color = it)) }
     }
 }

@@ -17,6 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.eminallahverdi.balance.core.common.DateLabels
@@ -44,7 +46,7 @@ internal fun WaitingFromBank(state: QuickAddUiState, vm: QuickAddViewModel) {
     val waiting = state.waitingHere
     if (waiting.isEmpty()) return
     Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
-        Overline(if (waiting.size == 1) "From your bank · 1 waiting" else "From your bank · ${waiting.size} waiting", Modifier.padding(bottom = 8.dp))
+        Overline(pluralStringResource(R.plurals.quickadd_from_bank_waiting, waiting.size, waiting.size), Modifier.padding(bottom = 8.dp))
         BtCard(shape = BtShapes.md) {
             Column {
                 waiting.sortedByDescending { it.entry.postedAt }.take(WAITING_SHOWN).forEachIndexed { i, item ->
@@ -53,7 +55,7 @@ internal fun WaitingFromBank(state: QuickAddUiState, vm: QuickAddViewModel) {
                 }
             }
         }
-        Text("Tap one to check it first, or Add it as it is.", style = BtTheme.type.caption, color = c.textMuted, modifier = Modifier.padding(start = 4.dp, top = 6.dp))
+        Text(stringResource(R.string.quickadd_tap_to_check_or_add), style = BtTheme.type.caption, color = c.textMuted, modifier = Modifier.padding(start = 4.dp, top = 6.dp))
     }
 }
 
@@ -65,7 +67,7 @@ private fun WaitingRow(item: PendingItem, state: QuickAddUiState, vm: QuickAddVi
     val account = state.accounts.firstOrNull { it.id == guess.accountId }
     val posted = item.entry.postedAt.atZone(ZoneId.systemDefault())
     val caption = listOfNotNull(
-        "Suggested".takeIf { guess.isSuggested },
+        stringResource(R.string.quickadd_suggested).takeIf { guess.isSuggested },
         category?.name,
         account?.name,
         DateLabels.timeOfDay(posted.hour * 60 + posted.minute),
@@ -73,7 +75,7 @@ private fun WaitingRow(item: PendingItem, state: QuickAddUiState, vm: QuickAddVi
     // Adding as it is needs everything To confirm's Confirm needs; anything short of that is opened to fill in.
     val canAdd = guess.accountId != null && (guess.categoryId != null || guess.toAccountId != null)
     Row(
-        Modifier.fillMaxWidth().clickable(onClickLabel = "Check it first") { vm.openPending(item) }.padding(horizontal = 12.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().clickable(onClickLabel = stringResource(R.string.quickadd_check_it_first)) { vm.openPending(item) }.padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -85,7 +87,7 @@ private fun WaitingRow(item: PendingItem, state: QuickAddUiState, vm: QuickAddVi
         Text(MoneyFormat.format(item.entry.amount), style = BtTheme.type.amountSmall, color = c.textPrimary)
         if (canAdd) {
             BtChip(
-                text = "Add",
+                text = stringResource(R.string.quickadd_add),
                 selected = false,
                 onClick = { vm.addPending(item) },
                 leading = { Icon(Icons.Rounded.Check, null, tint = c.accentText, modifier = Modifier.size(16.dp)) },

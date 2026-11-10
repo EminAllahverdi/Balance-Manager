@@ -21,12 +21,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.datastore.BackupProblem
 import com.eminallahverdi.balance.core.designsystem.component.BtSwitch
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
 import com.eminallahverdi.balance.core.designsystem.component.OptionRow
+import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.AppEnvironment
 import com.eminallahverdi.balance.core.model.DriveBackup
@@ -34,10 +38,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
-private val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
-private val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
+private val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 /** Backs up every night to a hidden folder in the user's own Google Drive. Restoring is here too, for after a reinstall. */
 @Composable
@@ -46,25 +48,25 @@ internal fun BackupSection(viewModel: BackupViewModel = hiltViewModel()) {
     var confirming by remember { mutableStateOf<DriveBackup?>(null) }
     DriveRestoreEffects(state, viewModel)
 
-    Section("Backup") {
-        SettingRow(icon = Icons.Rounded.Backup, title = "Google Drive backup", caption = state.status()) {
+    Section(stringResource(R.string.settings_backup)) {
+        SettingRow(icon = Icons.Rounded.Backup, title = stringResource(R.string.settings_drive_backup), caption = state.status()) {
             BtSwitch(state.enabled, viewModel::setEnabled)
         }
         if (state.enabled) {
             Divider()
             SettingRow(
                 icon = Icons.Rounded.SignalCellularAlt,
-                title = "Use mobile data",
-                caption = if (state.useMobileData) "Backs up on any connection" else "Backups wait for Wi-Fi",
+                title = stringResource(R.string.settings_use_mobile_data),
+                caption = if (state.useMobileData) stringResource(R.string.settings_mobile_on) else stringResource(R.string.settings_mobile_off),
             ) { BtSwitch(state.useMobileData, viewModel::setMobileData) }
             Divider()
-            SettingRow(icon = Icons.Rounded.CloudUpload, title = "Back up now", onClick = viewModel::backUpNow) { Chevron() }
+            SettingRow(icon = Icons.Rounded.CloudUpload, title = stringResource(R.string.settings_back_up_now), onClick = viewModel::backUpNow) { Chevron() }
         }
         Divider()
         SettingRow(
             icon = Icons.Rounded.CloudDownload,
-            title = "Restore from Google Drive",
-            caption = "After a reinstall, or on a new phone",
+            title = stringResource(R.string.settings_restore_drive),
+            caption = stringResource(R.string.settings_restore_caption),
             onClick = viewModel::openRestore,
         ) { Chevron() }
     }
@@ -73,15 +75,15 @@ internal fun BackupSection(viewModel: BackupViewModel = hiltViewModel()) {
     confirming?.let { backup ->
         AlertDialog(
             onDismissRequest = { confirming = null },
-            title = { Text("Restore this backup?") },
-            text = { Text("Everything in the app now is replaced with the backup from ${backupTime(backup.createdAt.toEpochMilli())}, and the app restarts.") },
+            title = { Text(stringResource(R.string.settings_restore_question)) },
+            text = { Text(stringResource(R.string.settings_restore_text, backupTime(backup.createdAt.toEpochMilli()))) },
             confirmButton = {
                 TextButton(onClick = {
                     confirming = null
                     viewModel.restore(backup)
-                }) { Text("Replace and restart") }
+                }) { Text(stringResource(R.string.settings_replace_restart)) }
             },
-            dismissButton = { TextButton(onClick = { confirming = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirming = null }) { Text(stringResource(R.string.settings_cancel)) } },
         )
     }
 }
@@ -106,8 +108,8 @@ fun DriveRestoreEffects(state: BackupUiState, viewModel: BackupViewModel) {
 @Composable
 fun DriveRestoreSheet(state: BackupUiState, viewModel: BackupViewModel, onChoose: (DriveBackup) -> Unit) {
     val backups = state.backups ?: return
-    ChoiceSheet("Restore from Google Drive", onClose = viewModel::closeRestore) { choose ->
-        if (backups.isEmpty()) Text("No backups in this Google account yet", style = BtTheme.type.body, color = BtTheme.colors.textMuted)
+    ChoiceSheet(stringResource(R.string.settings_restore_drive), onClose = viewModel::closeRestore) { choose ->
+        if (backups.isEmpty()) Text(stringResource(R.string.settings_no_backups), style = BtTheme.type.body, color = BtTheme.colors.textMuted)
         backups.forEach { backup ->
             OptionRow(
                 text = backupTime(backup.createdAt.toEpochMilli()).replaceFirstChar { it.uppercase() },
@@ -119,30 +121,33 @@ fun DriveRestoreSheet(state: BackupUiState, viewModel: BackupViewModel, onChoose
     }
 }
 
+@Composable
 private fun BackupUiState.status(): String = when {
-    message != null -> message
-    !enabled -> "Every night, to your own Google account"
-    problem == BackupProblem.SIGN_IN -> "Turn this off and on to sign in again"
-    lastBackupAt == null -> "Not backed up yet"
-    problem == BackupProblem.FAILED -> "Last try failed. Last backed up ${backupTime(lastBackupAt)}"
-    else -> "Last backed up ${backupTime(lastBackupAt)}"
+    message != null -> message.text()
+    !enabled -> stringResource(R.string.settings_backup_off)
+    problem == BackupProblem.SIGN_IN -> stringResource(R.string.settings_sign_in_again)
+    lastBackupAt == null -> stringResource(R.string.settings_not_backed_up)
+    problem == BackupProblem.FAILED -> stringResource(R.string.settings_last_failed, backupTime(lastBackupAt))
+    else -> stringResource(R.string.settings_last_backed_up, backupTime(lastBackupAt))
 }
 
 /** Dev also offers real backups, so it says which is which. Prod only ever has its own. */
+@Composable
 private fun backupCaption(backup: DriveBackup, showSource: Boolean): String? {
-    val source = if (showSource) (if (backup.environment == AppEnvironment.PROD) "Real data" else "Test data") else null
-    return listOfNotNull(backup.entries?.let { "$it entries" }, source).joinToString(" · ").ifEmpty { null }
+    val source = if (showSource) (if (backup.environment == AppEnvironment.PROD) stringResource(R.string.settings_real_data) else stringResource(R.string.settings_test_data)) else null
+    return listOfNotNull(backup.entries?.let { pluralStringResource(R.plurals.settings_entries, it, it) }, source).joinToString(" · ").ifEmpty { null }
 }
 
+@Composable
 private fun backupTime(millis: Long): String {
     val time = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault())
     val today = LocalDate.now()
     val day = when (time.toLocalDate()) {
-        today -> "today"
-        today.minusDays(1) -> "yesterday"
-        else -> DAY.format(time)
+        today -> stringResource(R.string.settings_today_lower)
+        today.minusDays(1) -> stringResource(R.string.settings_yesterday_lower)
+        else -> DateLabels.dayMonth(time.toLocalDate())
     }
-    return "$day at ${TIME.format(time)}"
+    return stringResource(R.string.settings_backup_time, day, TIME.format(time))
 }
 
 /** The cleanest way for everything holding the old database to let go of it. */

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="receipts_back">Geri</string>
+    <string name="receipts_groceries">Ərzaq</string>
+    <string name="receipts_receipts">Çeklər</string>
+    <string name="receipts_add_receipt">Çek əlavə et</string>
+    <string name="receipts_month">Ay</string>
+    <string name="receipts_same">eyni</string>
+    <string name="receipts_spent_on">%1$s üçün xərclənib</string>
+    <string name="receipts_no_groceries_category">Ərzaq kateqoriyası tapılmadı</string>
+    <string name="receipts_last_month">Keçən ay</string>
+    <string name="receipts_month_average">%1$d aylıq orta</string>
+    <string name="receipts_what_did_it_go_on">Nəyə xərcləndi?</string>
+    <string name="receipts_hint">Ərzaq alış-verişinin çeklərini əlavə edin: burada ən çox nəyə xərclədiyiniz məhsullar və növlər üzrə, əvvəlki aylarla müqayisədə görünəcək.</string>
+    <string name="receipts_most_spent_on">Ən çox xərclənən</string>
+    <string name="receipts_leave_out">Çıxar: %1$s</string>
+    <string name="receipts_scan_qr">QR kodunu skan et</string>
+    <string name="receipts_scan_qr_caption">Çeki bütün məhsulları ilə vergi xidmətindən alır</string>
+    <string name="receipts_type_fiscal">Fiskal ID-ni yaz</string>
+    <string name="receipts_type_fiscal_caption">QR kodun altındakı 12 hərf və rəqəm</string>
+    <string name="receipts_read_photo">Şəklini oxut</string>
+    <string name="receipts_read_photo_caption">Vergi xidmətində hələ olmayan çek üçün</string>
+    <string name="receipts_fiscal_id">Fiskal ID</string>
+    <string name="receipts_twelve_characters">12 hərf və rəqəm</string>
+    <string name="receipts_look_up">Axtar</string>
+    <string name="receipts_cancel">Ləğv et</string>
+    <string name="receipts_couldnt_add">Əlavə etmək alınmadı</string>
+    <string name="receipts_open_its_page">Səhifəsini aç</string>
+    <string name="receipts_use_a_photo">Şəkildən istifadə et</string>
+    <string name="receipts_add_as_expense_q">Xərc kimi əlavə edilsin?</string>
+    <string name="receipts_not_in_entries">%2$s, %3$s, %1$s: bu hələ əməliyyatlarınızda yoxdur.</string>
+    <string name="receipts_add_expense">Xərc əlavə et</string>
+    <string name="receipts_not_now">İndi yox</string>
+    <string name="receipts_check_receipt">Çeki yoxlayın</string>
+    <string name="receipts_the_receipt">Çek</string>
+    <string name="receipts_shop">Mağaza</string>
+    <string name="receipts_today">Bu gün</string>
+    <string name="receipts_no_total">Yekun məbləğ tapılmadı, ona görə məhsulların cəmi götürüldü.</string>
+    <string name="receipts_items_dont_add">Məhsulların cəmi %2$s yox, %1$s edir. Nəsə səhv oxunub və ya buraxılıb, məsələn, endirim.</string>
+    <string name="receipts_save_receipt">Çeki yadda saxla</string>
+    <string name="receipts_delete_receipt">Çeki sil</string>
+    <string name="receipts_delete_receipt_q">Bu çek silinsin?</string>
+    <string name="receipts_delete_receipt_text">Məhsulları hesabatdan çıxacaq. Əməliyyatlarınız olduğu kimi qalır.</string>
+    <string name="receipts_delete">Sil</string>
+    <string name="receipts_not_ekassa">Bu, e-kassa çekinin kodu deyil. Fiskal ID 12 hərf və rəqəmdən ibarətdir.</string>
+    <string name="receipts_saved_already">Bu çek artıq yadda saxlanılıb.</string>
+    <string name="receipts_asking_tax">Çek vergi xidmətindən soruşulur…</string>
+    <string name="receipts_tax_not_found">Vergi xidmətində bu çek hələ yoxdur. Çekin ora çatması bir həftəyədək çəkə bilər.</string>
+    <string name="receipts_tax_refused">Vergi xidməti bunun öz səhifəsində yoxlanmasını istəyir.</string>
+    <string name="receipts_tax_offline">Vergi xidməti ilə əlaqə alınmadı. İnterneti yoxlayıb yenidən cəhd edin.</string>
+    <string name="receipts_reading_receipt">Çek oxunur…</string>
+    <string name="receipts_couldnt_open_picture">Şəkli açmaq alınmadı.</string>
+    <string name="receipts_picture_not_opened">Çekin şəklini açmaq alınmadı.</string>
+    <string name="receipts_couldnt_read_phone">Bu telefonda çeki oxumaq alınmadı. Google Play xidmətləri mətn oxuyucunu hələ yükləyir ola bilər.</string>
+    <string name="receipts_no_items_read">Bu çekdən heç bir məhsul oxunmadı.</string>
+    <string name="receipts_group_dairy">Süd məhsulları və yumurta</string>
+    <string name="receipts_group_meat_fish">Ət və balıq</string>
+    <string name="receipts_group_bread">Çörək və un məmulatları</string>
+    <string name="receipts_group_fruit_veg">Meyvə və tərəvəz</string>
+    <string name="receipts_group_staples">Bakaleya</string>
+    <string name="receipts_group_drinks">İçkilər</string>
+    <string name="receipts_group_sweets">Şirniyyat və qəlyanaltılar</string>
+    <string name="receipts_group_household">Məişət</string>
+    <string name="receipts_group_other">Digər</string>
+    <plurals name="receipts_total_from_receipts">
+        <item quantity="one">%1$d çekdən %2$s</item>
+        <item quantity="other">%1$d çekdən %2$s</item>
+    </plurals>
+    <plurals name="receipts_times">
+        <item quantity="one">%d dəfə</item>
+        <item quantity="other">%d dəfə</item>
+    </plurals>
+    <plurals name="receipts_items">
+        <item quantity="one">%d məhsul</item>
+        <item quantity="other">%d məhsul</item>
+    </plurals>
+</resources>

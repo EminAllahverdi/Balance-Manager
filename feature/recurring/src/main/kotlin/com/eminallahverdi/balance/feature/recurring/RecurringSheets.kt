@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.eminallahverdi.balance.core.common.DateLabels
@@ -62,43 +63,43 @@ internal fun RecurringEditorSheet(draft: RecurringDraft, state: RecurringUiState
             Modifier.fillMaxWidth().imePadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            EditorTitle(if (draft.isNew) "New payment" else "Edit payment", onRemove = if (draft.isNew) null else ({ confirmRemove = true })) {
+            EditorTitle(if (draft.isNew) stringResource(R.string.recurring_new_payment) else stringResource(R.string.recurring_edit_payment), onRemove = if (draft.isNew) null else ({ confirmRemove = true })) {
                 CategoryTile(category?.icon ?: "more_horiz", category?.color ?: 0xFF8A94A3)
             }
-            BtTextField(draft.name, "Name, like Spotify", vm::setName)
+            BtTextField(draft.name, stringResource(R.string.recurring_name_like_spotify), vm::setName)
             BtTextField(
                 value = draft.amountText,
                 placeholder = "${MoneyFormat.SYMBOL}0.00",
                 onChange = vm::setAmount,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             )
-            EditorField("Category") { CategoryChipRow(state.topCategories, draft.categoryId, vm::selectCategory) }
+            EditorField(stringResource(R.string.recurring_category)) { CategoryChipRow(state.topCategories, draft.categoryId, vm::selectCategory) }
             if (subCategories.isNotEmpty()) {
-                EditorField("Sub-category") {
+                EditorField(stringResource(R.string.recurring_sub_category)) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         subCategories.forEach { sub -> BtChip(sub.name, sub.id == draft.subCategoryId, { vm.selectSubCategory(sub) }) }
                     }
                 }
             }
-            EditorField("For whom") {
+            EditorField(stringResource(R.string.recurring_for_whom)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     state.activePeople.forEach { person ->
                         BtChip(person.name, person.id == draft.personId, { vm.setPerson(person.id) }, leading = { PersonDot(person.color) })
                     }
                 }
             }
-            EditorField("From") {
+            EditorField(stringResource(R.string.recurring_from)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     state.activeAccounts.forEach { account ->
                         BtChip(account.name, account.id == draft.accountId, { vm.setAccount(account.id) }, leading = { PersonDot(account.color) })
                     }
                 }
             }
-            EditorField("Repeats") {
+            EditorField(stringResource(R.string.recurring_repeats)) {
                 val frequencies = RecurringFrequency.entries
                 SegmentedToggle(frequencies.map { it.label }, frequencies.indexOf(draft.frequency), { vm.setFrequency(frequencies[it]) }, Modifier.fillMaxWidth(), fill = true)
             }
-            EditorField("Next payment") {
+            EditorField(stringResource(R.string.recurring_next_payment)) {
                 BtChip(
                     text = DateLabels.relative(draft.nextDate, state.today),
                     selected = false,
@@ -106,7 +107,7 @@ internal fun RecurringEditorSheet(draft: RecurringDraft, state: RecurringUiState
                     leading = { Icon(Icons.Rounded.CalendarMonth, null, tint = c.textSecondary, modifier = Modifier.size(18.dp)) },
                 )
             }
-            PrimaryButton("Save", onSave, enabled = draft.canSave)
+            PrimaryButton(stringResource(R.string.recurring_save), onSave, enabled = draft.canSave)
         }
     }
 
@@ -115,10 +116,10 @@ internal fun RecurringEditorSheet(draft: RecurringDraft, state: RecurringUiState
     if (confirmRemove) {
         AlertDialog(
             onDismissRequest = { confirmRemove = false },
-            title = { Text("Remove ${draft.name}?") },
-            text = { Text("The reminders stop. Entries you logged for it stay in your history.") },
-            confirmButton = { TextButton(onClick = { confirmRemove = false; vm.removeEditing() }) { Text("Remove") } },
-            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.recurring_remove_named, draft.name)) },
+            text = { Text(stringResource(R.string.recurring_remove_payment_text)) },
+            confirmButton = { TextButton(onClick = { confirmRemove = false; vm.removeEditing() }) { Text(stringResource(R.string.recurring_remove)) } },
+            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.recurring_cancel)) } },
         )
     }
 }

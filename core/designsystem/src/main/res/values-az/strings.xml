@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ds_selected">Seçilib</string>
+    <string name="ds_own_colour_selected">Öz rənginiz, seçilib</string>
+    <string name="ds_pick_any_colour">İstənilən rəngi seçin</string>
+    <string name="ds_your_own_colour">Öz rənginiz</string>
+    <string name="ds_strength">Doyğunluq</string>
+    <string name="ds_lightness">Açıqlıq</string>
+    <string name="ds_on_dark">Tünd fonda</string>
+    <string name="ds_on_light">Açıq fonda</string>
+    <string name="ds_use_this_colour">Bu rəngi seç</string>
+    <string name="ds_hue_degrees">Çalar, %1$d dərəcə</string>
+    <string name="ds_slider_percent">%1$s, %2$d faiz</string>
+    <string name="ds_remove">Sil</string>
+    <string name="ds_pick_a_month">Ay seçin</string>
+    <string name="ds_previous_year">Əvvəlki il</string>
+    <string name="ds_next_year">Növbəti il</string>
+    <string name="ds_cancel">Ləğv et</string>
+    <string name="ds_close">Bağla</string>
+    <string name="ds_save">Yadda saxla</string>
+    <string name="ds_borrowed_from">Borc alındı: %1$s</string>
+    <string name="ds_paid_back_to">Borc qaytarıldı: %1$s</string>
+    <string name="ds_lent_to">Borc verildi: %1$s</string>
+    <string name="ds_paid_back_by">%1$s borcu qaytardı</string>
+    <string name="ds_your_share">Sizin payınız</string>
+    <string name="ds_paid_for">%1$s üçün ödənildi</string>
+</resources>

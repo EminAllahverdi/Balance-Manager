@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="catalog_save">Save</string>
+    <string name="catalog_remove_named">Remove %1$s?</string>
+    <string name="catalog_remove_text">If it\'s been used, it\'s archived so your history stays the same.</string>
+    <string name="catalog_remove">Remove</string>
+    <string name="catalog_cancel">Cancel</string>
+    <string name="catalog_new_category">New category</string>
+    <string name="catalog_edit_category">Edit category</string>
+    <string name="catalog_new_sub_category">New sub-category</string>
+    <string name="catalog_edit_sub_category">Edit sub-category</string>
+    <string name="catalog_name">Name</string>
+    <string name="catalog_for_whom">For whom</string>
+    <string name="catalog_same_as_category">Same as category</string>
+    <string name="catalog_no_default">No default</string>
+    <string name="catalog_icon">Icon</string>
+    <string name="catalog_colour">Colour</string>
+    <string name="catalog_new_person">New person</string>
+    <string name="catalog_edit_person">Edit person</string>
+    <string name="catalog_photo">Photo</string>
+    <string name="catalog_choose_photo">Choose photo</string>
+    <string name="catalog_remove_photo">Remove photo</string>
+    <string name="catalog_back">Back</string>
+    <string name="catalog_categories">Categories</string>
+    <string name="catalog_expense">Expense</string>
+    <string name="catalog_income">Income</string>
+    <string name="catalog_people">People</string>
+    <string name="catalog_add_sub_category">Add sub-category</string>
+    <string name="catalog_archived">Archived</string>
+    <string name="catalog_restore">Restore</string>
+    <string name="catalog_drag_to_reorder">Drag to reorder</string>
+    <plurals name="catalog_sub_categories">
+        <item quantity="one">%d sub-category</item>
+        <item quantity="other">%d sub-categories</item>
+    </plurals>
+</resources>

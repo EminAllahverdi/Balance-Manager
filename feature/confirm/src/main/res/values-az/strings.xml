@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bank_notifications">Cibim bank bildirişləri</string>
+    <string name="confirm_back">Geri</string>
+    <string name="confirm_to_confirm">Təsdiq üçün</string>
+    <string name="confirm_n_new">%1$d yeni</string>
+    <string name="confirm_not_read">Oxunmayıb</string>
+    <string name="confirm_not_read_hint">Cibim sonuncu dəfə açılandan bəri bank tətbiqlərinizdən gələnlər. Yalnız tətbiq bağlanana qədər saxlanılır. Birini göndərmək üçün kopyalayın: kart rəqəmləri və balanslar X ilə əvəz olunacaq.</string>
+    <string name="confirm_auto_confirm_q">Tanış mağazalar soruşulmadan əlavə edilsin?</string>
+    <string name="confirm_auto_confirm_text">Artıq təsdiqlədiyiniz mağazalardan gələn ödənişlər əvvəlki kateqoriya, şəxs və hesabla özü əlavə olunacaq. Yeni mağazalar yenə burada gözləyəcək. Bunu istənilən vaxt söndürə bilərsiniz.</string>
+    <string name="confirm_turn_on">Aktiv et</string>
+    <string name="confirm_cancel">Ləğv et</string>
+    <string name="confirm_intro_off">Ayarlarda Bank bildirişlərini aktiv edin: bank tətbiqlərinizdən gələn ödənişlər burada əlavə etməyə hazır görünəcək.</string>
+    <string name="confirm_intro_empty">Gözləyən heç nə yoxdur. Bank tətbiqlərinizdən gələn yeni ödənişlər burada əlavə etməyə hazır görünəcək.</string>
+    <string name="confirm_intro_rows">Bank bildirişlərinizdən oxunub. Kateqoriya, şəxs və hesab əvvəlki seçimlərinizdən götürülür. «Təklif» yazılanlar ehtimaldır, əvvəlcə yoxlayın.</string>
+    <string name="confirm_edit">Düzəlt</string>
+    <string name="confirm_skip">Keç</string>
+    <string name="confirm_confirm">Təsdiqlə</string>
+    <string name="confirm_added">Əlavə edildi</string>
+    <string name="confirm_copy">Kopyala</string>
+    <string name="confirm_copied">Kopyalandı</string>
+    <string name="confirm_auto_confirm">Tanış mağazaları avtomatik təsdiqlə</string>
+    <string name="confirm_auto_confirm_caption">Əvvəl təsdiqlədiyiniz mağazaları soruşmadan əlavə et</string>
+    <string name="confirm_cash_withdrawal">Nağd pul çıxarışı</string>
+    <string name="confirm_money_received">Daxil olan pul</string>
+    <string name="confirm_bank_payment">Bank ödənişi</string>
+    <string name="confirm_pick_account_to_move">Köçürüləcək hesabı seçin</string>
+    <string name="confirm_pick_a_category">Kateqoriya seçin</string>
+    <string name="confirm_suggested">Təklif</string>
+</resources>

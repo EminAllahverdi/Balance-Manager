@@ -47,12 +47,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.eminallahverdi.balance.core.designsystem.R
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.designsystem.theme.DarkBtColors
@@ -106,17 +108,18 @@ fun ColourPicker(palette: List<Long>, selected: Long, icon: String? = null, onSe
 @Composable
 private fun Swatch(colour: Long, on: Boolean) {
     Box(Modifier.size(32.dp).clip(CircleShape).background(colour.toColor()), contentAlignment = Alignment.Center) {
-        if (on) Icon(Icons.Rounded.Check, "Selected", tint = Color(0xFF0B0D10), modifier = Modifier.size(20.dp))
+        if (on) Icon(Icons.Rounded.Check, stringResource(R.string.ds_selected), tint = Color(0xFF0B0D10), modifier = Modifier.size(20.dp))
     }
 }
 
 /** A ring of every hue, around the colour of one's own when there is one, or a plus to pick one. */
 @Composable
 private fun OwnSwatch(custom: Long?) {
+    val description = stringResource(if (custom != null) R.string.ds_own_colour_selected else R.string.ds_pick_any_colour)
     Box(
         Modifier.size(32.dp).border(3.dp, Brush.sweepGradient(HUES), CircleShape).padding(5.dp).clip(CircleShape)
             .background(custom?.toColor() ?: BtTheme.colors.bgSurfaceRaised)
-            .semantics { contentDescription = if (custom != null) "Your own colour, selected" else "Pick any colour" },
+            .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
         if (custom != null) {
@@ -163,30 +166,30 @@ private fun OwnColourSheet(start: Long, icon: String?, onPick: (Long) -> Unit, o
     val colour = Hsl(hue, saturation, lightness).toColour()
     ModalBottomSheet(onDismissRequest = onClose, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = BtTheme.colors.bgSurface) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Your own colour", style = BtTheme.type.titleMedium, color = BtTheme.colors.textPrimary)
+            Text(stringResource(R.string.ds_your_own_colour), style = BtTheme.type.titleMedium, color = BtTheme.colors.textPrimary)
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 HueRing(hue, saturation, lightness, onHue = { hue = it }, modifier = Modifier.size(232.dp))
                 ColourPreview(colour, icon, size = 72.dp)
             }
-            EditorField("Strength") {
+            EditorField(stringResource(R.string.ds_strength)) {
                 GradientSlider(
                     value = (saturation - MIN_SATURATION) / (MAX_SATURATION - MIN_SATURATION),
                     onValue = { saturation = MIN_SATURATION + it * (MAX_SATURATION - MIN_SATURATION) },
                     brush = Brush.horizontalGradient(listOf(Color.hsl(hue, MIN_SATURATION, lightness), Color.hsl(hue, MAX_SATURATION, lightness))),
-                    label = "Strength",
+                    label = stringResource(R.string.ds_strength),
                 )
             }
-            EditorField("Lightness") {
+            EditorField(stringResource(R.string.ds_lightness)) {
                 GradientSlider(
                     value = (lightness - MIN_LIGHTNESS) / (MAX_LIGHTNESS - MIN_LIGHTNESS),
                     onValue = { lightness = MIN_LIGHTNESS + it * (MAX_LIGHTNESS - MIN_LIGHTNESS) },
                     brush = Brush.horizontalGradient(listOf(Color.hsl(hue, saturation, MIN_LIGHTNESS), Color.hsl(hue, saturation, MAX_LIGHTNESS))),
-                    label = "Lightness",
+                    label = stringResource(R.string.ds_lightness),
                 )
             }
             // How it reads on each theme, whichever one is on now.
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("On Dark" to DarkBtColors, "On Light" to LightBtColors).forEach { (label, colours) ->
+                listOf(stringResource(R.string.ds_on_dark) to DarkBtColors, stringResource(R.string.ds_on_light) to LightBtColors).forEach { (label, colours) ->
                     CompositionLocalProvider(LocalBtColors provides colours) {
                         Row(
                             Modifier.weight(1f).clip(BtShapes.md).background(colours.bgSurface)
@@ -200,7 +203,7 @@ private fun OwnColourSheet(start: Long, icon: String?, onPick: (Long) -> Unit, o
                     }
                 }
             }
-            PrimaryButton("Use this colour", { onPick(colour) })
+            PrimaryButton(stringResource(R.string.ds_use_this_colour), { onPick(colour) })
         }
     }
 }
@@ -221,9 +224,10 @@ private fun HueRing(hue: Float, saturation: Float, lightness: Float, onHue: (Flo
     val thickness = with(LocalDensity.current) { 28.dp.toPx() }
     val ring = remember(saturation, lightness) { (0..360 step 10).map { Color.hsl(it.toFloat(), saturation, lightness) } }
     val surface = BtTheme.colors.bgSurface
+    val hueDescription = stringResource(R.string.ds_hue_degrees, hue.roundToInt())
     Canvas(
         modifier
-            .semantics { contentDescription = "Hue, ${hue.roundToInt()} degrees" }
+            .semantics { contentDescription = hueDescription }
             .pointerInput(Unit) {
                 fun pick(at: Offset) {
                     val angle = Math.toDegrees(atan2((at.y - size.height / 2f).toDouble(), (at.x - size.width / 2f).toDouble())).toFloat()
@@ -253,9 +257,10 @@ private fun HueRing(hue: Float, saturation: Float, lightness: Float, onHue: (Flo
 @Composable
 private fun GradientSlider(value: Float, onValue: (Float) -> Unit, brush: Brush, label: String) {
     val c = BtTheme.colors
+    val description = stringResource(R.string.ds_slider_percent, label, (value * 100).roundToInt())
     BoxWithConstraints(
         Modifier.fillMaxWidth().height(36.dp)
-            .semantics { contentDescription = "$label, ${(value * 100).roundToInt()} percent" }
+            .semantics { contentDescription = description }
             .pointerInput(Unit) {
                 fun pick(x: Float) = onValue((x / size.width).coerceIn(0f, 1f))
                 awaitEachGesture {

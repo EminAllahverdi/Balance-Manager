@@ -75,21 +75,21 @@ private fun QuickActions(c: BtColors) {
             ActionButton(quickAddAction(context, TransactionKind.EXPENSE), c.accentFill, room * EXPENSE_SHARE) {
                 WidgetIcon(Icons.Rounded.Remove, c.accentOn, 22.dp)
                 Spacer(GlanceModifier.width(6.dp))
-                Text("Expense", style = widgetText(c.accentOn, 15.sp, FontWeight.Bold), maxLines = 1)
+                Text(widgetString(R.string.widget_expense), style = widgetText(c.accentOn, 15.sp, FontWeight.Bold), maxLines = 1)
             }
             Spacer(GlanceModifier.width(GAP))
             ActionButton(quickAddAction(context, TransactionKind.INCOME), c.bgSurfaceHigh, room * INCOME_SHARE) {
                 WidgetIcon(Icons.Rounded.Add, c.moneyIncome, 22.dp)
                 Spacer(GlanceModifier.width(6.dp))
-                Text("Income", style = widgetText(c.textPrimary, 15.sp, FontWeight.Bold), maxLines = 1)
+                Text(widgetString(R.string.widget_income), style = widgetText(c.textPrimary, 15.sp, FontWeight.Bold), maxLines = 1)
             }
             Spacer(GlanceModifier.width(GAP))
             ActionButton(quickAddAction(context, TransactionKind.TRANSFER), c.bgSurfaceHigh, room * TRANSFER_SHARE) {
-                WidgetIcon(Icons.Rounded.SwapHoriz, c.textPrimary, 24.dp, "Transfer")
+                WidgetIcon(Icons.Rounded.SwapHoriz, c.textPrimary, 24.dp, widgetString(R.string.widget_transfer))
             }
             Spacer(GlanceModifier.width(GAP))
             ActionButton(quickAddAction(context, TransactionKind.DEBT), c.bgSurfaceHigh, room * DEBT_SHARE) {
-                WidgetIcon(Icons.Rounded.Handshake, c.textPrimary, 24.dp, "Debt")
+                WidgetIcon(Icons.Rounded.Handshake, c.textPrimary, 24.dp, widgetString(R.string.widget_debt))
             }
         }
     }

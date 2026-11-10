@@ -1,5 +1,6 @@
 package com.eminallahverdi.balance.feature.history
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,32 +34,32 @@ import com.eminallahverdi.balance.core.model.CategoryType
 
 private const val CATEGORIES_PER_ROW = 4
 
-internal enum class FilterSheet(val title: String) {
-    MONTH("Month"),
-    PERSON("Person"),
-    CATEGORY("Category"),
-    ACCOUNT("Account"),
+internal enum class FilterSheet(@StringRes val title: Int) {
+    MONTH(R.string.history_month),
+    PERSON(R.string.history_person),
+    CATEGORY(R.string.history_category),
+    ACCOUNT(R.string.history_account),
 }
 
 /** Picks one filter value. Grids keep the longer choices on one screen, where a menu would run off it. */
 @Composable
 internal fun HistoryFilterSheet(sheet: FilterSheet, state: HistoryUiState, vm: HistoryViewModel, onClose: () -> Unit) {
     val filter = state.filter
-    ChoiceSheet(sheet.title, onClose) { choose ->
+    ChoiceSheet(stringResource(sheet.title), onClose) { choose ->
         when (sheet) {
             FilterSheet.MONTH -> {
-                OptionRow("All time", filter.month == null, onClick = { choose { vm.setMonth(null) } })
+                OptionRow(stringResource(R.string.history_all_time), filter.month == null, onClick = { choose { vm.setMonth(null) } })
                 MonthPicker(filter.month) { month -> choose { vm.setMonth(month) } }
             }
             FilterSheet.CATEGORY -> CategoryPicker(state.categories, filter.categoryId) { id -> choose { vm.setCategory(id) } }
             FilterSheet.PERSON -> {
-                OptionRow("Everyone", filter.personId == null, onClick = { choose { vm.setPerson(null) } })
+                OptionRow(stringResource(R.string.history_everyone), filter.personId == null, onClick = { choose { vm.setPerson(null) } })
                 state.people.forEach { person ->
                     OptionRow(person.name, person.id == filter.personId, onClick = { choose { vm.setPerson(person.id) } }, leading = { PersonDot(person.color, 10.dp) })
                 }
             }
             FilterSheet.ACCOUNT -> {
-                OptionRow("All accounts", filter.accountId == null, onClick = { choose { vm.setAccount(null) } })
+                OptionRow(stringResource(R.string.history_all_accounts), filter.accountId == null, onClick = { choose { vm.setAccount(null) } })
                 state.accounts.forEach { account ->
                     OptionRow(
                         text = account.name,
@@ -73,8 +75,8 @@ internal fun HistoryFilterSheet(sheet: FilterSheet, state: HistoryUiState, vm: H
 
 @Composable
 private fun CategoryPicker(categories: List<Category>, selected: Long?, onSelect: (Long?) -> Unit) {
-    OptionRow("All categories", selected == null, onClick = { onSelect(null) })
-    listOf(CategoryType.EXPENSE to "Expense", CategoryType.INCOME to "Income").forEach { (type, title) ->
+    OptionRow(stringResource(R.string.history_all_categories), selected == null, onClick = { onSelect(null) })
+    listOf(CategoryType.EXPENSE to stringResource(R.string.history_expense), CategoryType.INCOME to stringResource(R.string.history_income)).forEach { (type, title) ->
         val group = categories.filter { it.type == type }
         if (group.isNotEmpty()) {
             Overline(title, Modifier.padding(top = 8.dp, start = 4.dp))
