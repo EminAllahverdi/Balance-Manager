@@ -3,6 +3,7 @@ package com.eminallahverdi.balance.widget
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Handshake
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.runtime.Composable
@@ -42,9 +43,11 @@ private val EDGE = 10.dp
 private val GAP = 8.dp
 
 // Expense gets the most room. Glance rows can only weigh children equally, so the widths are worked out.
-private const val EXPENSE_SHARE = 2f / 4.2f
-private const val INCOME_SHARE = 1.4f / 4.2f
-private const val TRANSFER_SHARE = 0.8f / 4.2f
+// Expense leads; Transfer and Debt are icons alone, so all four fit a 4x1 widget with the words still whole.
+private const val EXPENSE_SHARE = 1.8f / 4.8f
+private const val INCOME_SHARE = 1.4f / 4.8f
+private const val TRANSFER_SHARE = 0.8f / 4.8f
+private const val DEBT_SHARE = 0.8f / 4.8f
 
 class QuickActionsWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
@@ -66,7 +69,7 @@ class QuickActionsWidgetReceiver : GlanceAppWidgetReceiver() {
 @Composable
 private fun QuickActions(c: BtColors) {
     val context = LocalContext.current
-    val room = LocalSize.current.width - EDGE * 2 - GAP * 2 - 2.dp
+    val room = LocalSize.current.width - EDGE * 2 - GAP * 3 - 2.dp
     WidgetSurface(c) {
         Row(GlanceModifier.fillMaxSize().padding(EDGE)) {
             ActionButton(quickAddAction(context, TransactionKind.EXPENSE), c.accentFill, room * EXPENSE_SHARE) {
@@ -83,6 +86,10 @@ private fun QuickActions(c: BtColors) {
             Spacer(GlanceModifier.width(GAP))
             ActionButton(quickAddAction(context, TransactionKind.TRANSFER), c.bgSurfaceHigh, room * TRANSFER_SHARE) {
                 WidgetIcon(Icons.Rounded.SwapHoriz, c.textPrimary, 24.dp, "Transfer")
+            }
+            Spacer(GlanceModifier.width(GAP))
+            ActionButton(quickAddAction(context, TransactionKind.DEBT), c.bgSurfaceHigh, room * DEBT_SHARE) {
+                WidgetIcon(Icons.Rounded.Handshake, c.textPrimary, 24.dp, "Debt")
             }
         }
     }

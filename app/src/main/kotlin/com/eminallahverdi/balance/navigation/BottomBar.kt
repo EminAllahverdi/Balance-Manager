@@ -19,12 +19,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,7 +42,7 @@ import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 enum class TopLevelTab(val label: String, val icon: ImageVector, val selectedIcon: ImageVector, val route: Any) {
     HOME("Home", Icons.Outlined.Home, Icons.Rounded.Home, HomeDestination),
     HISTORY("History", Icons.AutoMirrored.Outlined.ReceiptLong, Icons.AutoMirrored.Rounded.ReceiptLong, HistoryDestination),
-    INSIGHTS("Insights", Icons.Outlined.Insights, Icons.Rounded.Insights, InsightsDestination),
+    INSIGHTS("Reports", Icons.Outlined.BarChart, Icons.Rounded.BarChart, InsightsDestination),
     ACCOUNTS("Accounts", Icons.Outlined.AccountBalanceWallet, Icons.Rounded.AccountBalanceWallet, AccountsDestination),
 }
 

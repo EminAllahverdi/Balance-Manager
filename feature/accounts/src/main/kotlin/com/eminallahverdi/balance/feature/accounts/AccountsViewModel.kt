@@ -3,6 +3,7 @@ package com.eminallahverdi.balance.feature.accounts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.data.CatalogRepository
+import com.eminallahverdi.balance.core.data.RecurringRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.designsystem.theme.CategoryPalette
@@ -10,6 +11,7 @@ import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.AccountBalance
 import com.eminallahverdi.balance.core.model.AccountType
 import com.eminallahverdi.balance.core.model.Money
+import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.sum
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,11 +25,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val RECENT_TRANSFERS = 3
+private const val SUMMARY_NAMES = 3
 
 sealed interface AccountsSheet {
-    data class Editor(val account: Account, val isNew: Boolean) : AccountsSheet
+    /** [isDefault] is whether new expenses start on it. It can only be turned on: one account is always the default. */
+    data class Editor(val account: Account, val isNew: Boolean, val isDefault: Boolean, val wasDefault: Boolean) : AccountsSheet
     data class Adjust(val accountId: Long, val amountText: String = "") : AccountsSheet
 }
+
+/** The default just moved to [account] from [previousId], which Undo puts back. */
+data class DefaultChange(val account: Account, val previousId: Long?)
 
 data class AccountsUiState(
     val balances: List<AccountBalance> = emptyList(),
@@ -36,7 +43,13 @@ data class AccountsUiState(
     val preferredAccountId: Long? = null,
     val hideAmounts: Boolean = false,
     val sheet: AccountsSheet? = null,
+    val defaultChange: DefaultChange? = null,
+    val recurring: List<RecurringPayment> = emptyList(),
 ) {
+    /** Up to three names and how many, or None yet, for the row that opens them. */
+    val recurringSummary: String
+        get() = if (recurring.isEmpty()) "None yet" else recurring.take(SUMMARY_NAMES).joinToString(", ") { it.name } + " · ${recurring.size}"
+
     val included: List<AccountBalance> get() = balances.filter { it.account.includeInTotal }
     val total: Money get() = included.map { it.balance }.sum()
 
@@ -56,18 +69,20 @@ data class AccountsUiState(
 class AccountsViewModel @Inject constructor(
     private val catalog: CatalogRepository,
     private val transactions: TransactionRepository,
+    recurring: RecurringRepository,
     private val prefs: UserPreferencesRepository,
 ) : ViewModel() {
 
     private val sheet = MutableStateFlow<AccountsSheet?>(null)
+    private val defaultChange = MutableStateFlow<DefaultChange?>(null)
 
     val state: StateFlow<AccountsUiState> = combine(
         transactions.balances,
         catalog.accounts,
         transactions.observeTransfers(RECENT_TRANSFERS),
         prefs.preferences,
-        sheet,
-    ) { balances, accounts, transfers, p, open ->
+        combine(sheet, defaultChange, recurring.payments) { open, change, payments -> Triple(open, change, payments) },
+    ) { balances, accounts, transfers, p, (open, change, payments) ->
         AccountsUiState(
             balances = balances,
             archived = accounts.filter { it.isArchived },
@@ -75,6 +90,8 @@ class AccountsViewModel @Inject constructor(
             preferredAccountId = p.defaultExpenseAccountId,
             hideAmounts = p.hideAmountsInApp,
             sheet = open,
+            defaultChange = change,
+            recurring = payments.filterNot { it.isFinished },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccountsUiState())
 
@@ -87,16 +104,29 @@ class AccountsViewModel @Inject constructor(
             color = CategoryPalette.first(),
             sortOrder = state.value.balances.size,
         )
-        sheet.update { AccountsSheet.Editor(draft, isNew = true) }
+        // The first account there is starts as the default, since there's nothing else to start on.
+        val first = state.value.balances.isEmpty()
+        sheet.update { AccountsSheet.Editor(draft, isNew = true, isDefault = first, wasDefault = first) }
     }
 
-    fun edit(account: Account) = sheet.update { AccountsSheet.Editor(account, isNew = false) }
+    fun edit(account: Account) {
+        val isDefault = account.id == state.value.defaultAccountId
+        sheet.update { AccountsSheet.Editor(account, isNew = false, isDefault = isDefault, wasDefault = isDefault) }
+    }
+
     fun update(account: Account) = sheet.update { (it as? AccountsSheet.Editor)?.copy(account = account) ?: it }
+
+    /** Only on: the default moves to another account by turning it on there. */
+    fun setEditorDefault(on: Boolean) = sheet.update { editor -> (editor as? AccountsSheet.Editor)?.let { if (it.wasDefault) it else it.copy(isDefault = on) } ?: editor }
 
     fun saveEditor() {
         val draft = sheet.value as? AccountsSheet.Editor ?: return
         sheet.update { null }
-        viewModelScope.launch { catalog.saveAccount(draft.account.copy(name = draft.account.name.trim())) }
+        viewModelScope.launch {
+            val id = catalog.saveAccount(draft.account.copy(name = draft.account.name.trim()))
+            val saved = if (draft.isNew) id else draft.account.id
+            if (draft.isDefault && !draft.wasDefault) prefs.setDefaultExpenseAccount(saved)
+        }
     }
 
     /** Removes what's being edited. An account with transactions is archived instead, so history keeps it. */
@@ -106,12 +136,23 @@ class AccountsViewModel @Inject constructor(
         viewModelScope.launch { catalog.removeAccount(draft.account) }
     }
 
-    fun setInTotal(account: Account, included: Boolean) { viewModelScope.launch { catalog.saveAccount(account.copy(includeInTotal = included)) } }
-    fun setOnWidget(account: Account, shown: Boolean) { viewModelScope.launch { catalog.saveAccount(account.copy(showOnWidget = shown)) } }
     fun restore(account: Account) { viewModelScope.launch { catalog.saveAccount(account.copy(isArchived = false)) } }
 
-    /** The same setting as Settings' "Default expense account". */
-    fun makeDefault(account: Account) { viewModelScope.launch { prefs.setDefaultExpenseAccount(account.id) } }
+    /** New expenses start on [account] from now on. What it was before is kept a moment, for Undo. */
+    fun makeDefault(account: Account) {
+        val previous = state.value.defaultAccountId
+        if (previous == account.id) return
+        defaultChange.value = DefaultChange(account, previous)
+        viewModelScope.launch { prefs.setDefaultExpenseAccount(account.id) }
+    }
+
+    fun undoDefault() {
+        val change = defaultChange.value ?: return
+        defaultChange.value = null
+        change.previousId?.let { id -> viewModelScope.launch { prefs.setDefaultExpenseAccount(id) } }
+    }
+
+    fun dismissDefaultChange() = defaultChange.update { null }
 
     fun openAdjust() {
         val account = state.value.defaultAccountId ?: return

@@ -1,30 +1,33 @@
 package com.eminallahverdi.balance.feature.accounts
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarOutline
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Tune
@@ -32,14 +35,17 @@ import androidx.compose.material.icons.rounded.Widgets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -53,6 +59,7 @@ import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
+import com.eminallahverdi.balance.core.designsystem.component.FittedAmount
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
@@ -61,16 +68,20 @@ import com.eminallahverdi.balance.core.model.AccountBalance
 import com.eminallahverdi.balance.core.model.AccountType
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.TransactionDetails
+import kotlinx.coroutines.delay
 
 private const val TRANSFER_TILE = 0xFFAEB6C1
 
 @Composable
-private fun LoansRow(onClick: () -> Unit) {
+private fun PlaceRow(icon: String, title: String, caption: String?, onClick: () -> Unit) {
     val c = BtTheme.colors
     BtCard(Modifier.clip(BtShapes.md).clickable(onClick = onClick)) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            CategoryTile("handshake", TRANSFER_TILE)
-            Text("Loans & debts", style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
+            CategoryTile(icon, TRANSFER_TILE)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, style = BtTheme.type.bodyStrong, color = c.textPrimary)
+                caption?.let { Text(it, style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            }
             Icon(Icons.Rounded.ChevronRight, null, tint = c.textSecondary)
         }
     }
@@ -108,6 +119,7 @@ fun AccountsRoute(
     onOpenLoans: () -> Unit,
     onDeleteArchived: (Long) -> Unit,
     onSeeAllTransfers: () -> Unit,
+    onOpenRecurring: () -> Unit,
     viewModel: AccountsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -115,8 +127,9 @@ fun AccountsRoute(
     var archivedOpen by rememberSaveable { mutableStateOf(false) }
     fun money(m: Money) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m, signed = true)
 
+    Box(Modifier.fillMaxSize().background(c.bgCanvas)) {
     LazyColumn(
-        Modifier.fillMaxSize().background(c.bgCanvas),
+        Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -126,23 +139,13 @@ fun AccountsRoute(
                 BtIconButton(Icons.Rounded.Add, "Add account", viewModel::newAccount)
             }
         }
-        item {
-            val count = state.included.size
-            Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Overline(if (count == 1) "Total · 1 account included" else "Total · $count accounts included")
-                Text(money(state.total), style = BtTheme.type.amountDisplay.copy(fontSize = 36.sp, lineHeight = 40.sp), color = c.textPrimary)
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ActionButton("Transfer", Icons.Rounded.SwapHoriz, enabled = state.canTransfer, onClick = onTransfer, modifier = Modifier.weight(1f))
-                ActionButton("Adjust balance", Icons.Rounded.Tune, enabled = true, onClick = viewModel::openAdjust, modifier = Modifier.weight(1f))
-            }
-        }
+        item { TotalCard(state, money(state.total), onTransfer, viewModel::openAdjust) }
         items(state.balances, key = { it.account.id }) { balance ->
             AccountCard(balance, isDefault = balance.account.id == state.defaultAccountId, amount = money(balance.balance), vm = viewModel)
         }
-        item(key = "loans") { LoansRow(onOpenLoans) }
+        // What's owed and what's coming round again sit together, below the balances they come out of.
+        item(key = "loans") { PlaceRow("handshake", "Loans & debts", caption = null, onOpenLoans) }
+        item(key = "recurring") { PlaceRow("event_repeat", "Recurring payments", state.recurringSummary, onOpenRecurring) }
         if (state.archived.isNotEmpty()) {
             item(key = "archived") { ArchivedHeader(state.archived.size, archivedOpen) { archivedOpen = !archivedOpen } }
             if (archivedOpen) items(state.archived, key = { "a${it.id}" }) { account -> ArchivedRow(account, viewModel, onDeleteArchived) }
@@ -172,6 +175,10 @@ fun AccountsRoute(
             }
         }
     }
+    state.defaultChange?.let { change ->
+        DefaultChangeBar(change, viewModel::undoDefault, viewModel::dismissDefaultChange, Modifier.align(Alignment.BottomCenter).padding(16.dp))
+    }
+    }
 
     when (val sheet = state.sheet) {
         is AccountsSheet.Editor -> AccountEditorSheet(sheet, state, viewModel)
@@ -180,16 +187,37 @@ fun AccountsRoute(
     }
 }
 
-/** Both weigh the same: a lime one beside a plain one read as a selected tab. */
+/**
+ * The total and the two things done to balances, in one box: Transfer and Adjust balance sit along its foot, split by a
+ * hairline, so they read as the box's actions rather than as tabs.
+ */
 @Composable
-private fun ActionButton(text: String, icon: ImageVector, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun TotalCard(state: AccountsUiState, total: String, onTransfer: () -> Unit, onAdjust: () -> Unit) {
+    val c = BtTheme.colors
+    val count = state.included.size
+    BtCard(shape = BtShapes.lg, bordered = true) {
+        Column {
+            Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Overline(if (count == 1) "Total · 1 account" else "Total · $count accounts")
+                FittedAmount(total, BtTheme.type.amountDisplay.copy(fontSize = 34.sp, lineHeight = 40.sp))
+            }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                BoxAction("Transfer", Icons.Rounded.SwapHoriz, enabled = state.canTransfer, onClick = onTransfer, modifier = Modifier.weight(1f))
+                Box(Modifier.width(1.dp).fillMaxHeight().padding(vertical = 10.dp).background(c.borderDefault))
+                BoxAction("Adjust balance", Icons.Rounded.Tune, enabled = true, onClick = onAdjust, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun BoxAction(text: String, icon: ImageVector, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = BtTheme.colors
     Row(
         modifier
-            .height(52.dp)
+            .heightIn(min = 52.dp)
             .alpha(if (enabled) 1f else 0.5f)
-            .clip(BtShapes.md)
-            .background(c.bgSurface)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
@@ -199,77 +227,94 @@ private fun ActionButton(text: String, icon: ImageVector, enabled: Boolean, onCl
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * One account: its name, what kind it is and its card's digits, and the balance. A star says which one new expenses start
+ * on, and tapping another moves it there. What it counts in is set in its editor and only shown here: a small widget mark
+ * when it's on the widget, and a dimmed balance with "not in the total" when it isn't counted.
+ */
 @Composable
 private fun AccountCard(balance: AccountBalance, isDefault: Boolean, amount: String, vm: AccountsViewModel) {
     val c = BtTheme.colors
     val account = balance.account
     BtCard {
-        Column {
-            Row(
-                Modifier.fillMaxWidth().clickable { vm.edit(account) }.padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                CategoryTile(account.icon, account.color)
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(account.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                        if (isDefault) {
-                            Text(
-                                "Default",
-                                style = BtTheme.type.overline.copy(letterSpacing = 0.sp),
-                                color = c.accentOn,
-                                modifier = Modifier.clip(BtShapes.full).background(c.accentFill).padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
-                        }
-                    }
-                    Text(account.type.label, style = BtTheme.type.caption, color = c.textSecondary)
+        Row(
+            Modifier.fillMaxWidth().clickable(onClickLabel = "Edit ${account.name}") { vm.edit(account) }.padding(start = 14.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CategoryTile(account.icon, account.color)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(account.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    val details = listOfNotNull(
+                        account.type.label,
+                        account.cardEnding.takeIf { it.isNotBlank() }?.let { "•••• $it" },
+                        "not in the total".takeUnless { account.includeInTotal },
+                    )
+                    Text(details.joinToString(" · "), style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                    if (account.showOnWidget) Icon(Icons.Rounded.Widgets, "On the widget", tint = c.textMuted, modifier = Modifier.size(14.dp))
                 }
-                Text(amount, style = BtTheme.type.amountMedium, color = c.textPrimary, maxLines = 1)
             }
-            FlowRow(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SwitchChip(
-                    text = "In total",
-                    icon = if (account.includeInTotal) Icons.Rounded.Check else Icons.Rounded.Remove,
-                    on = account.includeInTotal,
-                    onClick = { vm.setInTotal(account, !account.includeInTotal) },
-                )
-                SwitchChip(
-                    text = if (account.showOnWidget) "On widget" else "Not on widget",
-                    icon = Icons.Rounded.Widgets,
-                    on = account.showOnWidget,
-                    onClick = { vm.setOnWidget(account, !account.showOnWidget) },
-                )
-                if (!isDefault) {
-                    SwitchChip(text = "Make default", icon = Icons.Rounded.StarOutline, on = true, role = Role.Button, onClick = { vm.makeDefault(account) })
-                }
+            Text(amount, style = BtTheme.type.amountMedium, color = if (account.includeInTotal) c.textPrimary else c.textMuted, maxLines = 1)
+            StarButton(account.name, isDefault) { vm.makeDefault(account) }
+        }
+    }
+}
+
+/** Filled lime on the default account, an outline on the others; it springs as it fills, so the move is seen. */
+@Composable
+private fun StarButton(name: String, isDefault: Boolean, onClick: () -> Unit) {
+    val c = BtTheme.colors
+    val scale = remember { Animatable(1f) }
+    var wasDefault by remember { mutableStateOf(isDefault) }
+    LaunchedEffect(isDefault) {
+        if (isDefault && !wasDefault) {
+            scale.snapTo(0.5f)
+            scale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMediumLow))
+        }
+        wasDefault = isDefault
+    }
+    val tint by animateColorAsState(if (isDefault) c.accentText else c.textMuted, label = "star")
+    Box(
+        Modifier
+            .size(44.dp)
+            .clip(BtShapes.full)
+            .clickable(enabled = !isDefault, role = Role.Button, onClickLabel = "Make $name the default", onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            if (isDefault) Icons.Rounded.Star else Icons.Rounded.StarOutline,
+            if (isDefault) "$name is the default" else null,
+            tint = tint,
+            modifier = Modifier.size(22.dp).scale(scale.value),
+        )
+    }
+}
+
+/** "New expenses start on Taksit", with Undo, for a few seconds after the star moves. */
+@Composable
+private fun DefaultChangeBar(change: DefaultChange, onUndo: () -> Unit, onDone: () -> Unit, modifier: Modifier = Modifier) {
+    val c = BtTheme.colors
+    LaunchedEffect(change) {
+        delay(DEFAULT_BAR_MS)
+        onDone()
+    }
+    Row(
+        modifier.fillMaxWidth().clip(BtShapes.md).background(c.bgSurfaceHigh).padding(start = 16.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(Icons.Rounded.Star, null, tint = c.accentText, modifier = Modifier.size(20.dp))
+        Text("New expenses start on ${change.account.name}", style = BtTheme.type.body, color = c.textPrimary, modifier = Modifier.weight(1f).padding(vertical = 14.dp))
+        if (change.previousId != null) {
+            Box(Modifier.heightIn(min = 44.dp).clip(BtShapes.full).clickable(role = Role.Button, onClick = onUndo).padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                Text("Undo", style = BtTheme.type.label, color = c.accentText)
             }
         }
     }
 }
 
-/** A small on/off chip inside a touch target that's taller than it looks. */
-@Composable
-private fun SwitchChip(text: String, icon: ImageVector, on: Boolean, onClick: () -> Unit, role: Role = Role.Switch) {
-    val c = BtTheme.colors
-    Box(Modifier.heightIn(min = 44.dp).clickable(role = role, onClick = onClick), contentAlignment = Alignment.Center) {
-        Row(
-            Modifier
-                .height(30.dp)
-                .alpha(if (on) 1f else 0.6f)
-                .clip(BtShapes.full)
-                .background(c.bgSurfaceRaised)
-                .border(1.dp, c.borderDefault, BtShapes.full)
-                .padding(horizontal = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Icon(icon, null, tint = c.textSecondary, modifier = Modifier.size(16.dp))
-            Text(text, style = BtTheme.type.caption.copy(fontSize = 12.sp), color = c.textPrimary)
-        }
-    }
-}
+private const val DEFAULT_BAR_MS = 4_000L
 
 @Composable
 private fun ArchivedRow(account: Account, vm: AccountsViewModel, onDelete: (Long) -> Unit) {

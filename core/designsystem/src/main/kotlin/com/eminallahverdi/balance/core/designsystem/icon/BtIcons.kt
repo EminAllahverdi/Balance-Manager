@@ -1,6 +1,8 @@
 package com.eminallahverdi.balance.core.designsystem.icon
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.CallMade
+import androidx.compose.material.icons.automirrored.rounded.CallReceived
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Apps
@@ -11,9 +13,11 @@ import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.DirectionsBus
 import androidx.compose.material.icons.rounded.DirectionsCar
+import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.FamilyRestroom
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Flight
+import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Handshake
 import androidx.compose.material.icons.rounded.Hotel
 import androidx.compose.material.icons.rounded.Inventory2
@@ -38,6 +42,7 @@ import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Subscriptions
 import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.VolunteerActivism
 import androidx.compose.material.icons.rounded.Work
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -82,6 +87,11 @@ object BtIcons {
         "credit_card" to Icons.Rounded.CreditCard,
         "savings" to Icons.Rounded.Savings,
         "handshake" to Icons.Rounded.Handshake,
+        "event_repeat" to Icons.Rounded.EventRepeat,
+        "groups" to Icons.Rounded.Groups,
+        "volunteer_activism" to Icons.Rounded.VolunteerActivism,
+        "call_made" to Icons.AutoMirrored.Rounded.CallMade,
+        "call_received" to Icons.AutoMirrored.Rounded.CallReceived,
         "inventory_2" to Icons.Rounded.Inventory2,
         "swap_horiz" to Icons.Rounded.SwapHoriz,
         "more_horiz" to Icons.Rounded.MoreHoriz,

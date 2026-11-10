@@ -37,12 +37,13 @@ import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -66,11 +67,12 @@ data class GroceriesUiState(
     val loading: Boolean = true,
     val month: YearMonth = YearMonth.now(),
     val category: Category? = null,
-    val report: GroceryReport? = null,
-    val receipts: List<Receipt> = emptyList(),
     val scan: ScanState = ScanState.Idle,
     val open: Receipt? = null,
 )
+
+/** One page of the report: the month's groceries against the months before, and the receipts saved in it. */
+data class GroceriesMonth(val month: YearMonth, val category: Category?, val report: GroceryReport, val receipts: List<Receipt>)
 
 private val GROCERY_NAMES = setOf("groceries", "grocery", "market", "supermarket", "ərzaq", "erzaq", "продукты")
 
@@ -94,29 +96,26 @@ class GroceriesViewModel @Inject constructor(
     private val scan = MutableStateFlow<ScanState>(ScanState.Idle)
     private val open = MutableStateFlow<Receipt?>(null)
 
-    private val entries = month.flatMapLatest { m -> transactions.observeDetails(DateRange(m.minusMonths(MONTHS_COMPARED).atDay(1), m.atEndOfMonth())) }
+    private val categories = catalog.categories
 
-    val state: StateFlow<GroceriesUiState> = combine(
-        combine(month, catalog.categories, entries) { m, c, e -> Triple(m, c, e) },
+    /** The sheets, and which month is on screen: what adding a receipt and its quick add go by. */
+    val state: StateFlow<GroceriesUiState> = combine(month, categories, scan, open) { m, all, scanState, opened ->
+        GroceriesUiState(loading = false, month = m, category = groceriesCategory(all), scan = scanState, open = opened)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GroceriesUiState())
+
+    /** One month's page, as Home has: each page of the swipe has its own, so a swipe shows the next month straight away. */
+    fun monthPage(m: YearMonth): Flow<GroceriesMonth> = combine(
+        categories,
+        transactions.observeDetails(DateRange(m.minusMonths(MONTHS_COMPARED).atDay(1), m.atEndOfMonth())),
         receipts.receipts,
-        scan,
-        open,
-    ) { (m, categories, rows), all, scanState, opened ->
-        val groceries = groceriesCategory(categories)
+    ) { all, rows, saved ->
+        val groceries = groceriesCategory(all)
         // Sub-categories count towards their parent, as they do everywhere else.
         val spent = rows.filter { row ->
             row.transaction.kind == TransactionKind.EXPENSE && groceries != null && (row.category?.id == groceries.id || row.parentCategory?.id == groceries.id)
         }.groupBy { YearMonth.from(it.transaction.date) }.mapValues { (_, list) -> list.map { it.transaction.amount }.sum() }
-        GroceriesUiState(
-            loading = false,
-            month = m,
-            category = groceries,
-            report = groceryReport(m, spent, all),
-            receipts = all.filter { YearMonth.from(it.date) == m },
-            scan = scanState,
-            open = opened,
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GroceriesUiState())
+        GroceriesMonth(m, groceries, groceryReport(m, spent, saved), saved.filter { YearMonth.from(it.date) == m })
+    }.flowOn(Dispatchers.Default)
 
     fun showMonth(next: YearMonth) {
         if (!next.isAfter(YearMonth.now())) month.value = next

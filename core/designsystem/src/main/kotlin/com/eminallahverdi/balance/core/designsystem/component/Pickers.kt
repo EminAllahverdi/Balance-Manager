@@ -35,6 +35,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -103,6 +104,27 @@ private const val WHEEL_TICK_STRENGTH = 150
 /** Matches how far back Home can swipe. */
 private const val YEARS_BACK = 49
 private const val MONTHS_PER_ROW = 3
+
+/** How many months a month-by-month page can swipe back through: Home's and Groceries' pagers, and [MonthPicker]'s years. */
+const val MONTH_PAGES = 600
+
+/**
+ * A month's name with a small caret, on the page itself, so it moves with a swipe and a swipe that starts on it works.
+ * Tapping it opens a sheet of months ([MonthPicker]). The year shows only when it isn't this one.
+ */
+@Composable
+fun MonthTitle(month: YearMonth, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = BtTheme.colors
+    val label = month.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH) + if (month.year != YearMonth.now().year) " ${month.year}" else ""
+    Row(
+        modifier.clip(BtShapes.sm).clickable(role = Role.Button, onClickLabel = "Pick a month", onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(label, style = BtTheme.type.titleLarge, color = c.textPrimary)
+        Icon(Icons.Rounded.ExpandMore, null, tint = c.textSecondary, modifier = Modifier.size(22.dp))
+    }
+}
 
 /** Any month up to this one: a year at a time, so it stays on one screen. */
 @Composable

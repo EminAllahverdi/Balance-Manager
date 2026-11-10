@@ -36,6 +36,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.unit.ColorProvider
 import com.eminallahverdi.balance.core.datastore.WidgetBalanceMode
+import com.eminallahverdi.balance.core.designsystem.theme.BtColors
 import com.eminallahverdi.balance.core.model.TransactionKind
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -50,13 +51,13 @@ class BalanceVoiceWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val data = context.widgetData
-        val states = combine(data.transactions().balances, data.preferences().preferences, BalanceReveal.secondsLeft) { balances, preferences, secondsLeft ->
-            balanceWidgetState(balances, preferences, secondsLeft, preferences.colors(context))
+        val states = combine(data.transactions().balances, data.preferences().preferences, BalanceReveal.secondsLeft, data.bankAlerts().waitingCount) { balances, preferences, secondsLeft, waiting ->
+            balanceWidgetState(balances, preferences, secondsLeft, preferences.colors(context)) to waiting
         }
         val first = states.first()
         provideContent {
-            val state by states.collectAsState(first)
-            BalanceVoiceContent(state)
+            val shown by states.collectAsState(first)
+            BalanceVoiceContent(shown.first, shown.second)
         }
     }
 }
@@ -67,7 +68,7 @@ class BalanceVoiceWidgetReceiver : GlanceAppWidgetReceiver() {
 
 /** Three tap areas: the mic listens, the + adds an expense, and the balance follows the Widget balance setting. */
 @Composable
-private fun BalanceVoiceContent(state: BalanceWidgetState) {
+private fun BalanceVoiceContent(state: BalanceWidgetState, waiting: Int) {
     val c = state.colors
     val context = LocalContext.current
     val room = LocalSize.current.width - 16.dp - KEY * 2 - KEY_GAP - EDGE * 2 - 2.dp
@@ -88,16 +89,25 @@ private fun BalanceVoiceContent(state: BalanceWidgetState) {
             Spacer(GlanceModifier.width(EDGE))
             Key(Icons.Rounded.Mic, "Add by voice", c.accentOn, c.accentFill, voiceAction(context))
             Spacer(GlanceModifier.width(KEY_GAP))
-            Key(Icons.Rounded.Add, "Add expense", c.accentText, c.bgSurfaceHigh, quickAddAction(context, TransactionKind.EXPENSE))
+            // The count says the bank has sent something To confirm holds: + opens with it on top.
+            Key(Icons.Rounded.Add, if (waiting > 0) "Add expense, $waiting from your bank" else "Add expense", c.accentText, c.bgSurfaceHigh, quickAddAction(context, TransactionKind.EXPENSE), badge = waiting, badgeColors = c)
             Spacer(GlanceModifier.width(EDGE))
         }
     }
 }
 
 @Composable
-private fun Key(icon: ImageVector, label: String, tint: Color, fill: Color, action: Action) {
-    Box(
-        GlanceModifier.size(KEY).cornerRadius(16.dp).background(ColorProvider(fill)).clickable(action),
-        contentAlignment = Alignment.Center,
-    ) { WidgetIcon(icon, tint, 24.dp, label) }
+private fun Key(icon: ImageVector, label: String, tint: Color, fill: Color, action: Action, badge: Int = 0, badgeColors: BtColors? = null) {
+    Box(GlanceModifier.size(KEY).cornerRadius(16.dp).background(ColorProvider(fill)).clickable(action), contentAlignment = Alignment.Center) {
+        WidgetIcon(icon, tint, 24.dp, label)
+        if (badge > 0 && badgeColors != null) {
+            Box(GlanceModifier.fillMaxSize().padding(4.dp), contentAlignment = Alignment.TopEnd) {
+                Box(GlanceModifier.size(18.dp).cornerRadius(9.dp).background(ColorProvider(badgeColors.accentFill)), contentAlignment = Alignment.Center) {
+                    Text(if (badge > MAX_BADGE) "$MAX_BADGE+" else "$badge", style = widgetText(badgeColors.accentOn, 10.sp, FontWeight.Bold), maxLines = 1)
+                }
+            }
+        }
+    }
 }
+
+private const val MAX_BADGE = 9

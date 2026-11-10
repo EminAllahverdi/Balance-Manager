@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -17,8 +18,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Functions
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarOutline
+import androidx.compose.material.icons.rounded.Widgets
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,11 +38,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.designsystem.component.BtChip
+import com.eminallahverdi.balance.core.designsystem.component.BtSwitch
 import com.eminallahverdi.balance.core.designsystem.component.BtTextField
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.ColourPicker
@@ -98,6 +108,25 @@ internal fun AccountEditorSheet(editor: AccountsSheet.Editor, state: AccountsUiS
                 Text("Bank notifications from this card go to this account.", style = BtTheme.type.caption, color = BtTheme.colors.textMuted)
             }
         }
+        // How the account takes part: where expenses start, what Total counts, and what the balance widgets add up.
+        Column(Modifier.fillMaxWidth().clip(BtShapes.md).background(BtTheme.colors.bgSurfaceRaised)) {
+            SwitchRow(
+                icon = if (editor.isDefault) Icons.Rounded.Star else Icons.Rounded.StarOutline,
+                iconTint = if (editor.isDefault) BtTheme.colors.accentText else BtTheme.colors.textSecondary,
+                title = "Default for expenses",
+                caption = if (editor.wasDefault) "New expenses start here. Make another account the default to change it" else "New expenses start on this account",
+                checked = editor.isDefault,
+                onChange = vm::setEditorDefault,
+            )
+            SwitchDivider()
+            SwitchRow(Icons.Rounded.Functions, BtTheme.colors.textSecondary, "Count in the total", "Part of Total here and the balance on Home", account.includeInTotal) {
+                vm.update(account.copy(includeInTotal = it))
+            }
+            SwitchDivider()
+            SwitchRow(Icons.Rounded.Widgets, BtTheme.colors.textSecondary, "Show on the widget", "Added into the balance widgets", account.showOnWidget) {
+                vm.update(account.copy(showOnWidget = it))
+            }
+        }
         EditorField("Icon") {
             IconPicker(account.color, account.icon, { vm.update(account.copy(icon = it)) }, keys = ACCOUNT_ICONS)
         }
@@ -118,6 +147,26 @@ internal fun AccountEditorSheet(editor: AccountsSheet.Editor, state: AccountsUiS
         )
     }
 }
+
+/** One on/off line in a grouped box: the whole row toggles, not just the switch. */
+@Composable
+private fun SwitchRow(icon: ImageVector, iconTint: Color, title: String, caption: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(role = Role.Switch) { onChange(!checked) }.padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(icon, null, tint = iconTint, modifier = Modifier.size(22.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = BtTheme.type.bodyStrong, color = BtTheme.colors.textPrimary)
+            Text(caption, style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+        }
+        BtSwitch(checked, onChange)
+    }
+}
+
+@Composable
+private fun SwitchDivider() = Box(Modifier.fillMaxWidth().height(1.dp).background(BtTheme.colors.borderDefault))
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

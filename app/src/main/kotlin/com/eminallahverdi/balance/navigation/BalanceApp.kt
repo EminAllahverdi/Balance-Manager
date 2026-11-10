@@ -26,9 +26,7 @@ import com.eminallahverdi.balance.feature.catalog.CatalogRoute
 import com.eminallahverdi.balance.feature.confirm.ConfirmRoute
 import com.eminallahverdi.balance.feature.history.HistoryRoute
 import com.eminallahverdi.balance.feature.home.HomeRoute
-import com.eminallahverdi.balance.feature.insights.InsightsRoute
 import com.eminallahverdi.balance.feature.loans.LoansRoute
-import com.eminallahverdi.balance.feature.receipts.GroceriesRoute
 import com.eminallahverdi.balance.feature.receipts.ReceiptEntry
 import com.eminallahverdi.balance.feature.recurring.RecurringRoute
 import com.eminallahverdi.balance.feature.settings.SettingsRoute
@@ -43,7 +41,6 @@ import kotlinx.serialization.Serializable
 @Serializable data object RecurringDestination
 @Serializable data object LoansDestination
 @Serializable data object ConfirmDestination
-@Serializable data object GroceriesDestination
 
 /** History narrowed to what was tapped on Home. The names match the ARG_ keys in HistoryViewModel. */
 /** History narrowed to what was tapped. A list of one kind, like all transfers, has no month: it starts on all time. */
@@ -109,8 +106,7 @@ fun BalanceApp(
             }
             composable<HistoryDestination> { HistoryRoute(onOpen = onOpenTransaction) }
             composable<TransactionsDestination> { HistoryRoute(onOpen = onOpenTransaction, onBack = { nav.popBackStack() }) }
-            composable<InsightsDestination> { InsightsRoute(onOpenGroceries = { nav.navigate(GroceriesDestination) { launchSingleTop = true } }) }
-            composable<GroceriesDestination> { GroceriesRoute(onBack = { nav.popBackStack() }, onAddExpense = onAddReceipt) }
+            composable<InsightsDestination> { ReportsRoute(onAddReceipt) }
             composable<AccountsDestination> {
                 AccountsRoute(
                     onTransfer = onTransfer,
@@ -118,6 +114,7 @@ fun BalanceApp(
                     onOpenLoans = { nav.navigate(LoansDestination) { launchSingleTop = true } },
                     onDeleteArchived = { id -> nav.navigate(DeleteAccountDestination(id)) { launchSingleTop = true } },
                     onSeeAllTransfers = { nav.navigate(TransactionsDestination(kind = TransactionKind.TRANSFER.name)) { launchSingleTop = true } },
+                    onOpenRecurring = { nav.navigate(RecurringDestination) { launchSingleTop = true } },
                 )
             }
             composable<DeleteAccountDestination> { DeleteAccountRoute(onBack = { nav.popBackStack() }, onOpen = onOpenTransaction) }
@@ -127,7 +124,6 @@ fun BalanceApp(
                 SettingsRoute(
                     onBack = { nav.popBackStack() },
                     onOpenCatalog = { nav.navigate(CatalogDestination) { launchSingleTop = true } },
-                    onOpenRecurring = { nav.navigate(RecurringDestination) { launchSingleTop = true } },
                     onOpenConfirm = { nav.navigate(ConfirmDestination) { launchSingleTop = true } },
                 )
             }

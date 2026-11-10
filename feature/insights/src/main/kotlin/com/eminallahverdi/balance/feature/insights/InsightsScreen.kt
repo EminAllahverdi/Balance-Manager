@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -72,9 +73,12 @@ private const val BAR_WIDTH_SHARE = 0.72f
 private const val BAR_FADE = 0.4f
 private const val TOP_CHANGES = 3
 
-/** How the money moved: period by period, who it was for, and what changed most. */
+/**
+ * How the money moved: period by period, who it was for, and what changed most. [embedded]: inside Reports, which gives it
+ * its title, and the groceries report its own chip.
+ */
 @Composable
-fun InsightsRoute(onOpenGroceries: () -> Unit, viewModel: InsightsViewModel = hiltViewModel()) {
+fun InsightsRoute(embedded: Boolean = false, onOpenGroceries: () -> Unit = {}, viewModel: InsightsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val c = BtTheme.colors
     var showAll by rememberSaveable { mutableStateOf(false) }
@@ -86,14 +90,14 @@ fun InsightsRoute(onOpenGroceries: () -> Unit, viewModel: InsightsViewModel = hi
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Insights", style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
+                if (embedded) Spacer(Modifier.weight(1f)) else Text("Insights", style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
                 SegmentedToggle(listOf("Week", "Month", "Year"), state.period.ordinal, { viewModel.setPeriod(InsightPeriod.entries[it]) })
             }
         }
         val overview = state.overview ?: return@LazyColumn
         item { ChartCard(state.period, overview, viewModel) }
         item { Stats(state, overview) }
-        item { GroceriesRow(onOpenGroceries) }
+        if (!embedded) item { GroceriesRow(onOpenGroceries) }
         if (overview.changes.isNotEmpty()) {
             item {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {

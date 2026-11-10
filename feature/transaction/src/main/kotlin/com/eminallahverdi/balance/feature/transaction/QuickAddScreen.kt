@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Storefront
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
@@ -98,7 +99,9 @@ import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.designsystem.theme.tileGlyph
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.Category
+import com.eminallahverdi.balance.core.model.DebtType
 import com.eminallahverdi.balance.core.model.TransactionKind
+import com.eminallahverdi.balance.core.model.namesIn
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -106,6 +109,12 @@ import kotlinx.coroutines.launch
 
 private const val GRID_COLUMNS = 4
 private const val SHORT_SCREEN_DP = 800
+
+/** How much of the screen a page with the tabs takes: room for the full grid, or the keypad page of a transfer. */
+private const val TABBED_SHEET_SHARE = 0.84f
+
+/** Names offered while one is typed. */
+private const val NAME_MATCHES = 4
 
 /** The quick-add sheet. [onClose] is called after saving or when the user dismisses it. [onVoice] swaps it for listening. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -142,12 +151,16 @@ fun QuickAddRoute(onClose: () -> Unit, onVoice: (() -> Unit)? = null, viewModel:
         BackHandler {
             if (!viewModel.back()) scope.launch { sheet.hide() }.invokeOnCompletion { onClose() }
         }
-        Column(Modifier.fillMaxWidth().animateContentSize().navigationBarsPadding().imePadding()) {
+        // Every page with the tabs on it is one height, so switching between them never moves the tabs under the thumb.
+        val tabbed = state.showsKinds
+        val tabbedHeight = (LocalConfiguration.current.screenHeightDp * TABBED_SHEET_SHARE).dp
+        Column(Modifier.fillMaxWidth().then(if (tabbed) Modifier.height(tabbedHeight) else Modifier.animateContentSize()).navigationBarsPadding().imePadding()) {
             if (state.editing != null) EditHeader(onDelete = { confirmDelete = true })
             state.heard?.let { HeardLine(it) }
             when (state.step) {
-                QuickAddStep.CATEGORY -> CategoryStep(state, viewModel, onVoice.takeIf { state.editing == null && state.pending == null && state.payment == null }, Modifier.weight(1f, fill = false))
-                QuickAddStep.ENTRY -> EntryStep(state, viewModel, onOpenCalendar = { showCalendar = true }, Modifier.weight(1f, fill = false))
+                QuickAddStep.CATEGORY -> CategoryStep(state, viewModel, onVoice.takeIf { state.editing == null && state.pending == null && state.payment == null }, Modifier.weight(1f, fill = tabbed))
+                QuickAddStep.ENTRY -> EntryStep(state, viewModel, onOpenCalendar = { showCalendar = true }, Modifier.weight(1f, fill = tabbed), fill = tabbed)
+                QuickAddStep.DEBT -> DebtStep(state, viewModel, onVoice, Modifier.weight(1f, fill = tabbed))
             }
         }
     }
@@ -206,10 +219,12 @@ private fun HeardLine(text: String) {
 }
 
 @Composable
-private fun KindToggle(state: QuickAddUiState, vm: QuickAddViewModel) {
-    val kinds = listOf(TransactionKind.EXPENSE, TransactionKind.INCOME, TransactionKind.TRANSFER)
+internal fun KindToggle(state: QuickAddUiState, vm: QuickAddViewModel) {
+    // A debt is only ever new here: something being edited, or arriving filled in, stays the kind it is.
+    val new = state.editing == null && state.pending == null && state.payment == null
+    val kinds = listOfNotNull(TransactionKind.EXPENSE, TransactionKind.INCOME, TransactionKind.TRANSFER, TransactionKind.DEBT.takeIf { new })
     SegmentedToggle(
-        options = listOf("Expense", "Income", "Transfer"),
+        options = kinds.map { kind -> if (kind == TransactionKind.DEBT) "Debt" else kind.name.lowercase().replaceFirstChar(Char::titlecase) },
         selected = kinds.indexOf(state.kind),
         onSelect = { vm.setKind(kinds[it]) },
         fill = true,
@@ -226,6 +241,8 @@ private fun CategoryStep(state: QuickAddUiState, vm: QuickAddViewModel, onVoice:
             Box(Modifier.weight(1f)) { KindToggle(state, vm) }
             onVoice?.let { BtIconButton(Icons.Rounded.Mic, "Add by voice", it, Modifier.padding(end = 16.dp)) }
         }
+        // The bank's ready-made entries come first: the payment just made is usually one of them.
+        if (state.debt == null) WaitingFromBank(state, vm)
         val frequent = state.frequent
         if (frequent.isNotEmpty()) {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
@@ -291,14 +308,34 @@ private fun CategoryCell(category: Category, selected: Boolean, vm: QuickAddView
 
 /** Everything on one page, with Save always in reach. The page scrolls when the keyboard leaves it too little room. */
 @Composable
-private fun EntryStep(state: QuickAddUiState, vm: QuickAddViewModel, onOpenCalendar: () -> Unit, modifier: Modifier) {
+private fun EntryStep(state: QuickAddUiState, vm: QuickAddViewModel, onOpenCalendar: () -> Unit, modifier: Modifier, fill: Boolean = false) {
     val transfer = state.kind == TransactionKind.TRANSFER
     Column(modifier) {
-        Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-            if (transfer) KindToggle(state, vm) else EntryHeader(state, vm)
+        // [fill]: the sheet is a fixed height, and the keypad keeps to its bottom.
+        Column(Modifier.weight(1f, fill = fill).verticalScroll(rememberScrollState())) {
+            val debt = state.debt.takeIf { state.isDebt }
+            when {
+                transfer -> KindToggle(state, vm)
+                debt != null && !debt.type.hasCategory -> DebtHeader(state, vm)
+                else -> EntryHeader(state, vm, showAccount = debt?.type != DebtType.PAID_FOR_ME)
+            }
+            if (debt != null && debt.type.hasCategory) DebtKindLine(state, vm)
             AmountLine(state)
+            if (debt != null) DebtCaption(state)
             if (transfer) {
                 TransferAccounts(state, vm)
+            } else if (debt != null) {
+                if (debt.type != DebtType.PAID_BACK) DebtWho(state, vm)
+                when (debt.type) {
+                    DebtType.LENT, DebtType.BORROWED -> DebtParts(state, vm)
+                    DebtType.PAID_FOR_OTHERS -> DebtShare(state, vm)
+                    else -> Unit
+                }
+                if (debt.type.hasCategory) {
+                    if (state.subCategories.isNotEmpty()) SubCategories(state, vm)
+                    Merchants(state, vm)
+                    ForWhom(state, vm)
+                }
             } else {
                 if (state.subCategories.isNotEmpty()) SubCategories(state, vm)
                 Merchants(state, vm)
@@ -314,7 +351,7 @@ private fun EntryStep(state: QuickAddUiState, vm: QuickAddViewModel, onOpenCalen
 }
 
 @Composable
-private fun EntryHeader(state: QuickAddUiState, vm: QuickAddViewModel) {
+private fun EntryHeader(state: QuickAddUiState, vm: QuickAddViewModel, showAccount: Boolean = true) {
     val c = BtTheme.colors
     val income = state.kind == TransactionKind.INCOME
     Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -327,7 +364,7 @@ private fun EntryHeader(state: QuickAddUiState, vm: QuickAddViewModel) {
             Text(state.category?.name ?: "Pick a category", style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             Icon(Icons.Rounded.ExpandMore, null, tint = c.textSecondary, modifier = Modifier.size(18.dp))
         }
-        AccountPicker(label = if (income) "To" else "From", accounts = state.accounts, selected = state.account, onSelect = vm::selectAccount)
+        if (showAccount) AccountPicker(label = if (income) "To" else "From", accounts = state.accounts, selected = state.account, onSelect = vm::selectAccount)
     }
 }
 
@@ -346,7 +383,7 @@ private fun AmountLine(state: QuickAddUiState) {
 }
 
 @Composable
-private fun AccountPicker(label: String, accounts: List<Account>, selected: Account?, onSelect: (Long) -> Unit) {
+internal fun AccountPicker(label: String, accounts: List<Account>, selected: Account?, onSelect: (Long) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Column(horizontalAlignment = Alignment.End, modifier = Modifier.clip(BtShapes.sm).clickable { open = true }.padding(4.dp)) {
         Overline(label)
@@ -463,7 +500,7 @@ private fun DateAndNote(state: QuickAddUiState, vm: QuickAddViewModel, onOpenCal
 
 /** A chip that's only an icon, like the pencil beside the merchants. */
 @Composable
-private fun IconChip(icon: ImageVector, description: String, selected: Boolean, onClick: () -> Unit) {
+internal fun IconChip(icon: ImageVector, description: String, selected: Boolean, onClick: () -> Unit) {
     val c = BtTheme.colors
     Box(
         Modifier
@@ -486,15 +523,31 @@ private fun IconChip(icon: ImageVector, description: String, selected: Boolean, 
 private fun TextBar(typing: QuickAddText, state: QuickAddUiState, vm: QuickAddViewModel) {
     val c = BtTheme.colors
     val isMerchant = typing == QuickAddText.MERCHANT
+    val isName = typing == QuickAddText.NAME
     val focus = remember { FocusRequester() }
     // What's there starts selected, so typing replaces it and a tap keeps it to correct.
     var field by remember(typing) {
-        val current = if (isMerchant) state.merchant else state.note
+        val current = when (typing) {
+            QuickAddText.MERCHANT -> state.merchant
+            QuickAddText.NOTE -> state.note
+            QuickAddText.NAME -> state.debt?.who.orEmpty()
+        }
         mutableStateOf(TextFieldValue(current, TextRange(0, current.length)))
     }
     fun change(value: TextFieldValue) {
         field = value
-        if (isMerchant) vm.setMerchant(value.text) else vm.setNote(value.text)
+        when (typing) {
+            QuickAddText.MERCHANT -> vm.setMerchant(value.text)
+            QuickAddText.NOTE -> vm.setNote(value.text)
+            QuickAddText.NAME -> vm.setWho(value.text)
+        }
+    }
+    // Names used before that start like what's typed, so the same person isn't spelt two ways.
+    val nameMatches = if (isName) {
+        val typed = namesIn(field.text).lastOrNull().orEmpty()
+        state.knownNames.filter { typed.isNotBlank() && it.startsWith(typed, ignoreCase = true) && !it.equals(typed, ignoreCase = true) }.take(NAME_MATCHES)
+    } else {
+        emptyList()
     }
     LaunchedEffect(typing) { focus.requestFocus() }
 
@@ -507,6 +560,18 @@ private fun TextBar(typing: QuickAddText, state: QuickAddUiState, vm: QuickAddVi
 
     Column(Modifier.fillMaxWidth().background(c.bgSurface)) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderStrong))
+        if (nameMatches.isNotEmpty()) {
+            Row(Modifier.padding(top = 10.dp).fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                nameMatches.forEach { name ->
+                    BtChip(name, selected = false, onClick = {
+                        // The typed start becomes the name it matched; a bill keeps the names before it.
+                        val before = namesIn(field.text).dropLast(1)
+                        change(TextFieldValue(joinNames(before + name)))
+                        vm.stopTyping()
+                    })
+                }
+            }
+        }
         if (isMerchant && (state.merchantMatches.isNotEmpty() || state.isNewMerchant)) {
             Row(Modifier.padding(top = 10.dp).fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 state.merchantMatches.forEach { name -> BtChip(name, selected = false, onClick = { vm.pickMerchant(name) }) }
@@ -527,9 +592,9 @@ private fun TextBar(typing: QuickAddText, state: QuickAddUiState, vm: QuickAddVi
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(if (isMerchant) Icons.Rounded.Storefront else Icons.AutoMirrored.Rounded.Notes, null, tint = c.textMuted, modifier = Modifier.size(20.dp))
+                Icon(when { isMerchant -> Icons.Rounded.Storefront; isName -> Icons.Rounded.Person; else -> Icons.AutoMirrored.Rounded.Notes }, null, tint = c.textMuted, modifier = Modifier.size(20.dp))
                 Box(Modifier.weight(1f)) {
-                    if (field.text.isEmpty()) Text(if (isMerchant) "Shop or service" else "Add a note", style = BtTheme.type.body, color = c.textMuted, maxLines = 1)
+                    if (field.text.isEmpty()) Text(when { isMerchant -> "Shop or service"; isName -> if (state.debt?.type == DebtType.PAID_FOR_OTHERS) "Names, like Sam and Alex" else "Name"; else -> "Add a note" }, style = BtTheme.type.body, color = c.textMuted, maxLines = 1)
                     BasicTextField(
                         value = field,
                         onValueChange = ::change,
@@ -537,7 +602,7 @@ private fun TextBar(typing: QuickAddText, state: QuickAddUiState, vm: QuickAddVi
                         textStyle = BtTheme.type.body.copy(color = c.textPrimary),
                         cursorBrush = SolidColor(c.accentFill),
                         keyboardOptions = KeyboardOptions(
-                            capitalization = if (isMerchant) KeyboardCapitalization.Words else KeyboardCapitalization.Sentences,
+                            capitalization = if (isMerchant || isName) KeyboardCapitalization.Words else KeyboardCapitalization.Sentences,
                             imeAction = ImeAction.Done,
                         ),
                         keyboardActions = KeyboardActions(onDone = { vm.stopTyping() }),
@@ -609,7 +674,7 @@ private fun Keypad(state: QuickAddUiState, vm: QuickAddViewModel) {
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
+internal fun Section(title: String, content: @Composable () -> Unit) {
     Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
         Overline(title, Modifier.padding(bottom = 8.dp))
         content()

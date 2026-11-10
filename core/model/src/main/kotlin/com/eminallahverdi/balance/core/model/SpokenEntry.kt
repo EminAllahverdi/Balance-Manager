@@ -22,6 +22,10 @@ data class SpokenEntry(
     val merchant: String? = null,
     /** 1 for "yesterday", 0 for "today", null when no day was said. */
     val daysAgo: Int? = null,
+    /** A debt, when the words for one were said: lent, borrowed, paid back, paid for me or for others. */
+    val debt: DebtType? = null,
+    /** Who the debt is with, as said. Several for a bill paid for others: "Sam and Alex". */
+    val counterparty: String? = null,
 )
 
 /** What a sentence is matched against: everything the user has named. */
@@ -32,6 +36,8 @@ data class SpokenNames(
     val merchants: List<Merchant>,
     /** Entries per category id, so when two share a name, like Fuel under Car and under Motorbike, the one in use wins. */
     val categoryUse: Map<Long, Int> = emptyMap(),
+    /** People there are debts with, so "Samə borc verdim" finds Sam, whatever ending the sentence gave the name. */
+    val debtNames: List<String> = emptyList(),
 )
 
 /**
@@ -45,6 +51,18 @@ fun parseSpokenEntry(text: String, names: SpokenNames, language: SpokenLanguage)
     val amount = takeAmount(words, language)
     val daysAgo = takeDay(words)
     val incomeSaid = words.any { it.isOneOf(INCOME_WORDS) }
+
+    // A debt first: its name is someone outside the household, so it's taken before people are looked for.
+    val debt = debtSaid(words)
+    if (debt != null) {
+        val who = takeCounterparty(words, text, debt, names.debtNames)
+        val accounts = names.accounts.filterNot { it.isArchived }
+        val account = takeBest(words, accounts) { it.name } ?: accountByType(words, accounts)
+        val categories = names.categories.filterNot { it.isArchived }
+        // Only a bill, or a share of one, is in a category: lending and paying back aren't spending.
+        val category = if (debt.hasCategory) takeCategory(words, categories, names.categoryUse) else null
+        return SpokenEntry(amount = amount, kind = TransactionKind.DEBT, categoryId = category?.id, accountId = account?.id, daysAgo = daysAgo, debt = debt, counterparty = who)
+    }
 
     val accounts = names.accounts.filterNot { it.isArchived }
     val account = takeBest(words, accounts) { it.name } ?: accountByType(words, accounts)
@@ -495,3 +513,91 @@ private fun newMerchant(words: List<Word>, language: SpokenLanguage): String? {
     } ?: return null
     return word.replaceFirstChar { it.titlecase(Locale.ROOT) }
 }
+
+/**
+ * The words for each kind of debt, in English and Azerbaijani, over the folded words of the sentence. They're tried in this
+ * order, so "paid for me" is a share someone paid before "paid for" can be a bill the user paid.
+ */
+private val DEBT_WORDS: List<Pair<DebtType, Regex>> = listOf(
+    DebtType.PAID_BACK to Regex("""\b(?:paid|pay|pays|gave|give|gives|sent|send)(?: \w+){0,2} back\b|\breturned\b|\bqaytar\w*"""),
+    DebtType.PAID_FOR_ME to Regex("""\b(?:paid|pays|covered|treated)(?: for)? me\b|\bmenim (?:ucun|yerime|evezime)\b|\bevezime\b"""),
+    DebtType.PAID_FOR_OTHERS to Regex("""\bpaid for\b|\bucun odedim\b|\bhami ucun\b"""),
+    DebtType.LENT to Regex("""\b(?:lent|lend|loaned)\b|\bborc(?:a)? ver\w*"""),
+    DebtType.BORROWED to Regex("""\b(?:borrowed|borrow)\b|\bborc (?:al|got)\w*"""),
+)
+
+private fun debtSaid(words: List<Word>): DebtType? {
+    val said = words.joinToString(" ") { it.folded }
+    return DEBT_WORDS.firstOrNull { (_, pattern) -> pattern.containsMatchIn(said) }?.first
+}
+
+/** Words that are never someone's name, whatever their place in the sentence. */
+private val NOT_A_NAME = setOf(
+    "i", "me", "my", "we", "us", "to", "from", "the", "a", "an", "back", "paid", "pay", "gave", "sent", "and", "for", "of", "money", "lunch",
+    "at", "in", "on", "with", "by", "today", "yesterday", "dinner", "breakfast", "coffee", "everyone", "them", "him", "her", "our", "their",
+    "men", "mene", "meni", "menim", "biz", "pul", "pulu", "borc", "ve", "ile", "da", "de", "bu", "o", "bir", "geri", "ucun",
+) + CURRENCY + MINOR_UNITS
+
+/**
+ * Who a debt is with. Someone there are debts with already is found whatever ending the sentence gave them. Otherwise
+ * it's the word in the place the language puts them: after "lent" or "from", before "paid back" or "qaytardı", in the
+ * dative before "borc verdim" (Samə), in the ablative before "borc aldım" (Samdan), and every name for a bill.
+ */
+private fun takeCounterparty(words: MutableList<Word>, text: String, debt: DebtType, known: List<String>): String? {
+    val found = generateSequence { takeBest(words, known) { it } }.take(MOST_NAMES).toList()
+    if (found.isNotEmpty()) return if (debt == DebtType.PAID_FOR_OTHERS) joinNames(found) else found.first()
+    val heard = Regex("""[\p{L}][\p{L}'’-]*|\d+""").findAll(text).map { it.value }.toList()
+    val lower = heard.map { fold(it.lowercase(Locale.ROOT)) }
+    fun at(i: Int): String? = heard.getOrNull(i)?.takeIf { lower[i] !in NOT_A_NAME && !lower[i].first().isDigit() }
+    fun firstAfter(i: Int): String? = (i + 1 until heard.size).firstNotNullOfOrNull { at(it) }
+    fun lastBefore(i: Int): String? = (i - 1 downTo 0).firstNotNullOfOrNull { at(it) }
+    fun index(vararg keys: String): Int = lower.indexOfFirst { word -> keys.any { word == it || it.endsWith("*") && word.startsWith(it.dropLast(1)) } }
+    val name = when (debt) {
+        DebtType.LENT -> index("lent", "lend", "loaned").takeIf { it >= 0 }?.let { firstAfter(it) }
+            ?: index("borc", "borca").takeIf { it >= 0 }?.let { lastBefore(it) }?.withoutEnding(listOf("ya", "ye", "yə"), listOf("a", "e", "ə"))
+        DebtType.BORROWED -> index("from").takeIf { it >= 0 }?.let { firstAfter(it) }
+            ?: index("borc").takeIf { it >= 0 }?.let { lastBefore(it) }?.withoutEnding(listOf("dan", "den", "dən"), emptyList())
+        DebtType.PAID_BACK -> index("paid", "pays", "gave", "gives", "sent", "qaytar*").takeIf { it >= 0 }?.let { lastBefore(it) ?: firstAfter(it) }
+        DebtType.PAID_FOR_ME -> index("paid", "pays", "covered", "treated", "menim", "evezime").takeIf { it >= 0 }?.let { lastBefore(it) }
+        DebtType.PAID_FOR_OTHERS -> return billNames(heard, lower)
+    } ?: return null
+    return name.replaceFirstChar { it.titlecase(Locale.ROOT) }
+}
+
+/** Everyone a bill was paid for: the names after "paid for" in English, or before "üçün" in Azerbaijani. */
+private fun billNames(heard: List<String>, lower: List<String>): String? {
+    val joins = setOf("and", "ve", ",")
+    // "paid for Sam and Alex", or with the amount between: "paid 20 manat for Sam and Alex".
+    val paid = lower.indexOf("paid")
+    val english = if (paid >= 0) (paid + 1 until minOf(lower.size, paid + BILL_GAP)).firstOrNull { lower[it] == "for" } ?: -1 else -1
+    val names = if (english >= 0) {
+        (english + 1 until heard.size).asSequence().map { heard[it] to lower[it] }
+            .takeWhile { (_, word) -> word in joins || (word !in NOT_A_NAME && !word.first().isDigit()) }
+            .filter { (_, word) -> word !in joins }.map { it.first }.toList()
+    } else {
+        val ucun = lower.indexOf("ucun").takeIf { it > 0 } ?: return null
+        (ucun - 1 downTo 0).asSequence().map { heard[it] to lower[it] }
+            .takeWhile { (_, word) -> word in joins || (word !in NOT_A_NAME && !word.first().isDigit()) }
+            .filter { (_, word) -> word !in joins }.map { it.first }.toList().reversed()
+    }
+    return names.takeIf { it.isNotEmpty() }?.map { n -> n.replaceFirstChar { it.titlecase(Locale.ROOT) } }?.let(::joinNames)
+}
+
+/** "Leylaya" is Leyla and "Samə" is Sam: a vowel-ending name takes a y before the ending, a consonant-ending one doesn't. */
+private fun String.withoutEnding(afterVowel: List<String>, afterConsonant: List<String>): String {
+    val lower = lowercase(Locale.ROOT)
+    afterVowel.firstOrNull { lower.endsWith(it) && length > it.length + 1 }?.let { return dropLast(it.length) }
+    afterConsonant.firstOrNull { lower.endsWith(it) && length > it.length + 1 }?.let { return dropLast(it.length) }
+    return this
+}
+
+private fun joinNames(names: List<String>): String = when (names.size) {
+    0 -> ""
+    1 -> names.single()
+    else -> names.dropLast(1).joinToString(", ") + " and " + names.last()
+}
+
+private const val MOST_NAMES = 6
+
+/** How far after "paid" its "for" can be, with an amount and currency between. */
+private const val BILL_GAP = 5

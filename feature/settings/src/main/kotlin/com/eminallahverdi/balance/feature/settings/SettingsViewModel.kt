@@ -8,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.common.IoDispatcher
 import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
-import com.eminallahverdi.balance.core.data.RecurringRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.ThemePreference
 import com.eminallahverdi.balance.core.datastore.UserPreferences
@@ -17,7 +16,6 @@ import com.eminallahverdi.balance.core.datastore.WidgetBalanceMode
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.ExportSpan
-import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.exportFileName
 import com.eminallahverdi.balance.core.model.transactionsToCsv
@@ -47,17 +45,8 @@ data class SettingsUiState(
     val accounts: List<Account> = emptyList(),
     val categoryCount: Int = 0,
     val peopleCount: Int = 0,
-    val recurring: List<RecurringPayment> = emptyList(),
     val toConfirm: Int = 0,
-) {
-
-    val recurringSummary: String
-        get() = if (recurring.isEmpty()) "None yet" else recurring.take(SUMMARY_NAMES).joinToString(", ") { it.name } + " · ${recurring.size}"
-
-    private companion object {
-        const val SUMMARY_NAMES = 3
-    }
-}
+)
 
 /** The export sheet: a ready-made [span] or dates picked by hand, which clear it, and how many entries fall in them. */
 data class ExportDraft(val span: ExportSpan?, val from: LocalDate, val to: LocalDate, val count: Int? = null) {
@@ -75,7 +64,6 @@ data class ImportUiState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     catalog: CatalogRepository,
-    recurring: RecurringRepository,
     bankAlerts: BankAlertRepository,
     private val transactions: TransactionRepository,
     private val prefs: UserPreferencesRepository,
@@ -98,15 +86,13 @@ class SettingsViewModel @Inject constructor(
         catalog.accounts,
         catalog.categories,
         catalog.people,
-        recurring.payments,
-    ) { (p, waiting), accounts, categories, people, payments ->
+    ) { (p, waiting), accounts, categories, people ->
         SettingsUiState(
             toConfirm = waiting,
             preferences = p,
             accounts = accounts.filterNot { it.isArchived },
             categoryCount = categories.count { it.parentId == null && !it.isArchived },
             peopleCount = people.count { !it.isArchived },
-            recurring = payments.filterNot { it.isFinished },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 

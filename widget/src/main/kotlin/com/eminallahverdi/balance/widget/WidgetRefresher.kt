@@ -40,8 +40,11 @@ class WidgetRefresher @Inject constructor(
     fun start() {
         scope.launch { context.bookDailyWork<MidnightRefreshWorker>(MIDNIGHT_WORK, MIDNIGHT, ExistingPeriodicWorkPolicy.KEEP) }
         scope.launch {
-            // Its own trigger: this count is all that widget shows, and it changes nothing the others show.
-            bankAlerts.waitingCount.distinctUntilChanged().drop(1).collect { ToConfirmWidget().updateAll(context) }
+            // Its own trigger: the To confirm widget shows only this count, and the 4x1 balance shows it on its +.
+            bankAlerts.waitingCount.distinctUntilChanged().drop(1).collect {
+                ToConfirmWidget().updateAll(context)
+                BalanceVoiceWidget().updateAll(context)
+            }
         }
         scope.launch {
             // Room re-emits on every write to the table, so balances also fires for edits that leave the sums alone.

@@ -59,13 +59,14 @@ import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
 import com.eminallahverdi.balance.core.designsystem.component.DonutChart
 import com.eminallahverdi.balance.core.designsystem.component.FittedAmount
+import com.eminallahverdi.balance.core.designsystem.component.MONTH_PAGES
 import com.eminallahverdi.balance.core.designsystem.component.MonthPicker
+import com.eminallahverdi.balance.core.designsystem.component.MonthTitle
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonAvatar
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
 import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
 import com.eminallahverdi.balance.core.designsystem.component.SplitBar
-import com.eminallahverdi.balance.core.designsystem.component.toColor
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.CategorySpending
@@ -76,13 +77,10 @@ import com.eminallahverdi.balance.core.model.PieSlice
 import com.eminallahverdi.balance.core.model.Share
 import com.eminallahverdi.balance.core.model.pieSlices
 import java.time.YearMonth
-import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
-import java.util.Locale
 import kotlinx.coroutines.launch
 
 /** How far back Home can swipe. The last page is the current month. */
-private const val MONTH_PAGES = 600
 
 private val CHART_SIZE = 136.dp
 private val HEADER_TOP = 16.dp
@@ -259,21 +257,6 @@ private fun HomeNotice(icon: androidx.compose.ui.graphics.vector.ImageVector, te
             Text(text, style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
             Icon(Icons.Rounded.ChevronRight, null, tint = c.textMuted, modifier = Modifier.size(20.dp))
         }
-    }
-}
-
-/** The month's name, and a sheet to jump to any other. Swiping is the way to the months either side. */
-@Composable
-private fun MonthTitle(month: YearMonth, onClick: () -> Unit, modifier: Modifier) {
-    val c = BtTheme.colors
-    val label = month.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH) + if (month.year != YearMonth.now().year) " ${month.year}" else ""
-    Row(
-        modifier.clip(BtShapes.sm).clickable(role = Role.Button, onClickLabel = "Pick a month", onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Text(label, style = BtTheme.type.titleLarge, color = c.textPrimary)
-        Icon(Icons.Rounded.ExpandMore, null, tint = c.textSecondary, modifier = Modifier.size(22.dp))
     }
 }
 

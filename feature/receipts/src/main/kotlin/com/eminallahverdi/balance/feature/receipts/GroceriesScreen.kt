@@ -23,14 +23,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BakeryDining
 import androidx.compose.material.icons.rounded.Cake
-import androidx.compose.material.icons.rounded.ChevronLeft
-import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Eco
@@ -52,6 +52,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,7 +62,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -75,6 +75,9 @@ import com.eminallahverdi.balance.core.designsystem.component.BtTextField
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
 import com.eminallahverdi.balance.core.designsystem.component.FittedAmount
 import com.eminallahverdi.balance.core.designsystem.component.FloatingAddButton
+import com.eminallahverdi.balance.core.designsystem.component.MONTH_PAGES
+import com.eminallahverdi.balance.core.designsystem.component.MonthPicker
+import com.eminallahverdi.balance.core.designsystem.component.MonthTitle
 import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PrimaryButton
@@ -95,66 +98,73 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import java.time.temporal.ChronoUnit
+import kotlinx.coroutines.launch
 
-private val MONTH = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
 
 /**
  * What groceries came to this month, against the months before, and what they went on, from the receipts scanned.
  * [onAddExpense] opens quick add filled in with a receipt the entries don't have yet.
  */
+/**
+ * [onBack] null: it sits inside Reports, which gives it its title. Months change as they do on Home: swipe for the ones
+ * either side, or tap the month's name for a sheet of them.
+ */
 @Composable
-fun GroceriesRoute(onBack: () -> Unit, onAddExpense: (ReceiptEntry) -> Unit, viewModel: GroceriesViewModel = hiltViewModel()) {
+fun GroceriesRoute(onBack: (() -> Unit)?, onAddExpense: (ReceiptEntry) -> Unit, viewModel: GroceriesViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val c = BtTheme.colors
+    val thisMonth = remember { YearMonth.now() }
+    val pager = rememberPagerState(initialPage = MONTH_PAGES - 1) { MONTH_PAGES }
+    val scope = rememberCoroutineScope()
+    var pickingMonth by rememberSaveable { mutableStateOf(false) }
+    fun monthOf(page: Int) = thisMonth.minusMonths((MONTH_PAGES - 1 - page).toLong())
+    fun pageOf(month: YearMonth) = MONTH_PAGES - 1 - ChronoUnit.MONTHS.between(month, thisMonth).toInt()
+    LaunchedEffect(pager.settledPage) { viewModel.showMonth(monthOf(pager.settledPage)) }
+
     Box(Modifier.fillMaxSize().background(c.bgCanvas)) {
         Column(Modifier.fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
-                Text("Groceries", style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
+            if (onBack != null) {
+                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Back", onBack)
+                    Text("Groceries", style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
+                }
             }
-            MonthSwitcher(state.month, onChange = viewModel::showMonth)
-            LazyColumn(
-                Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                val report = state.report
-                if (!state.loading && report != null) {
-                    item(key = "spent") { SpentCard(report, state.category?.name) }
+            HorizontalPager(pager, Modifier.fillMaxSize(), key = { it }) { page ->
+                val month = monthOf(page)
+                val data by remember(month) { viewModel.monthPage(month) }.collectAsStateWithLifecycle(null)
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    // On the page, so its name moves with the swipe, as on Home.
+                    item(key = "month") { MonthTitle(month, onClick = { pickingMonth = true }, Modifier.heightIn(min = 44.dp)) }
+                    val shown = data ?: return@LazyColumn
+                    val report = shown.report
+                    item(key = "spent") { SpentCard(report, shown.category?.name) }
                     if (report.receipts == 0) {
                         item(key = "hint") { HintCard() }
                     } else {
                         item(key = "groups") { GroupsCard(report) }
                         item(key = "items") { TopItemsCard(report) }
                     }
-                    if (state.receipts.isNotEmpty()) {
+                    if (shown.receipts.isNotEmpty()) {
                         item(key = "receipts") { Overline("Receipts", Modifier.padding(start = 4.dp, top = 4.dp)) }
-                        items(state.receipts, key = { it.id }) { receipt -> ReceiptRow(receipt) { viewModel.openReceipt(receipt) } }
+                        items(shown.receipts, key = { it.id }) { receipt -> ReceiptRow(receipt) { viewModel.openReceipt(receipt) } }
                     }
                 }
             }
         }
-        FloatingAddButton("Add a receipt", viewModel::startScan, Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(16.dp))
+        FloatingAddButton("Add a receipt", viewModel::startScan, Modifier.align(Alignment.BottomEnd).then(if (onBack != null) Modifier.navigationBarsPadding() else Modifier).padding(16.dp))
+    }
+    if (pickingMonth) {
+        ChoiceSheet("Month", onClose = { pickingMonth = false }) { choose ->
+            MonthPicker(monthOf(pager.currentPage)) { month -> choose { scope.launch { pager.animateScrollToPage(pageOf(month)) } } }
+        }
     }
     ScanFlow(state.scan, viewModel, onAddExpense)
     state.open?.let { ReceiptSheet(it, onClose = { viewModel.openReceipt(null) }, onDelete = { viewModel.delete(it) }) }
-}
-
-@Composable
-private fun MonthSwitcher(month: YearMonth, onChange: (YearMonth) -> Unit) {
-    val c = BtTheme.colors
-    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(44.dp).clip(BtShapes.full).clickable { onChange(month.minusMonths(1)) }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.ChevronLeft, "Month before", tint = c.textSecondary)
-        }
-        Text(month.format(MONTH), style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-        val canGoOn = month.isBefore(YearMonth.now())
-        Box(Modifier.size(44.dp).clip(BtShapes.full).clickable(enabled = canGoOn) { onChange(month.plusMonths(1)) }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.ChevronRight, "Month after", tint = if (canGoOn) c.textSecondary else c.textMuted.copy(alpha = 0.3f))
-        }
-    }
 }
 
 /** +12% in the spending colour when it's more, −8% in the income colour when it's less. */

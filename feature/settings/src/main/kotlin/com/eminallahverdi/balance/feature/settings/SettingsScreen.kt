@@ -30,7 +30,6 @@ import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsActive
@@ -82,14 +81,13 @@ import com.eminallahverdi.balance.importer.moneymanager.ImportPreview
 fun SettingsRoute(
     onBack: () -> Unit,
     onOpenCatalog: () -> Unit,
-    onOpenRecurring: () -> Unit,
     onOpenConfirm: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var pickingTime by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxSize()) {
-        SettingsList(state, viewModel, onBack, onOpenCatalog, onOpenRecurring, onOpenConfirm, onPickTime = { pickingTime = true })
+        SettingsList(state, viewModel, onBack, onOpenCatalog, onOpenConfirm, onPickTime = { pickingTime = true })
         BtTimePickerSheet(
             visible = pickingTime,
             title = "Reminder time",
@@ -106,7 +104,6 @@ private fun SettingsList(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
     onOpenCatalog: () -> Unit,
-    onOpenRecurring: () -> Unit,
     onOpenConfirm: () -> Unit,
     onPickTime: () -> Unit,
 ) {
@@ -147,13 +144,6 @@ private fun SettingsList(
                 BankNotificationRows(state, viewModel, onOpenConfirm)
                 Divider()
                 EveningReminderRows(state, viewModel, onPickTime)
-                Divider()
-                SettingRow(
-                    icon = Icons.Rounded.EventRepeat,
-                    title = "Recurring payments",
-                    caption = state.recurringSummary,
-                    onClick = onOpenRecurring,
-                ) { Chevron() }
             }
             BackupSection()
             Section("Data") {
