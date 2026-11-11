@@ -26,7 +26,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sec{padding:12px 16px 0}
 .line{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .p{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1 1 0;font-size:12px;line-height:16px;font-weight:600;color:var(--text-muted)}
-.av{width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#0B0D10;opacity:.55}
+.av{width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;background:var(--bg-surface-high);color:var(--text-primary)}
 .pad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .k{height:54px;border-radius:14px;background:var(--bg-surface-raised);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:24px}
 .save{grid-column:4;grid-row:2 / span 3;border-radius:14px;background:var(--accent-fill);color:var(--accent-on);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:700;font-size:15px}
@@ -49,11 +49,11 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 <div class="sec" style="padding-top: 14px"><span class="over">Sub-category</span><div class="line"><button class="chip sel">Fuel</button><button class="chip">Wash</button><button class="chip">Service</button><button class="chip">Parking</button></div></div>
 <div class="sec"><span class="over">Merchant</span><div class="line"><button class="chip sel">Azpetrol</button><button class="chip">SOCAR</button><button class="chip">Lukoil</button><a class="chip" href="QuickAddMerchant.dc.html" aria-label="Type a merchant" style="padding: 0 10px"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-secondary)">edit</span></a></div></div>
 <div class="sec"><span class="over">For whom</span><div style="display: flex">
-<button class="p" style="color: var(--text-primary)"><span class="av" style="background: var(--person-me); opacity: 1; box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--accent-fill)">M</span>Me</button>
-<button class="p"><span class="av" style="background: var(--person-wife)">W</span>Wife</button>
-<button class="p"><span class="av" style="background: var(--person-daughter)">D</span>Daughter</button>
-<button class="p"><span class="av" style="background: var(--person-mom)">M</span>Mom</button>
-<button class="p"><span class="av" style="background: var(--person-family)">F</span>Family</button>
+<button class="p" style="color: var(--text-primary)"><span class="av" style="box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--accent-fill)">M</span>Me</button>
+<button class="p"><span class="av">W</span>Wife</button>
+<button class="p"><span class="av">D</span>Daughter</button>
+<button class="p"><span class="av">M</span>Mom</button>
+<button class="p"><span class="av">F</span>Family</button>
 </div></div>
 <div class="sec"><span class="over">Date and note</span><div class="line">
 <button class="chip sel">Today</button><button class="chip">Yesterday</button>
