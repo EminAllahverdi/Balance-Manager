@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="receipts_back">Geri</string>
-    <string name="receipts_groceries">Ərzaq</string>
     <string name="receipts_receipts">Çeklər</string>
     <string name="receipts_add_receipt">Çek əlavə et</string>
     <string name="receipts_month">Ay</string>

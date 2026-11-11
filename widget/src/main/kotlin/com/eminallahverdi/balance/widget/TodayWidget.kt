@@ -34,6 +34,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.unit.ColorProvider
 import com.eminallahverdi.balance.core.common.DateLabels
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.designsystem.icon.BtIcons
 import com.eminallahverdi.balance.core.designsystem.theme.BtColors
@@ -98,7 +99,7 @@ private fun TodayContent(state: TodayWidgetState) {
         Column(GlanceModifier.fillMaxSize().padding(16.dp)) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(GlanceModifier.defaultWeight()) {
-                    Text(DateLabels.dayHeader(state.date, state.date).uppercase(), style = widgetText(c.textMuted, 11.sp, FontWeight.Bold), maxLines = 1)
+                    Text(DateLabels.dayHeader(state.date, state.date).uppercase(Language.locale), style = widgetText(c.textMuted, 11.sp, FontWeight.Bold), maxLines = 1)
                     Spacer(GlanceModifier.height(2.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(MoneyFormat.format(state.spent), style = widgetText(c.textPrimary, 26.sp), maxLines = 1)

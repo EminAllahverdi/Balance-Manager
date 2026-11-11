@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="insights_insights">Insights</string>
     <string name="insights_week">Week</string>
     <string name="insights_month">Month</string>
     <string name="insights_year">Year</string>
     <string name="insights_biggest_changes">Biggest changes</string>
     <string name="insights_top_n">Top %1$d</string>
     <string name="insights_all_categories">All categories</string>
-    <string name="insights_spending_by_person">Spending by person · %1$s</string>
+    <string name="insights_spending_by_person">By person · %1$s</string>
     <string name="insights_daily_average">Daily average</string>
     <string name="insights_income_minus_spending">Income − spending</string>
-    <string name="insights_groceries">Groceries</string>
-    <string name="insights_groceries_caption">What it went on, from your receipts</string>
     <string name="insights_week_of">week of %1$s</string>
     <string name="insights_saved">Saved</string>
     <string name="insights_saved_this_week">Saved this week</string>

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -124,6 +125,28 @@ fun MonthTitle(month: YearMonth, onClick: () -> Unit, modifier: Modifier = Modif
     ) {
         Text(label, style = BtTheme.type.titleLarge, color = c.textPrimary)
         Icon(Icons.Rounded.ExpandMore, null, tint = c.textSecondary, modifier = Modifier.size(22.dp))
+    }
+}
+
+/**
+ * A month as a small button with a caret, in the corner of a report's first card, where a page title would be one title too
+ * many. Tapping it opens the same sheet of months as [MonthTitle].
+ */
+@Composable
+fun MonthButton(month: YearMonth, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = BtTheme.colors
+    Row(
+        modifier
+            .heightIn(min = 36.dp)
+            .clip(BtShapes.full)
+            .background(c.bgSurfaceRaised)
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.ds_pick_a_month), onClick = onClick)
+            .padding(start = 12.dp, end = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(DateLabels.monthTitle(month), style = BtTheme.type.label, color = c.textPrimary, maxLines = 1)
+        Icon(Icons.Rounded.ExpandMore, null, tint = c.textSecondary, modifier = Modifier.size(18.dp))
     }
 }
 

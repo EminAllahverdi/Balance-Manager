@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,10 +36,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -147,9 +155,16 @@ fun BtChip(
 
 /** Pill segmented control (Category | Person, Expense | Income | Transfer). */
 @Composable
-fun SegmentedToggle(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier, fill: Boolean = false) {
+fun SegmentedToggle(
+    options: List<String>,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    fill: Boolean = false,
+    compact: Boolean = false,
+) {
     val c = BtTheme.colors
-    Row(modifier.clip(BtShapes.full).background(c.bgSurfaceRaised).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+    Row(modifier.clip(BtShapes.full).background(c.bgSurfaceRaised).padding(if (compact) 2.dp else 3.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         options.forEachIndexed { i, label ->
             val on = i == selected
             Box(
@@ -158,7 +173,7 @@ fun SegmentedToggle(options: List<String>, selected: Int, onSelect: (Int) -> Uni
                     .background(if (on) c.bgSurfaceHigh else Color.Transparent)
                     .clickable(role = Role.Tab) { onSelect(i) }
                     // Shared out evenly, a segment gives its label more of its room: longer words, like Azerbaijani ones, stay on one line.
-                    .padding(horizontal = if (fill) 4.dp else 12.dp, vertical = 7.dp),
+                    .padding(horizontal = if (fill) 4.dp else if (compact) 9.dp else 12.dp, vertical = if (compact) 5.dp else 7.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(label, style = BtTheme.type.label, color = if (on) c.textPrimary else c.textMuted, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
@@ -178,9 +193,10 @@ fun BtCard(modifier: Modifier = Modifier, bordered: Boolean = false, shape: andr
     )
 }
 
+/** Small capitals over a group, uppercased in the language showing, so Azerbaijani keeps its dotted İ. */
 @Composable
 fun Overline(text: String, modifier: Modifier = Modifier, color: Color = BtTheme.colors.textMuted) {
-    Text(text.uppercase(), style = BtTheme.type.overline, color = color, modifier = modifier)
+    Text(text.uppercase(LocalConfiguration.current.locales[0]), style = BtTheme.type.overline, color = color, modifier = modifier)
 }
 
 @Composable
@@ -271,3 +287,38 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier, trailing: @Composa
         trailing()
     }
 }
+
+/**
+ * A row of tabs with a lime line under the one showing, over a hairline. It scrolls sideways once the tabs don't fit, so
+ * more can join it: the Reports tab's reports.
+ */
+@Composable
+fun ScrollingTabs(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val c = BtTheme.colors
+    Box(modifier.fillMaxWidth()) {
+        Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(1.dp).background(c.borderDefault))
+        Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            options.forEachIndexed { i, label ->
+                val on = i == selected
+                val line = c.accentFill
+                Text(
+                    label,
+                    style = BtTheme.type.bodyStrong,
+                    color = if (on) c.textPrimary else c.textMuted,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .selectable(selected = on, role = Role.Tab, onClick = { onSelect(i) })
+                        .drawBehind {
+                            if (on) {
+                                val thick = TAB_LINE.toPx()
+                                drawRoundRect(line, topLeft = Offset(0f, size.height - thick), size = Size(size.width, thick), cornerRadius = CornerRadius(thick / 2))
+                            }
+                        }
+                        .padding(start = 2.dp, end = 2.dp, top = 10.dp, bottom = 12.dp),
+                )
+            }
+        }
+    }
+}
+
+private val TAB_LINE = 3.dp

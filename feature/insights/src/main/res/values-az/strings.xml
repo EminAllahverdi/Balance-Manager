@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="insights_insights">Təhlil</string>
     <string name="insights_week">Həftə</string>
     <string name="insights_month">Ay</string>
     <string name="insights_year">İl</string>
     <string name="insights_biggest_changes">Ən böyük dəyişikliklər</string>
     <string name="insights_top_n">İlk %1$d</string>
     <string name="insights_all_categories">Bütün kateqoriyalar</string>
-    <string name="insights_spending_by_person">Şəxslər üzrə xərclər · %1$s</string>
+    <string name="insights_spending_by_person">Şəxslər üzrə · %1$s</string>
     <string name="insights_daily_average">Gündəlik orta</string>
     <string name="insights_income_minus_spending">Gəlir − xərc</string>
-    <string name="insights_groceries">Ərzaq</string>
-    <string name="insights_groceries_caption">Çeklərə görə nəyə xərcləndiyi</string>
     <string name="insights_week_of">%1$s həftəsi</string>
     <string name="insights_saved">Qənaət</string>
     <string name="insights_saved_this_week">Bu həftə qənaət</string>

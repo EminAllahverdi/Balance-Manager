@@ -28,7 +28,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BakeryDining
 import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.CleaningServices
@@ -74,14 +73,13 @@ import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.common.findActivity
 import com.eminallahverdi.balance.core.data.ReceiptRepository
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
-import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
 import com.eminallahverdi.balance.core.designsystem.component.BtTextField
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
 import com.eminallahverdi.balance.core.designsystem.component.FittedAmount
 import com.eminallahverdi.balance.core.designsystem.component.FloatingAddButton
 import com.eminallahverdi.balance.core.designsystem.component.MONTH_PAGES
 import com.eminallahverdi.balance.core.designsystem.component.MonthPicker
-import com.eminallahverdi.balance.core.designsystem.component.MonthTitle
+import com.eminallahverdi.balance.core.designsystem.component.MonthButton
 import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PrimaryButton
@@ -109,14 +107,12 @@ import kotlinx.coroutines.launch
 
 /**
  * What groceries came to this month, against the months before, and what they went on, from the receipts scanned.
- * [onAddExpense] opens quick add filled in with a receipt the entries don't have yet.
- */
-/**
- * [onBack] null: it sits inside Reports, which gives it its title. Months change as they do on Home: swipe for the ones
- * either side, or tap the month's name for a sheet of them.
+ * [onAddExpense] opens quick add filled in with a receipt the entries don't have yet. It sits under Reports' tabs, which
+ * give it its title. Months change as they do on Home: swipe for the ones either side, or tap the month in the corner of
+ * the spending card for a sheet of them.
  */
 @Composable
-fun GroceriesRoute(onBack: (() -> Unit)?, onAddExpense: (ReceiptEntry) -> Unit, viewModel: GroceriesViewModel = hiltViewModel()) {
+fun GroceriesRoute(onAddExpense: (ReceiptEntry) -> Unit, viewModel: GroceriesViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val c = BtTheme.colors
     val thisMonth = remember { YearMonth.now() }
@@ -128,40 +124,31 @@ fun GroceriesRoute(onBack: (() -> Unit)?, onAddExpense: (ReceiptEntry) -> Unit, 
     LaunchedEffect(pager.settledPage) { viewModel.showMonth(monthOf(pager.settledPage)) }
 
     Box(Modifier.fillMaxSize().background(c.bgCanvas)) {
-        Column(Modifier.fillMaxSize()) {
-            if (onBack != null) {
-                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.receipts_back), onBack)
-                    Text(stringResource(R.string.receipts_groceries), style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
+        HorizontalPager(pager, Modifier.fillMaxSize(), key = { it }) { page ->
+            val month = monthOf(page)
+            val data by remember(month) { viewModel.monthPage(month) }.collectAsStateWithLifecycle(null)
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                val shown = data ?: return@LazyColumn
+                val report = shown.report
+                // The month sits on the page, so it moves with the swipe, as on Home.
+                item(key = "spent") { SpentCard(report, shown.category?.name, month, onPickMonth = { pickingMonth = true }) }
+                if (report.receipts == 0) {
+                    item(key = "hint") { HintCard() }
+                } else {
+                    item(key = "groups") { GroupsCard(report) }
+                    item(key = "items") { TopItemsCard(report) }
                 }
-            }
-            HorizontalPager(pager, Modifier.fillMaxSize(), key = { it }) { page ->
-                val month = monthOf(page)
-                val data by remember(month) { viewModel.monthPage(month) }.collectAsStateWithLifecycle(null)
-                LazyColumn(
-                    Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
-                    // On the page, so its name moves with the swipe, as on Home.
-                    item(key = "month") { MonthTitle(month, onClick = { pickingMonth = true }, Modifier.heightIn(min = 44.dp)) }
-                    val shown = data ?: return@LazyColumn
-                    val report = shown.report
-                    item(key = "spent") { SpentCard(report, shown.category?.name) }
-                    if (report.receipts == 0) {
-                        item(key = "hint") { HintCard() }
-                    } else {
-                        item(key = "groups") { GroupsCard(report) }
-                        item(key = "items") { TopItemsCard(report) }
-                    }
-                    if (shown.receipts.isNotEmpty()) {
-                        item(key = "receipts") { Overline(stringResource(R.string.receipts_receipts), Modifier.padding(start = 4.dp, top = 4.dp)) }
-                        items(shown.receipts, key = { it.id }) { receipt -> ReceiptRow(receipt) { viewModel.openReceipt(receipt) } }
-                    }
+                if (shown.receipts.isNotEmpty()) {
+                    item(key = "receipts") { Overline(stringResource(R.string.receipts_receipts), Modifier.padding(start = 4.dp, top = 4.dp)) }
+                    items(shown.receipts, key = { it.id }) { receipt -> ReceiptRow(receipt) { viewModel.openReceipt(receipt) } }
                 }
             }
         }
-        FloatingAddButton(stringResource(R.string.receipts_add_receipt), viewModel::startScan, Modifier.align(Alignment.BottomEnd).then(if (onBack != null) Modifier.navigationBarsPadding() else Modifier).padding(16.dp))
+        FloatingAddButton(stringResource(R.string.receipts_add_receipt), viewModel::startScan, Modifier.align(Alignment.BottomEnd).padding(16.dp))
     }
     if (pickingMonth) {
         ChoiceSheet(stringResource(R.string.receipts_month), onClose = { pickingMonth = false }) { choose ->
@@ -193,11 +180,14 @@ private fun Change(now: Money, before: Money?) {
 }
 
 @Composable
-private fun SpentCard(report: GroceryReport, categoryName: String?) {
+private fun SpentCard(report: GroceryReport, categoryName: String?, month: YearMonth, onPickMonth: () -> Unit) {
     val c = BtTheme.colors
     BtCard(bordered = true) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Overline(categoryName?.let { stringResource(R.string.receipts_spent_on, it) } ?: stringResource(R.string.receipts_no_groceries_category))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Overline(categoryName?.let { stringResource(R.string.receipts_spent_on, it) } ?: stringResource(R.string.receipts_no_groceries_category), Modifier.weight(1f))
+                MonthButton(month, onPickMonth)
+            }
             FittedAmount(MoneyFormat.format(report.spent), BtTheme.type.amountLarge)
             CompareRow(stringResource(R.string.receipts_last_month), report.lastMonth, report.spent)
             REPORT_SPANS.forEach { span -> CompareRow(stringResource(R.string.receipts_month_average, span), report.averages[span], report.spent) }

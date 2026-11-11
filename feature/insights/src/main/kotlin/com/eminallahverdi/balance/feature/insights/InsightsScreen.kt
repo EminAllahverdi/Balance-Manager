@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.NorthEast
 import androidx.compose.material.icons.rounded.SouthEast
 import androidx.compose.material3.Icon
@@ -77,30 +75,23 @@ private const val BAR_FADE = 0.4f
 private const val TOP_CHANGES = 3
 
 /**
- * How the money moved: period by period, who it was for, and what changed most. [embedded]: inside Reports, which gives it
- * its title, and the groceries report its own chip.
+ * How the money moved: period by period, who it was for, and what changed most. It sits under Reports' tabs, which give it
+ * its title, so the period is picked in the corner of its first card.
  */
 @Composable
-fun InsightsRoute(embedded: Boolean = false, onOpenGroceries: () -> Unit = {}, viewModel: InsightsViewModel = hiltViewModel()) {
+fun InsightsRoute(viewModel: InsightsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val c = BtTheme.colors
     var showAll by rememberSaveable { mutableStateOf(false) }
 
     LazyColumn(
         Modifier.fillMaxSize().background(c.bgCanvas),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (embedded) Spacer(Modifier.weight(1f)) else Text(stringResource(R.string.insights_insights), style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
-                SegmentedToggle(listOf(stringResource(R.string.insights_week), stringResource(R.string.insights_month), stringResource(R.string.insights_year)), state.period.ordinal, { viewModel.setPeriod(InsightPeriod.entries[it]) })
-            }
-        }
         val overview = state.overview ?: return@LazyColumn
         item { ChartCard(state.period, overview, viewModel) }
         item { Stats(state, overview) }
-        if (!embedded) item { GroceriesRow(onOpenGroceries) }
         if (overview.changes.isNotEmpty()) {
             item {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -136,7 +127,15 @@ private fun ChartCard(period: InsightPeriod, overview: InsightOverview, vm: Insi
     BtCard(bordered = true) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Overline(stringResource(R.string.insights_spending_by_person, period.periodName(overview.selected.range).text()))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Overline(stringResource(R.string.insights_spending_by_person, period.periodName(overview.selected.range).text()), Modifier.weight(1f))
+                    SegmentedToggle(
+                        options = listOf(stringResource(R.string.insights_week), stringResource(R.string.insights_month), stringResource(R.string.insights_year)),
+                        selected = period.ordinal,
+                        onSelect = { vm.setPeriod(InsightPeriod.entries[it]) },
+                        compact = true,
+                    )
+                }
                 Text(MoneyFormat.format(overview.spent), style = BtTheme.type.amountLarge, color = c.textPrimary)
                 Text(
                     comparison(overview.change, period.periodName(overview.previousRange)).text(),
@@ -280,22 +279,3 @@ private fun ChangeRow(item: CategoryChange, previous: String) {
     }
 }
 
-/** The way into the groceries report, which reads the receipts the user adds. */
-@Composable
-private fun GroceriesRow(onClick: () -> Unit) {
-    val c = BtTheme.colors
-    BtCard {
-        Row(
-            Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            CategoryTile("shopping_cart", 0xFF5DCAA5)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(stringResource(R.string.insights_groceries), style = BtTheme.type.bodyStrong, color = c.textPrimary)
-                Text(stringResource(R.string.insights_groceries_caption), style = BtTheme.type.caption, color = c.textSecondary)
-            }
-            Icon(Icons.Rounded.ChevronRight, null, tint = c.textSecondary)
-        }
-    }
-}
