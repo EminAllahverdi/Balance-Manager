@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Proposal — widgets: a Debt key, and a count on the +</title>
+<title>Export CSV — dates, then Save or Share</title>
 </head>
 <body>
 <x-dc>
@@ -61,17 +61,20 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--bg-surface-raised:#181C21;--bg-surface-high:#1F242B;--border-default:#1F242B;--border-strong:#2A3038;--text-primary:#F2F4F7;--text-secondary:#AEB6C1;--text-muted:#8A94A3;--accent-fill:#C8F169;--accent-on:#0B0D10;--accent-text:#C8F169;--money-expense:#FF7A66;--money-income:#4ADE9B;--status-warning:#F5B544;--person-me:#5B9DFF;--person-wife:#FF7AB6;--person-daughter:#FFB547;--person-mom:#A78BFA;--person-family:#8A94A3;--scrim:rgba(0,0,0,0.62)}
 </style>
 </helmet>
-<div class="scr t-dark" style="width: 424px; height: 380px">
-<div style="position: absolute; inset: 0; background: #26303A"></div>
-<div style="position: relative; padding: 32px; display: flex; flex-direction: column; gap: 28px">
-<div style="display: flex; flex-direction: column; gap: 10px"><span class="over" style="color: #C9D1DA">4×1 actions, with Debt</span>
-<div style="width: 360px; height: 96px; border-radius: 24px; background: rgba(18,21,25,0.92); display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="flex: 1.6 1 0; height: 64px; border-radius: 18px; background: var(--accent-fill); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--accent-on); font-size: 12px; font-weight: 600"><span class="ms" aria-hidden="true" style="font-size: 22px; color: var(--accent-on)">add</span>Expense</span><span style="flex: 1 1 0; height: 64px; border-radius: 18px; background: var(--bg-surface-high); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text-primary); font-size: 12px; font-weight: 600"><span class="ms" aria-hidden="true" style="font-size: 22px; color: var(--text-primary)">south_west</span>Income</span><span style="flex: 1 1 0; height: 64px; border-radius: 18px; background: var(--bg-surface-high); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text-primary); font-size: 12px; font-weight: 600"><span class="ms" aria-hidden="true" style="font-size: 22px; color: var(--text-primary)">swap_horiz</span>Transfer</span><span style="flex: 1 1 0; height: 64px; border-radius: 18px; background: var(--bg-surface-high); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text-primary); font-size: 12px; font-weight: 600"><span class="ms" aria-hidden="true" style="font-size: 22px; color: var(--text-primary)">handshake</span>Debt</span></div></div>
-<div style="display: flex; flex-direction: column; gap: 10px"><span class="over" style="color: #C9D1DA">The + says the bank sent something</span>
-<div style="width: 360px; height: 96px; border-radius: 24px; background: rgba(18,21,25,0.92); display: flex; align-items: center; padding: 0 8px 0 16px; gap: 8px"><div class="col"><span style="font-size: 11px; font-weight: 700; color: var(--text-muted)">BALANCE</span><span style="font-size: 24px; line-height: 30px; font-weight: 600">₼ ••••</span><span style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary)"><span class="ms" aria-hidden="true" style="font-size: 14px; color: var(--accent-text)">fingerprint</span>Touch to show</span></div><span style="width: 56px; height: 56px; border-radius: 18px; background: var(--accent-fill); display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 26px; color: var(--accent-on)">mic</span></span><span style="position: relative; width: 56px; height: 56px; border-radius: 18px; background: var(--bg-surface-high); display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 26px; color: var(--accent-text)">add</span><span style="position: absolute; top: 6px; right: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent-fill); color: var(--accent-on); font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center">2</span></span></div></div>
-</div>
+<div class="scr t-dark" style="width: 390px; height: 844px">
+<h1 style="margin: 0; padding: 16px; font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.5px">Settings</h1>
+<div class="scrim"></div>
+<section class="sheet" aria-label="Export entries">
+<div class="handle"></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 18px; line-height: 24px; font-weight: 700">Export entries</span><span class="cap">A CSV file, which opens in Excel or Google Sheets.</span></div>
+<div class="group"><span class="over">Quick picks</span><div class="wrap"><span class="chip on">This month</span><span class="chip">Last month</span><span class="chip">Last 30 days</span><span class="chip">Last 90 days</span><span class="chip">This year</span><span class="chip">Last year</span><span class="chip">Everything</span></div></div>
+<div style="display: flex; gap: 8px"><div class="group" style="flex: 1 1 0"><span class="over">From</span><span class="field">1 Nov 2026</span></div><div class="group" style="flex: 1 1 0"><span class="over">To</span><span class="field">11 Nov 2026</span></div></div>
+<span style="font-size: 15px; line-height: 20px; font-weight: 600">33 entries</span>
+<div style="display: flex; gap: 8px"><span class="save" style="flex: 1 1 0; gap: 8px"><span class="ms" aria-hidden="true" style="font-size: 20px">download</span>Save</span><span class="save" style="flex: 1 1 0; gap: 8px; background: var(--bg-surface-high); color: var(--text-primary)"><span class="ms" aria-hidden="true" style="font-size: 20px">share</span>Share</span></div>
+</section>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 424, "height": 380}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
 class Component extends DCLogic {
   renderVals() { return {}; }
 }

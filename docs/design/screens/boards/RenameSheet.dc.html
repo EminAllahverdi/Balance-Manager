@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Proposal — Reports tab, Spending</title>
+<title>Change someone's name, on all their debts</title>
 </head>
 <body>
 <x-dc>
@@ -62,27 +62,15 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 </style>
 </helmet>
 <div class="scr t-dark" style="width: 390px; height: 844px">
-<header class="hd"><h1>Reports</h1></header>
-<div style="display: flex; gap: 8px; padding: 0 16px 8px"><span class="chip on"><span class="ms" aria-hidden="true" style="font-size: 16px">bar_chart</span>Spending</span><span class="chip"><span class="ms" aria-hidden="true" style="font-size: 16px">shopping_cart</span>Groceries</span></div>
-<div style="flex: 1 1 0; min-height: 0; overflow: hidden; padding: 4px 16px 0; display: flex; flex-direction: column; gap: 12px">
-<div class="segf" style="align-self: flex-start"><span>Week</span><span class="on">Month</span><span>Year</span></div>
-<section class="row" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border-default)">
-<div style="display: flex; flex-direction: column; gap: 2px"><span class="over">Spending by person · November</span><span class="num" style="font-size: 28px; line-height: 33px">₼1,124.24</span><span class="cap" style="color: var(--money-income)">−₼613.17 vs October</span></div>
-<div style="display: flex; align-items: flex-end; gap: 4px; height: 170px">
-<span style="flex: 1 1 0; display: flex; justify-content: center"><span style="width: 32px; height: 120px; border-radius: 10px 10px 4px 4px; background: var(--person-me); opacity: .4"></span></span>
-<span style="flex: 1 1 0; display: flex; justify-content: center"><span style="width: 32px; height: 140px; border-radius: 10px 10px 4px 4px; background: var(--person-me); opacity: .4"></span></span>
-<span style="flex: 1 1 0; display: flex; justify-content: center"><span style="width: 32px; height: 126px; border-radius: 10px 10px 4px 4px; background: var(--person-me); opacity: .4"></span></span>
-<span style="flex: 1 1 0; display: flex; justify-content: center"><span style="width: 32px; height: 112px; border-radius: 10px 10px 4px 4px; background: var(--person-me); opacity: .4"></span></span>
-<span style="flex: 1 1 0; display: flex; justify-content: center"><span style="width: 32px; height: 98px; border-radius: 10px 10px 4px 4px; background: var(--person-me); opacity: .4"></span></span>
-<span style="flex: 1 1 0; display: flex; justify-content: center"><span style="width: 32px; height: 60px; border-radius: 10px 10px 4px 4px; background: var(--person-me)"></span></span>
-</div></section>
-<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
-<div class="row" style="padding: 14px; display: flex; flex-direction: column; gap: 4px"><span class="over">Daily average</span><span class="num" style="font-size: 20px">₼102.20</span><span class="cap">11 days</span></div>
-<div class="row" style="padding: 14px; display: flex; flex-direction: column; gap: 4px"><span class="over">Saved this month</span><span class="num" style="font-size: 20px; color: var(--money-income)">₼1,375.76</span><span class="cap">Income − spending</span></div>
-</div>
-<div style="display: flex; justify-content: space-between; padding: 0 4px"><span class="over">Biggest changes</span><span class="cap" style="color: var(--accent-text)">All categories</span></div>
-</div>
-<nav style="flex: none; height: 80px; background: var(--bg-surface); border-top: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between; padding: 0 16px"><button style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 64px"><span style="padding: 4px 16px; border-radius: 999px"><span class="ms" aria-hidden="true" style="color: var(--text-muted)">home</span></span><span style="font-size: 12px; font-weight: 600; color: var(--text-muted)">Home</span></button><button style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 64px"><span style="padding: 4px 16px; border-radius: 999px"><span class="ms" aria-hidden="true" style="color: var(--text-muted)">receipt_long</span></span><span style="font-size: 12px; font-weight: 600; color: var(--text-muted)">History</span></button><span aria-label="Add transaction" style="width: 64px; height: 64px; border-radius: 22px; background: var(--accent-fill); display: flex; align-items: center; justify-content: center; margin-top: -28px"><span class="ms" aria-hidden="true" style="font-size: 32px; color: var(--accent-on)">add</span></span><button style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 64px"><span style="padding: 4px 16px; border-radius: 999px; background: var(--bg-surface-high)"><span class="ms fill" aria-hidden="true" style="color: var(--text-primary)">bar_chart</span></span><span style="font-size: 12px; font-weight: 600; color: var(--text-primary)">Reports</span></button><button style="display: flex; flex-direction: column; align-items: center; gap: 4px; width: 64px"><span style="padding: 4px 16px; border-radius: 999px"><span class="ms" aria-hidden="true" style="color: var(--text-muted)">account_balance_wallet</span></span><span style="font-size: 12px; font-weight: 600; color: var(--text-muted)">Accounts</span></button></nav>
+<header class="hd"><button class="iconbtn" aria-label="Back"><span class="ms" aria-hidden="true" style="color: var(--text-primary)">arrow_back</span></button><h1>Loans &amp; debts</h1></header>
+<div class="scrim"></div>
+<section class="sheet" aria-label="Change the name">
+<div class="handle"></div>
+<div style="display: flex; align-items: center; gap: 12px"><span class="tile" style="background: rgba(138,148,163,0.16)"><span class="ms" aria-hidden="true" style="color: #8A94A3">handshake</span></span><span style="flex: 1 1 0; font-size: 18px; line-height: 24px; font-weight: 700">Change the name</span></div>
+<span class="field">Samir</span>
+<span class="cap">Changes it on all 2 debts with Sam, and in the notes of what was paid back.</span>
+<span class="save">Save</span>
+</section>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>

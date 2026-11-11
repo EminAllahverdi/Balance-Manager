@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Proposal — the switches live in the account's editor</title>
+<title>Widgets — a Debt key, and a count on the +</title>
 </head>
 <body>
 <x-dc>
@@ -61,25 +61,17 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--bg-surface-raised:#181C21;--bg-surface-high:#1F242B;--border-default:#1F242B;--border-strong:#2A3038;--text-primary:#F2F4F7;--text-secondary:#AEB6C1;--text-muted:#8A94A3;--accent-fill:#C8F169;--accent-on:#0B0D10;--accent-text:#C8F169;--money-expense:#FF7A66;--money-income:#4ADE9B;--status-warning:#F5B544;--person-me:#5B9DFF;--person-wife:#FF7AB6;--person-daughter:#FFB547;--person-mom:#A78BFA;--person-family:#8A94A3;--scrim:rgba(0,0,0,0.62)}
 </style>
 </helmet>
-<div class="scr t-dark" style="width: 390px; height: 1000px">
-<header class="hd"><h1>Accounts</h1><button class="iconbtn" aria-label="Add account"><span class="ms" aria-hidden="true" style="color: var(--text-primary)">add</span></button></header>
-<div class="scrim"></div>
-<section class="sheet" aria-label="Edit account" style="top: 64px; gap: 16px"><div class="handle"></div>
-<div style="display: flex; align-items: center; gap: 12px"><span class="tile" style="background: #C8F16929"><span class="ms" aria-hidden="true" style="color: #C8F169">credit_card</span></span><h2 style="margin: 0; flex: 1 1 0; font-size: 18px; line-height: 24px; font-weight: 700">Edit account</h2><button style="font-size: 13px; font-weight: 600; color: var(--money-expense)">Remove</button></div>
-<div class="field">Taksit</div>
-<div class="group"><span class="over">Type</span><div class="wrap"><span class="chip">Debit card</span><span class="chip on">Credit card</span><span class="chip">Cash</span><span class="chip">Savings</span></div></div>
-<div class="group"><span class="over">Card's last 4 digits</span><div class="field">5678</div><span class="cap muted">Bank notifications from this card go to this account.</span></div>
-<div style="background: var(--bg-surface-raised); border-radius: 18px; overflow: hidden">
-<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px"><span class="ms fill" aria-hidden="true" style="color: var(--accent-text)">star</span><div class="col"><span style="font-size: 15px; font-weight: 600">Default for expenses</span><span class="cap">New expenses start on this account</span></div><span class="toggle on" role="switch" aria-checked="true"><i></i></span></div>
-<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--border-default)"><span class="ms" aria-hidden="true" style="color: var(--text-secondary)">functions</span><div class="col"><span style="font-size: 15px; font-weight: 600">Count in the total</span><span class="cap">Part of Total here and the balance on Home</span></div><span class="toggle on" role="switch" aria-checked="true"><i></i></span></div>
-<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--border-default)"><span class="ms" aria-hidden="true" style="color: var(--text-secondary)">widgets</span><div class="col"><span style="font-size: 15px; font-weight: 600">Show on the widget</span><span class="cap">Added into the balance widgets</span></div><span class="toggle on" role="switch" aria-checked="true"><i></i></span></div>
+<div class="scr t-dark" style="width: 424px; height: 380px">
+<div style="position: absolute; inset: 0; background: #26303A"></div>
+<div style="position: relative; padding: 32px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 10px"><span class="over" style="color: #C9D1DA">4×1 actions, with Debt</span>
+<div style="width: 360px; height: 96px; border-radius: 24px; background: rgba(18,21,25,0.92); display: flex; align-items: center; gap: 6px; padding: 0 10px"><span style="flex: 1.6 1 0; height: 64px; border-radius: 18px; background: var(--accent-fill); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--accent-on); font-size: 12px; font-weight: 600"><span class="ms" aria-hidden="true" style="font-size: 22px; color: var(--accent-on)">add</span>Expense</span><span style="flex: 1 1 0; height: 64px; border-radius: 18px; background: var(--bg-surface-high); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text-primary); font-size: 12px; font-weight: 600"><span class="ms" aria-hidden="true" style="font-size: 22px; color: var(--text-primary)">south_west</span>Income</span><span style="flex: 1 1 0; height: 64px; border-radius: 18px; background: var(--bg-surface-high); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text-primary); font-size: 12px; font-weight: 600"><span class="ms" aria-hidden="true" style="font-size: 22px; color: var(--text-primary)">swap_horiz</span>Transfer</span><span style="flex: 1 1 0; height: 64px; border-radius: 18px; background: var(--bg-surface-high); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text-primary); font-size: 12px; font-weight: 600"><span class="ms" aria-hidden="true" style="font-size: 22px; color: var(--text-primary)">handshake</span>Debt</span></div></div>
+<div style="display: flex; flex-direction: column; gap: 10px"><span class="over" style="color: #C9D1DA">The + says the bank sent something</span>
+<div style="width: 360px; height: 96px; border-radius: 24px; background: rgba(18,21,25,0.92); display: flex; align-items: center; padding: 0 8px 0 16px; gap: 8px"><div class="col"><span style="font-size: 11px; font-weight: 700; color: var(--text-muted)">BALANCE</span><span style="font-size: 24px; line-height: 30px; font-weight: 600">₼ ••••</span><span style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary)"><span class="ms" aria-hidden="true" style="font-size: 14px; color: var(--accent-text)">fingerprint</span>Touch to show</span></div><span style="width: 56px; height: 56px; border-radius: 18px; background: var(--accent-fill); display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 26px; color: var(--accent-on)">mic</span></span><span style="position: relative; width: 56px; height: 56px; border-radius: 18px; background: var(--bg-surface-high); display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 26px; color: var(--accent-text)">add</span><span style="position: absolute; top: 6px; right: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent-fill); color: var(--accent-on); font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center">2</span></span></div></div>
 </div>
-<div class="group"><span class="over">Colour</span><div style="display: flex; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 18px; background: #5DCAA5"></span><span style="width: 36px; height: 36px; border-radius: 18px; background: #C8F169; box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px #C8F169"></span><span style="width: 36px; height: 36px; border-radius: 18px; background: #F5B544"></span><span style="width: 36px; height: 36px; border-radius: 18px; background: #8AB4F8"></span><span style="width: 36px; height: 36px; border-radius: 18px; background: #B39DFF"></span><span style="width: 36px; height: 36px; border-radius: 18px; background: #FF7A66"></span></div></div>
-<button class="save">Save</button>
-</section>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 1000}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 424, "height": 380}}'>
 class Component extends DCLogic {
   renderVals() { return {}; }
 }

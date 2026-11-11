@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Proposal — Debt, a fourth kind in quick add</title>
+<title>A debt by voice, filled in</title>
 </head>
 <body>
 <x-dc>
@@ -54,12 +54,25 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 </helmet>
 <div class="scr t-dark" style="width: 390px; height: 844px">
 <div style="position: absolute; inset: 0; background: var(--scrim)"></div>
-<section class="sheet" aria-label="Add — a debt" style="top: 150px">
+<section class="sheet" aria-label="Add — I lent" style="top: 100px">
 <div class="handle"></div>
-<div style="display: flex; align-items: center; gap: 8px; padding: 14px 16px 0"><div class="seg" style="flex: 1 1 0"><button>Expense</button><button>Income</button><button>Transfer</button><button class="on">Debt</button></div><button class="icb" aria-label="Add by voice"><span class="ms" aria-hidden="true">mic</span></button></div>
-<div style="padding: 16px 16px 0"><span class="over">New</span><div class="g">
-<button class="c"><span class="bt" style="background: #8A94A329"><span class="ms" aria-hidden="true" style="color: #8A94A3">groups</span></span><span class="l">I paid for others</span></button><button class="c"><span class="bt" style="background: #8A94A329"><span class="ms" aria-hidden="true" style="color: #8A94A3">volunteer_activism</span></span><span class="l">They paid for me</span></button><button class="c"><span class="bt" style="background: #8A94A329"><span class="ms" aria-hidden="true" style="color: #8A94A3">call_made</span></span><span class="l">I lent</span></button><button class="c"><span class="bt" style="background: #8A94A329"><span class="ms" aria-hidden="true" style="color: #8A94A3">call_received</span></span><span class="l">I borrowed</span></button></div></div><div style="padding: 16px 16px 20px"><span class="over">Paid back</span><div class="card" style="overflow: hidden">
-<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px"><span style="width: 36px; height: 36px; border-radius: 18px; background: var(--bg-surface-high); display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none">S</span><div class="col"><span class="ell" style="font-size: 15px; font-weight: 600">Sam</span><span class="cap" style="color: var(--money-expense)">I owe</span></div><span class="num" style="font-size: 15px">₼10.00</span><span class="btn plain">Pay</span></div><div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--border-default)"><span style="width: 36px; height: 36px; border-radius: 18px; background: var(--bg-surface-high); display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none">S</span><div class="col"><span class="ell" style="font-size: 15px; font-weight: 600">Sam, Alex and Kamal</span><span class="cap" style="color: var(--money-income)">Owe me</span></div><span class="num" style="font-size: 15px">₼8.00</span><span class="btn plain">Received</span></div><div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--border-default)"><span style="width: 36px; height: 36px; border-radius: 18px; background: var(--bg-surface-high); display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none">K</span><div class="col"><span class="ell" style="font-size: 15px; font-weight: 600">Kamal</span><span class="cap" style="color: var(--money-income)">Owes me · ₼100.00 a month</span></div><span class="num" style="font-size: 15px">₼600.00</span><span class="btn plain">Received</span></div></div></div></section>
+<div class="heard"><span class="ms" aria-hidden="true" style="font-size: 16px; color: var(--accent-text)">mic</span>“lent Sam 20 manat from cash”</div>
+<div style="padding: 12px 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="display: flex; align-items: center; gap: 10px; min-height: 44px"><span class="t" style="background: #8A94A329"><span class="ms" aria-hidden="true" style="color: #8A94A3">call_made</span></span><span style="display: flex; align-items: center; gap: 2px; font-size: 15px; font-weight: 700">I lent<span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-secondary)">expand_more</span></span></span>
+<button class="from"><span class="over" style="margin: 0">From</span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 700"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-secondary)">account_balance_wallet</span>Cash<span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-secondary)">expand_more</span></span></button>
+</div>
+<div style="padding: 8px 20px 0; display: flex; align-items: center; gap: 4px"><span class="num" style="font-size: 44px; line-height: 48px; letter-spacing: -1.5px">₼20.00</span><span style="width: 2px; height: 40px; background: var(--accent-fill)"></span></div>
+<span class="cap" style="padding: 2px 20px 0">Leaves Cash, and isn't spending. Sam owes you ₼20.00.</span>
+<div class="sec" style="padding-top: 14px"><span class="over">Who</span><div class="line"><button class="chip sel">Sam</button><button class="chip">Alex</button><button class="chip">Kamal</button><button class="chip" aria-label="Type a name" style="padding: 0 10px"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-secondary)">edit</span></button></div></div>
+<div class="sec"><span class="over">Pay back in parts</span><div class="line"><button class="chip sel">Once</button><button class="chip">2</button><button class="chip">3</button><button class="chip">6</button><button class="chip">12</button></div></div>
+<div class="sec"><span class="over">Date and note</span><div class="line"><button class="chip sel">Today</button><button class="chip">Yesterday</button><button class="chip" aria-label="Pick an older date" style="padding: 0 10px"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-secondary)">calendar_month</span></button><button class="chip"><span class="ms" aria-hidden="true" style="font-size: 16px; color: var(--text-secondary)">notes</span>Note</button></div></div>
+<div class="pad" style="margin-top: auto; padding: 12px 16px 20px">
+<button class="k">1</button><button class="k">2</button><button class="k">3</button><button class="k" aria-label="Clear" style="background: var(--bg-surface-high)">C</button>
+<button class="k">4</button><button class="k">5</button><button class="k">6</button><button class="save"><span class="ms" aria-hidden="true" style="font-size: 28px">check</span>Save</button>
+<button class="k">7</button><button class="k">8</button><button class="k">9</button>
+<button class="k">.</button><button class="k">0</button><button class="k" aria-label="Delete"><span class="ms" aria-hidden="true">backspace</span></button>
+</div>
+</section>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>

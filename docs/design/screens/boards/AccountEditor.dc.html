@@ -2,46 +2,84 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Edit account</title>
+<title>Edit account — default, in total and on the widget as switches</title>
 </head>
 <body>
 <x-dc>
 <helmet>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;display=block" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Space+Grotesk:wght@500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;display=block" rel="stylesheet">
 <style>
 body{margin:0}
 *{box-sizing:border-box}
+a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
 .scr{font-family:Manrope,system-ui,sans-serif;background:var(--bg-canvas);color:var(--text-primary);position:relative;overflow:hidden;display:flex;flex-direction:column}
 .ms{font-family:'Material Symbols Rounded';font-weight:400;font-style:normal;font-size:22px;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;font-feature-settings:'liga';-webkit-font-smoothing:antialiased;display:inline-block;flex:none}
+.fill{font-variation-settings:'FILL' 1}
+.num{font-family:'Space Grotesk',Manrope,sans-serif;font-weight:500}
+.cap{font-size:12px;line-height:16px;font-weight:500;color:var(--text-secondary)}
+.muted{color:var(--text-muted)}
 .over{font-size:11px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted)}
-.chip{display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:999px;background:var(--bg-surface-raised);border:1px solid var(--border-default);font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;flex:none}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;background:var(--bg-surface-raised);border:1px solid var(--border-default);font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;flex:none}
 .chip.on{background:var(--accent-fill);color:var(--accent-on);border-color:var(--accent-fill)}
-.tile{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;background:rgba(245,181,68,0.16)}
-.ico{width:44px;height:44px;margin:3px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(245,181,68,0.16)}
-.ico.on{outline:2px solid var(--accent-fill);outline-offset:3px}
-.sw{width:32px;height:32px;margin:6px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#0B0D10}
-.sheet{background:var(--bg-surface);border-radius:28px 28px 0 0}
-.handle{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:10px auto 0}
-.t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--bg-surface-raised:#181C21;--border-default:#1F242B;--border-strong:#2A3038;--text-primary:#F2F4F7;--text-muted:#8A94A3;--accent-fill:#C8F169;--accent-on:#0B0D10;--money-expense:#FF7A66;--scrim:rgba(0,0,0,0.62)}
+.tile{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.gt{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.gt .ms{font-size:20px}
+.row{background:var(--bg-surface);border-radius:18px}
+.iconbtn{width:44px;height:44px;border-radius:22px;background:var(--bg-surface-raised);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);flex:none}
+.dot{width:8px;height:8px;border-radius:4px;flex:none;display:inline-block}
+.toggle{width:44px;height:26px;border-radius:13px;background:var(--bg-surface-high);position:relative;flex:none}
+.toggle>i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:10px;background:var(--text-muted)}
+.toggle.on{background:var(--accent-fill)}
+.toggle.on>i{left:21px;background:var(--accent-on)}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:10px auto 0;flex:none}
+.field{height:52px;padding:0 16px;display:flex;align-items:center;border-radius:16px;background:var(--bg-surface-raised);font-size:15px;font-weight:500}
+.field.ph{color:var(--text-muted)}
+.group{display:flex;flex-direction:column;gap:8px}
+.wrap{display:flex;flex-wrap:wrap;gap:8px}
+.segf{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--bg-surface-raised)}
+.segf>span{flex:1 1 0;text-align:center;padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--text-muted)}
+.segf>span.on{background:var(--bg-surface-high);color:var(--text-primary)}
+.opt{padding:12px 16px;display:flex;flex-direction:column;gap:2px}
+.save{height:56px;border-radius:999px;background:var(--accent-fill);color:var(--accent-on);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;flex:none}
+.line{display:flex;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--border-default)}
+.av{width:40px;height:40px;border-radius:20px;background:var(--bg-surface-high);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scrim{position:absolute;inset:0;background:var(--scrim)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg-surface);border-radius:28px 28px 0 0;padding:0 16px 20px;display:flex;flex-direction:column;gap:14px}
+.dialog{position:absolute;left:32px;right:32px;background:var(--bg-surface-raised);border-radius:28px;padding:24px;display:flex;flex-direction:column;gap:16px}
+.dialog h2{margin:0;font-size:22px;line-height:28px;font-weight:700}
+.dialog p{margin:0;font-size:14px;line-height:20px;color:var(--text-secondary)}
+.acts{display:flex;justify-content:flex-end;gap:24px;font-size:14px;font-weight:600;color:var(--accent-text)}
+.bar{height:6px;border-radius:3px;background:var(--bg-surface-high);overflow:hidden}
+.bar>i{display:block;height:6px;border-radius:3px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:17px;color:var(--text-secondary);white-space:pre-wrap;word-break:break-word}
+.hd{flex:none;display:flex;align-items:center;gap:12px;padding:16px 16px 8px}
+.hd h1{margin:0;flex:1 1 0;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-0.5px}
+.fab{position:absolute;right:16px;bottom:24px;display:inline-flex;align-items:center;gap:6px;height:56px;padding:0 22px;border-radius:20px;background:var(--accent-fill);color:var(--accent-on);font-size:15px;font-weight:600}
+.t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--bg-surface-raised:#181C21;--bg-surface-high:#1F242B;--border-default:#1F242B;--border-strong:#2A3038;--text-primary:#F2F4F7;--text-secondary:#AEB6C1;--text-muted:#8A94A3;--accent-fill:#C8F169;--accent-on:#0B0D10;--accent-text:#C8F169;--money-expense:#FF7A66;--money-income:#4ADE9B;--status-warning:#F5B544;--person-me:#5B9DFF;--person-wife:#FF7AB6;--person-daughter:#FFB547;--person-mom:#A78BFA;--person-family:#8A94A3;--scrim:rgba(0,0,0,0.62)}
 </style>
 </helmet>
-<div class="scr t-dark" style="width: 390px; height: 844px">
-<h1 style="margin: 0; padding: 16px; font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.5px">Accounts</h1>
-<div style="position: absolute; inset: 0; background: var(--scrim)"></div>
-<section class="sheet" aria-label="Edit account" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px 24px; display: flex; flex-direction: column; gap: 16px">
-<div class="handle"></div>
-<div style="display: flex; align-items: center; gap: 12px"><span class="tile"><span class="ms" aria-hidden="true" style="color: #F5B544">payments</span></span><h2 style="margin: 0; flex: 1 1 0; font-size: 18px; line-height: 24px; font-weight: 700">Edit account</h2><button style="padding: 12px; font-size: 13px; font-weight: 600; color: var(--money-expense)">Remove</button></div>
-<label style="height: 52px; border-radius: 18px; background: var(--bg-surface-raised); display: flex; align-items: center; padding: 0 16px; font-size: 15px; font-weight: 500">Salary</label>
-<div style="display: flex; flex-direction: column; gap: 8px"><span class="over">Type</span><div style="display: flex; flex-wrap: wrap; gap: 8px"><button class="chip on">Debit card</button><button class="chip">Credit card</button><button class="chip">Cash</button><button class="chip">Savings</button></div></div>
-<div style="display: flex; flex-direction: column; gap: 8px"><span class="over">Card's last 4 digits</span><label style="height: 52px; border-radius: 18px; background: var(--bg-surface-raised); display: flex; align-items: center; padding: 0 16px; font-size: 15px; font-weight: 500">1234</label><span style="font-size: 12px; line-height: 16px; font-weight: 500; color: var(--text-muted)">Bank notifications from this card go to this account.</span></div>
-<div style="display: flex; flex-direction: column; gap: 8px"><span class="over">Icon</span><div style="display: flex; gap: 14px"><button class="ico" aria-label="Card"><span class="ms" aria-hidden="true" style="color: #F5B544">credit_card</span></button><button class="ico on" aria-label="Payments"><span class="ms" aria-hidden="true" style="color: #F5B544">payments</span></button><button class="ico" aria-label="Wallet"><span class="ms" aria-hidden="true" style="color: #F5B544">account_balance_wallet</span></button><button class="ico" aria-label="Bank"><span class="ms" aria-hidden="true" style="color: #F5B544">account_balance</span></button><button class="ico" aria-label="Savings"><span class="ms" aria-hidden="true" style="color: #F5B544">savings</span></button></div></div>
-<div style="display: flex; flex-direction: column; gap: 8px"><span class="over">Colour</span><div style="display: flex; flex-wrap: wrap"><button class="sw" aria-label="Teal" style="background: #5DCAA5"></button><button class="sw" aria-label="Coral" style="background: #FF7A66"></button><button class="sw" aria-label="Blue" style="background: #8AB4F8"></button><button class="sw" aria-label="Violet" style="background: #B39DFF"></button><button class="sw" aria-label="Amber, selected" style="background: #F5B544"><span class="ms" aria-hidden="true" style="font-size: 20px">check</span></button><button class="sw" aria-label="Yellow" style="background: #FFD166"></button><button class="sw" aria-label="Orange" style="background: #FF9F6E"></button><button class="sw" aria-label="Sky" style="background: #7FD1F7"></button></div></div>
-<button style="height: 56px; border-radius: 999px; background: var(--accent-fill); color: var(--accent-on); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600">Save</button>
+<div class="scr t-dark" style="width: 390px; height: 1000px">
+<header class="hd"><h1>Accounts</h1><button class="iconbtn" aria-label="Add account"><span class="ms" aria-hidden="true" style="color: var(--text-primary)">add</span></button></header>
+<div class="scrim"></div>
+<section class="sheet" aria-label="Edit account" style="top: 64px; gap: 16px"><div class="handle"></div>
+<div style="display: flex; align-items: center; gap: 12px"><span class="tile" style="background: #C8F16929"><span class="ms" aria-hidden="true" style="color: #C8F169">credit_card</span></span><h2 style="margin: 0; flex: 1 1 0; font-size: 18px; line-height: 24px; font-weight: 700">Edit account</h2><button style="font-size: 13px; font-weight: 600; color: var(--money-expense)">Remove</button></div>
+<div class="field">Taksit</div>
+<div class="group"><span class="over">Type</span><div class="wrap"><span class="chip">Debit card</span><span class="chip on">Credit card</span><span class="chip">Cash</span><span class="chip">Savings</span></div></div>
+<div class="group"><span class="over">Card's last 4 digits</span><div class="field">5678</div><span class="cap muted">Bank notifications from this card go to this account.</span></div>
+<div style="background: var(--bg-surface-raised); border-radius: 18px; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px"><span class="ms fill" aria-hidden="true" style="color: var(--accent-text)">star</span><div class="col"><span style="font-size: 15px; font-weight: 600">Default for expenses</span><span class="cap">New expenses start on this account</span></div><span class="toggle on" role="switch" aria-checked="true"><i></i></span></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--border-default)"><span class="ms" aria-hidden="true" style="color: var(--text-secondary)">functions</span><div class="col"><span style="font-size: 15px; font-weight: 600">Count in the total</span><span class="cap">Part of Total here and the balance on Home</span></div><span class="toggle on" role="switch" aria-checked="true"><i></i></span></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--border-default)"><span class="ms" aria-hidden="true" style="color: var(--text-secondary)">widgets</span><div class="col"><span style="font-size: 15px; font-weight: 600">Show on the widget</span><span class="cap">Added into the balance widgets</span></div><span class="toggle on" role="switch" aria-checked="true"><i></i></span></div>
+</div>
+<div class="group"><span class="over">Colour</span><div style="display: flex; gap: 10px"><span style="width: 36px; height: 36px; border-radius: 18px; background: #5DCAA5"></span><span style="width: 36px; height: 36px; border-radius: 18px; background: #C8F169; box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px #C8F169"></span><span style="width: 36px; height: 36px; border-radius: 18px; background: #F5B544"></span><span style="width: 36px; height: 36px; border-radius: 18px; background: #8AB4F8"></span><span style="width: 36px; height: 36px; border-radius: 18px; background: #B39DFF"></span><span style="width: 36px; height: 36px; border-radius: 18px; background: #FF7A66"></span></div></div>
+<button class="save">Save</button>
 </section>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 1000}}'>
 class Component extends DCLogic {
   renderVals() { return {}; }
 }

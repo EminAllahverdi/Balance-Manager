@@ -26,6 +26,10 @@ Releases are built by CI and published on GitHub Releases. `CLAUDE.md` describes
 
 Every screen is in [`docs/design/screens`](docs/design/screens) (open `index.html` in a browser), and the design system (colours, type, spacing, patterns) is in [`docs/design`](docs/design).
 
+## iOS
+
+[`docs/ios.md`](docs/ios.md) maps this app for an iOS version: where the rules live, what iOS does differently, and what to keep the same so the two apps stay compatible.
+
 ## Privacy
 
 [`docs/privacy.md`](docs/privacy.md)

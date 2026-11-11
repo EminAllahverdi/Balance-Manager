@@ -2,11 +2,11 @@
    "attachments" : {},
    "boards" : {
       "AccountEditor.dc.html" : {
-         "h" : 844,
+         "h" : 1000,
          "page" : "accounts",
-         "title" : "Edit account",
+         "title" : "Edit account — default, in total and on the widget as switches",
          "w" : 390,
-         "x" : 470,
+         "x" : 940,
          "y" : 0
       },
       "AccountSheet.dc.html" : {
@@ -18,9 +18,9 @@
          "y" : 0
       },
       "Accounts.dc.html" : {
-         "h" : 844,
+         "h" : 920,
          "page" : "accounts",
-         "title" : "Accounts",
+         "title" : "Accounts — the total and its actions in one box, a star for the default",
          "w" : 390,
          "x" : 0,
          "y" : 0
@@ -30,15 +30,55 @@
          "page" : "accounts",
          "title" : "Archived, folded open",
          "w" : 390,
-         "x" : 1410,
+         "x" : 1880,
          "y" : 0
+      },
+      "AccountsDefault.dc.html" : {
+         "h" : 844,
+         "page" : "accounts",
+         "title" : "Tapping a star moves the default, with Undo",
+         "w" : 390,
+         "x" : 470,
+         "y" : 0
+      },
+      "AddDebt.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "Debt, a fourth kind: new, or paid back",
+         "w" : 390,
+         "x" : 0,
+         "y" : 3672
+      },
+      "AddDebtDetails.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "A debt on the keypad page",
+         "w" : 390,
+         "x" : 470,
+         "y" : 3672
+      },
+      "AddWaiting.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "+ opens with what your bank sent",
+         "w" : 390,
+         "x" : 0,
+         "y" : 4896
+      },
+      "AddWaitingOpen.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "Tapping one opens it filled in",
+         "w" : 390,
+         "x" : 470,
+         "y" : 4896
       },
       "AdjustBalance.dc.html" : {
          "h" : 844,
          "page" : "accounts",
          "title" : "Adjust balance",
          "w" : 390,
-         "x" : 940,
+         "x" : 1410,
          "y" : 0
       },
       "AppIcon.dc.html" : {
@@ -119,7 +159,7 @@
          "title" : "Categories & sub-categories",
          "w" : 390,
          "x" : 0,
-         "y" : 3672
+         "y" : 2448
       },
       "CategoriesArchived.dc.html" : {
          "h" : 844,
@@ -127,7 +167,7 @@
          "title" : "Archived and restore",
          "w" : 390,
          "x" : 470,
-         "y" : 3672
+         "y" : 2448
       },
       "ColourRing.dc.html" : {
          "h" : 844,
@@ -135,7 +175,7 @@
          "title" : "Own colour — hue ring",
          "w" : 390,
          "x" : 1410,
-         "y" : 3672
+         "y" : 2448
       },
       "ColourRows.dc.html" : {
          "h" : 844,
@@ -143,7 +183,7 @@
          "title" : "Colours — two rows, the last opens the hue ring",
          "w" : 390,
          "x" : 940,
-         "y" : 3672
+         "y" : 2448
       },
       "Confirm.dc.html" : {
          "h" : 844,
@@ -214,6 +254,14 @@
          "page" : "accounts",
          "title" : "Delete an archived account",
          "w" : 390,
+         "x" : 2350,
+         "y" : 0
+      },
+      "ExportSheet.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Export CSV — dates, then Save or Share",
+         "w" : 390,
          "x" : 1880,
          "y" : 0
       },
@@ -244,17 +292,17 @@
       "Groceries.dc.html" : {
          "h" : 1380,
          "page" : "insights",
-         "title" : "Groceries — with receipts, the whole page",
+         "title" : "Reports — Groceries, the whole page",
          "w" : 390,
-         "x" : 940,
+         "x" : 1410,
          "y" : 0
       },
       "GroceriesEmpty.dc.html" : {
          "h" : 844,
          "page" : "insights",
-         "title" : "Groceries — before any receipt",
+         "title" : "Reports — Groceries before any receipt",
          "w" : 390,
-         "x" : 470,
+         "x" : 940,
          "y" : 0
       },
       "History.dc.html" : {
@@ -297,6 +345,14 @@
          "x" : 0,
          "y" : 2448
       },
+      "HomeAz.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Home in Azerbaijani: the app's words change, the names typed stay",
+         "w" : 390,
+         "x" : 940,
+         "y" : 3672
+      },
       "HomeBackupNotice.dc.html" : {
          "h" : 844,
          "page" : "home",
@@ -337,13 +393,13 @@
          "x" : 470,
          "y" : 0
       },
-      "Insights.dc.html" : {
+      "LanguageSheet.dc.html" : {
          "h" : 844,
-         "page" : "insights",
-         "title" : "Insights",
+         "page" : "settings",
+         "title" : "Language — each named in itself",
          "w" : 390,
          "x" : 0,
-         "y" : 0
+         "y" : 3672
       },
       "LoanEditor.dc.html" : {
          "h" : 1240,
@@ -481,102 +537,6 @@
          "x" : 0,
          "y" : 0
       },
-      "PropAccountEditor.dc.html" : {
-         "h" : 1000,
-         "page" : "accounts",
-         "title" : "Default, In total and On widget as switches in the editor",
-         "w" : 390,
-         "x" : 940,
-         "y" : 1224
-      },
-      "PropAccounts.dc.html" : {
-         "h" : 920,
-         "page" : "accounts",
-         "title" : "Total and its actions in one box; star for default",
-         "w" : 390,
-         "x" : 0,
-         "y" : 1224
-      },
-      "PropAccountsDefault.dc.html" : {
-         "h" : 844,
-         "page" : "accounts",
-         "title" : "Tapping a star moves the default",
-         "w" : 390,
-         "x" : 470,
-         "y" : 1224
-      },
-      "PropAddDebt.dc.html" : {
-         "h" : 844,
-         "page" : "adding",
-         "title" : "Debt, a fourth kind: new, or paid back",
-         "w" : 390,
-         "x" : 0,
-         "y" : 3672
-      },
-      "PropAddDebtDetails.dc.html" : {
-         "h" : 844,
-         "page" : "adding",
-         "title" : "A debt on the keypad page",
-         "w" : 390,
-         "x" : 470,
-         "y" : 3672
-      },
-      "PropAddWaiting.dc.html" : {
-         "h" : 844,
-         "page" : "adding",
-         "title" : "+ opens with what your bank sent",
-         "w" : 390,
-         "x" : 0,
-         "y" : 4896
-      },
-      "PropAddWaitingOpen.dc.html" : {
-         "h" : 844,
-         "page" : "adding",
-         "title" : "Tapping one opens it filled in",
-         "w" : 390,
-         "x" : 470,
-         "y" : 4896
-      },
-      "PropReportsCards.dc.html" : {
-         "h" : 844,
-         "page" : "insights",
-         "title" : "B — report cards at the top of Insights",
-         "w" : 390,
-         "x" : 940,
-         "y" : 3220
-      },
-      "PropReportsGroceries.dc.html" : {
-         "h" : 844,
-         "page" : "insights",
-         "title" : "A — Reports: Groceries",
-         "w" : 390,
-         "x" : 470,
-         "y" : 3220
-      },
-      "PropReportsSpending.dc.html" : {
-         "h" : 844,
-         "page" : "insights",
-         "title" : "A — Insights becomes Reports: Spending",
-         "w" : 390,
-         "x" : 0,
-         "y" : 3220
-      },
-      "PropVoiceDebt.dc.html" : {
-         "h" : 844,
-         "page" : "adding",
-         "title" : "A debt by voice, filled in",
-         "w" : 390,
-         "x" : 940,
-         "y" : 3672
-      },
-      "PropWidgets.dc.html" : {
-         "h" : 380,
-         "page" : "adding",
-         "title" : "Widgets: a Debt key, and a count on the +",
-         "w" : 424,
-         "x" : 1410,
-         "y" : 3672
-      },
       "QuickAdd.dc.html" : {
          "h" : 844,
          "is_interactive" : true,
@@ -651,7 +611,7 @@
          "page" : "insights",
          "title" : "A saved receipt",
          "w" : 390,
-         "x" : 1410,
+         "x" : 1880,
          "y" : 0
       },
       "ReceiptSaved.dc.html" : {
@@ -664,19 +624,19 @@
       },
       "Recurring.dc.html" : {
          "h" : 844,
-         "page" : "settings",
+         "page" : "accounts",
          "title" : "Recurring payments",
          "w" : 390,
          "x" : 0,
-         "y" : 2448
+         "y" : 1360
       },
       "RecurringEditor.dc.html" : {
          "h" : 844,
-         "page" : "settings",
+         "page" : "accounts",
          "title" : "Edit recurring payment",
          "w" : 390,
          "x" : 470,
-         "y" : 2448
+         "y" : 1360
       },
       "ReminderTime.dc.html" : {
          "h" : 844,
@@ -694,6 +654,30 @@
          "x" : 940,
          "y" : 1224
       },
+      "RenameSheet.dc.html" : {
+         "h" : 844,
+         "page" : "loans",
+         "title" : "Change someone's name, on all their debts",
+         "w" : 390,
+         "x" : 2350,
+         "y" : 1620
+      },
+      "Reports.dc.html" : {
+         "h" : 844,
+         "page" : "insights",
+         "title" : "Reports — Spending",
+         "w" : 390,
+         "x" : 0,
+         "y" : 0
+      },
+      "ReportsGroceries.dc.html" : {
+         "h" : 844,
+         "page" : "insights",
+         "title" : "Reports — Groceries",
+         "w" : 390,
+         "x" : 470,
+         "y" : 0
+      },
       "Settings.dc.html" : {
          "h" : 844,
          "page" : "settings",
@@ -701,6 +685,14 @@
          "w" : 390,
          "x" : 0,
          "y" : 0
+      },
+      "SettingsAz.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Settings in Azerbaijani",
+         "w" : 390,
+         "x" : 470,
+         "y" : 3672
       },
       "SettingsBottom.dc.html" : {
          "h" : 844,
@@ -717,6 +709,14 @@
          "w" : 390,
          "x" : 470,
          "y" : 1224
+      },
+      "VoiceDebt.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "A debt by voice, filled in",
+         "w" : 390,
+         "x" : 940,
+         "y" : 3672
       },
       "VoiceHeard.dc.html" : {
          "h" : 844,
@@ -765,6 +765,14 @@
          "w" : 1100,
          "x" : 0,
          "y" : 0
+      },
+      "WidgetsDebt.dc.html" : {
+         "h" : 380,
+         "page" : "widgets",
+         "title" : "Widgets — a Debt key, and a count on the +",
+         "w" : 424,
+         "x" : 3094,
+         "y" : 0
       }
    },
    "createdOnFiles" : {
@@ -807,10 +815,9 @@
       "runSteps",
       "runOther",
       "widgetsRow",
-      "propAccounts",
-      "propReports",
       "propDebts",
-      "propWaiting"
+      "propWaiting",
+      "setLanguage"
    ],
    "notes" : {
       "accRow" : {
@@ -916,7 +923,7 @@
          "kind" : "title1",
          "maxW" : 1800,
          "page" : "insights",
-         "text" : "Insights and groceries",
+         "text" : "Reports",
          "w" : 240,
          "x" : 0,
          "y" : -260
@@ -948,38 +955,20 @@
          "x" : 0,
          "y" : -260
       },
-      "propAccounts" : {
-         "kind" : "title1",
-         "maxW" : 1330,
-         "page" : "accounts",
-         "text" : "Proposal — one box, quieter cards",
-         "w" : 240,
-         "x" : 0,
-         "y" : 964
-      },
       "propDebts" : {
          "kind" : "title1",
          "maxW" : 1834,
          "page" : "adding",
-         "text" : "Proposal — debts from + and by voice",
+         "text" : "Debts in +, and by voice",
          "w" : 240,
          "x" : 0,
          "y" : 3412
-      },
-      "propReports" : {
-         "kind" : "title1",
-         "maxW" : 1330,
-         "page" : "insights",
-         "text" : "Proposal — a home for reports",
-         "w" : 240,
-         "x" : 0,
-         "y" : 2960
       },
       "propWaiting" : {
          "kind" : "title1",
          "maxW" : 860,
          "page" : "adding",
-         "text" : "Proposal — bank entries in +",
+         "text" : "What the bank sent, in +",
          "w" : 240,
          "x" : 0,
          "y" : 4636
@@ -1018,16 +1007,25 @@
          "text" : "Categories and colours",
          "w" : 240,
          "x" : 0,
+         "y" : 2188
+      },
+      "setLanguage" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "settings",
+         "text" : "Language",
+         "w" : 240,
+         "x" : 0,
          "y" : 3412
       },
       "setRecurring" : {
          "kind" : "title1",
          "maxW" : 860,
-         "page" : "settings",
+         "page" : "accounts",
          "text" : "Recurring payments",
          "w" : 240,
          "x" : 0,
-         "y" : 2188
+         "y" : 1100
       },
       "setRow" : {
          "kind" : "title1",
@@ -1074,7 +1072,6 @@
       "FilterPerson.dc.html",
       "HistorySwipe.dc.html",
       "HistoryDeleteAsk.dc.html",
-      "Insights.dc.html",
       "GroceriesEmpty.dc.html",
       "Groceries.dc.html",
       "ReceiptDetail.dc.html",
@@ -1132,18 +1129,20 @@
       "WidgetBalanceVoice.dc.html",
       "WidgetBalanceSheet.dc.html",
       "AppIcon.dc.html",
-      "PropAccounts.dc.html",
-      "PropAccountsDefault.dc.html",
-      "PropAccountEditor.dc.html",
-      "PropReportsSpending.dc.html",
-      "PropReportsGroceries.dc.html",
-      "PropReportsCards.dc.html",
-      "PropAddDebt.dc.html",
-      "PropAddDebtDetails.dc.html",
-      "PropVoiceDebt.dc.html",
-      "PropWidgets.dc.html",
-      "PropAddWaiting.dc.html",
-      "PropAddWaitingOpen.dc.html"
+      "AccountsDefault.dc.html",
+      "Reports.dc.html",
+      "ReportsGroceries.dc.html",
+      "AddDebt.dc.html",
+      "AddDebtDetails.dc.html",
+      "VoiceDebt.dc.html",
+      "WidgetsDebt.dc.html",
+      "AddWaiting.dc.html",
+      "AddWaitingOpen.dc.html",
+      "ExportSheet.dc.html",
+      "HomeAz.dc.html",
+      "LanguageSheet.dc.html",
+      "RenameSheet.dc.html",
+      "SettingsAz.dc.html"
    ],
    "pages" : [
       {
@@ -1160,7 +1159,7 @@
       },
       {
          "id" : "insights",
-         "name" : "Insights & groceries"
+         "name" : "Reports"
       },
       {
          "id" : "accounts",
