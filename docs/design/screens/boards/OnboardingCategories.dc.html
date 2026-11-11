@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>First run — categories</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Space+Grotesk:wght@500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;display=block" rel="stylesheet">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+.scr{font-family:Manrope,system-ui,sans-serif;background:var(--bg-canvas);color:var(--text-primary);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.ms{font-family:'Material Symbols Rounded';font-weight:400;font-style:normal;font-size:22px;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;font-feature-settings:'liga';-webkit-font-smoothing:antialiased;display:inline-block;flex:none}
+.cap{font-size:12px;line-height:16px;font-weight:500;color:var(--text-secondary)}
+.over{font-size:11px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);display:block}
+.card{background:var(--bg-surface);border-radius:18px;overflow:hidden}
+.rw{display:flex;align-items:center;gap:14px;min-height:56px;padding:14px 16px;width:100%}
+.rw+.rw{border-top:1px solid var(--border-default)}
+.rw b{display:block;font-size:15px;line-height:20px;font-weight:600}
+.iconbtn{width:44px;height:44px;border-radius:22px;background:var(--bg-surface-raised);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);flex:none}
+.top{flex:none;display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px}
+.h1{margin:0;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-0.5px}
+.lead{margin:0;font-size:14px;line-height:20px;font-weight:500;color:var(--text-secondary)}
+.field{height:52px;border-radius:18px;background:var(--bg-surface-raised);display:flex;align-items:center;padding:0 16px;font-size:15px;font-weight:500}
+.save{height:56px;border-radius:999px;background:var(--accent-fill);color:var(--accent-on);text-align:center;font-size:16px;font-weight:600;width:100%;flex:none}
+.quiet{height:44px;text-align:center;font-size:14px;font-weight:600;color:var(--text-secondary);width:100%;flex:none}
+.avatar{width:40px;height:40px;border-radius:20px;display:flex;align-items:center;justify-content:center;flex:none;font-size:15px;font-weight:700;color:#0B0D10}
+.seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--bg-surface-raised)}
+.seg>button{flex:1 1 0;text-align:center;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--text-muted)}
+.seg>button.on{background:var(--bg-surface-high);color:var(--text-primary)}
+.g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 6px}
+.c{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.t{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;flex:none}
+.t .ms{font-size:28px}
+.l{font-size:12px;line-height:15px;font-weight:600;color:var(--text-secondary);text-align:center;height:30px;overflow:hidden}
+.off .t{background:var(--bg-surface)!important;border:1px dashed var(--border-strong)}
+.off .t .ms{color:var(--text-muted)!important}
+.off .l{color:var(--text-muted);text-decoration:line-through}
+.sheet{background:var(--bg-surface);border-radius:28px 28px 0 0;position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;padding:0 16px 24px}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:10px auto 0;flex:none}
+.opt{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 12px;border-radius:18px;width:100%}
+.opt.on{background:var(--bg-surface-high)}
+.opt>span:first-child{flex:1 1 0;display:flex;flex-direction:column;gap:2px;font-size:15px;line-height:20px;font-weight:600}
+.opt small{font-size:12px;line-height:16px;font-weight:500;color:var(--text-secondary)}
+.sw{width:32px;height:32px;margin:6px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#0B0D10}
+.t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--bg-surface-raised:#181C21;--bg-surface-high:#1F242B;--border-default:#1F242B;--border-strong:#2A3038;--text-primary:#F2F4F7;--text-secondary:#AEB6C1;--text-muted:#8A94A3;--accent-fill:#C8F169;--accent-on:#0B0D10;--accent-text:#C8F169;--money-expense:#FF7A66;--money-income:#4ADE9B;--status-warning:#F5B544;--scrim:rgba(0,0,0,0.62)}
+</style>
+</helmet>
+<div class="scr t-dark" style="width: 390px; height: 844px">
+<header class="top"><button class="iconbtn" aria-label="Back"><span class="ms" aria-hidden="true" style="color: var(--text-primary)">arrow_back</span></button><span class="cap">2 of 4</span></header>
+<div style="flex: 1 1 0; min-height: 0; padding: 8px 16px 0; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 8px"><h1 class="h1">Your categories</h1><p class="lead">Tap one to leave it out. You can change all of this later.</p></div>
+<div class="card"><button class="rw" style="min-height: 52px; padding: 10px 16px"><span style="flex: 1 1 0"><b>Template</b></span><span class="cap">Household</span><span class="ms" aria-hidden="true" style="font-size: 20px; color: var(--text-muted)">chevron_right</span></button></div>
+<div class="seg"><button class="on">Expense</button><button>Income</button></div>
+<div class="g">
+<button class="c"><span class="t" style="background: rgba(93,202,165,0.16)"><span class="ms" aria-hidden="true" style="color: #5DCAA5">shopping_cart</span></span><span class="l">Groceries</span></button>
+<button class="c"><span class="t" style="background: rgba(255,159,110,0.16)"><span class="ms" aria-hidden="true" style="color: #FF9F6E">restaurant</span></span><span class="l">Cafe &amp; Restaurants</span></button>
+<button class="c"><span class="t" style="background: rgba(245,181,68,0.16)"><span class="ms" aria-hidden="true" style="color: #F5B544">work</span></span><span class="l">Work</span></button>
+<button class="c"><span class="t" style="background: rgba(255,209,102,0.16)"><span class="ms" aria-hidden="true" style="color: #FFD166">local_taxi</span></span><span class="l">Transport</span></button>
+<button class="c"><span class="t" style="background: rgba(138,180,248,0.16)"><span class="ms" aria-hidden="true" style="color: #8AB4F8">directions_car</span></span><span class="l">Car</span></button>
+<button class="c"><span class="t" style="background: rgba(255,122,102,0.16)"><span class="ms" aria-hidden="true" style="color: #FF7A66">medical_services</span></span><span class="l">Health</span></button>
+<button class="c"><span class="t" style="background: rgba(244,154,194,0.16)"><span class="ms" aria-hidden="true" style="color: #F49AC2">content_cut</span></span><span class="l">Grooming</span></button>
+<button class="c"><span class="t" style="background: rgba(154,208,168,0.16)"><span class="ms" aria-hidden="true" style="color: #9AD0A8">bolt</span></span><span class="l">Utilities</span></button>
+<button class="c"><span class="t" style="background: rgba(179,157,255,0.16)"><span class="ms" aria-hidden="true" style="color: #B39DFF">subscriptions</span></span><span class="l">Subscriptions</span></button>
+<button class="c off"><span class="t"><span class="ms" aria-hidden="true">school</span></span><span class="l">Kids &amp; Education</span></button>
+<button class="c"><span class="t" style="background: rgba(127,209,247,0.16)"><span class="ms" aria-hidden="true" style="color: #7FD1F7">shopping_bag</span></span><span class="l">Shopping</span></button>
+<button class="c"><span class="t" style="background: rgba(199,155,242,0.16)"><span class="ms" aria-hidden="true" style="color: #C79BF2">sports_esports</span></span><span class="l">Entertainment</span></button>
+<button class="c"><span class="t" style="background: rgba(247,160,114,0.16)"><span class="ms" aria-hidden="true" style="color: #F7A072">redeem</span></span><span class="l">Gifts &amp; Occasions</span></button>
+<button class="c off"><span class="t"><span class="ms" aria-hidden="true">family_restroom</span></span><span class="l">Family support</span></button>
+<button class="c"><span class="t" style="background: rgba(111,199,217,0.16)"><span class="ms" aria-hidden="true" style="color: #6FC7D9">flight</span></span><span class="l">Travel</span></button>
+<button class="c"><span class="t" style="background: rgba(138,148,163,0.16)"><span class="ms" aria-hidden="true" style="color: #8A94A3">more_horiz</span></span><span class="l">Other</span></button>
+</div>
+</div>
+<div style="flex: none; padding: 12px 16px 24px"><button class="save">Continue</button></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Proposal — + opens with what your bank sent</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Space+Grotesk:wght@500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;display=block" rel="stylesheet">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+.scr{font-family:Manrope,system-ui,sans-serif;background:var(--bg-canvas);color:var(--text-primary);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.ms{font-family:'Material Symbols Rounded';font-weight:400;font-style:normal;font-size:22px;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;font-feature-settings:'liga';-webkit-font-smoothing:antialiased;display:inline-block;flex:none}
+.num{font-family:'Space Grotesk',Manrope,sans-serif;font-weight:500}
+.over{font-size:11px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;background:var(--bg-surface-raised);border:1px solid var(--border-default);font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;flex:none}
+.chip.sel{background:var(--bg-surface-high);border-color:var(--accent-fill)}
+.sheet{background:var(--bg-surface);border-radius:28px 28px 0 0;position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:10px auto 0;flex:none}
+.from{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;min-height:44px;flex:none}
+.t{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.sec{padding:12px 16px 0}
+.line{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.p{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1 1 0;font-size:12px;line-height:16px;font-weight:600;color:var(--text-muted)}
+.av{width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#0B0D10;opacity:.55}
+.pad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.k{height:54px;border-radius:14px;background:var(--bg-surface-raised);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:24px}
+.save{grid-column:4;grid-row:2 / span 3;border-radius:14px;background:var(--accent-fill);color:var(--accent-on);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:700;font-size:15px}
+.heard{margin:12px 16px 0;padding:8px 12px;border-radius:18px;background:var(--bg-surface-raised);display:flex;align-items:center;gap:8px;font-size:12px;line-height:16px;font-weight:500;color:var(--text-secondary)}
+.t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--bg-surface-raised:#181C21;--bg-surface-high:#1F242B;--border-default:#1F242B;--border-strong:#2A3038;--text-primary:#F2F4F7;--text-secondary:#AEB6C1;--text-muted:#8A94A3;--accent-fill:#C8F169;--accent-on:#0B0D10;--accent-text:#C8F169;--person-me:#5B9DFF;--person-wife:#FF7AB6;--person-daughter:#FFB547;--person-mom:#A78BFA;--person-family:#8A94A3;--scrim:rgba(0,0,0,0.62);--money-expense:#FF7A66;--money-income:#4ADE9B;--status-warning:#F5B544}
+.seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--bg-surface-raised)}
+.seg>button{flex:1 1 0;text-align:center;padding:6px 8px;border-radius:999px;font-size:13px;font-weight:600;color:var(--text-muted)}
+.seg>button.on{background:var(--bg-surface-high);color:var(--text-primary)}
+.fchip{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 12px;border-radius:999px;background:var(--bg-surface-raised);border:1px solid var(--border-default);font-size:13px;font-weight:600;white-space:nowrap;flex:1 1 0}
+.g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 6px}
+.c{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.bt{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;flex:none}
+.bt .ms{font-size:28px}
+.l{font-size:12px;line-height:15px;font-weight:600;color:var(--text-secondary);text-align:center;height:30px;overflow:hidden}
+.cap{font-size:12px;line-height:16px;font-weight:500;color:var(--text-secondary)}
+.col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card{background:var(--bg-surface-raised);border-radius:18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:600;flex:none}
+.btn.lime{background:var(--accent-fill);color:var(--accent-on)}
+.btn.plain{background:var(--bg-surface-high);color:var(--text-primary)}
+.icb{width:44px;height:44px;border-radius:22px;background:var(--bg-surface-raised);display:flex;align-items:center;justify-content:center;flex:none}
+.source{margin:12px 16px 0;padding:8px 12px;border-radius:18px;background:var(--bg-surface-raised);display:flex;align-items:center;gap:8px;font-size:12px;line-height:16px;font-weight:500;color:var(--text-secondary)}
+</style>
+</helmet>
+<div class="scr t-dark" style="width: 390px; height: 844px">
+<div style="position: absolute; inset: 0; background: var(--scrim)"></div>
+<section class="sheet" aria-label="Add — with what the bank sent" style="top: 92px">
+<div class="handle"></div>
+<div style="padding: 14px 16px 0"><div class="seg"><button class="on">Expense</button><button>Income</button><button>Transfer</button><button>Debt</button></div></div>
+<div style="padding: 16px 16px 0"><div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px"><span class="over" style="margin: 0">From your bank · 2 waiting</span><span class="cap" style="color: var(--accent-text); font-weight: 600">To confirm</span></div>
+<div class="card" style="overflow: hidden">
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px"><span class="t" style="background: #5DCAA529"><span class="ms" aria-hidden="true" style="color: #5DCAA5">shopping_cart</span></span><div class="col"><span class="ell" style="font-size: 15px; font-weight: 600">Bravo</span><span class="cap ell">Groceries · Family · Card · 19:41</span></div><span class="num" style="font-size: 15px">₼12.40</span><span class="btn plain" aria-label="Add as it is"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--accent-text)">check</span>Add</span></div><div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-top: 1px solid var(--border-default)"><span class="t" style="background: #FFD16629"><span class="ms" aria-hidden="true" style="color: #FFD166">local_taxi</span></span><div class="col"><span class="ell" style="font-size: 15px; font-weight: 600">Yango</span><span class="cap ell">Suggested · Transport · 18:05</span></div><span class="num" style="font-size: 15px">₼6.80</span><span class="btn plain" aria-label="Add as it is"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--accent-text)">check</span>Add</span></div></div><span class="cap" style="display: block; padding: 8px 4px 0">Tap one to check it first, or Add it as it is.</span></div>
+<div style="padding: 16px 16px 0"><span class="over" style="margin-bottom: 8px">Frequent</span><div style="display: flex; gap: 8px"><span class="fchip"><span class="ms" aria-hidden="true" style="font-size: 18px; color: #B39DFF">subscriptions</span>Spotify</span><span class="fchip"><span class="ms" aria-hidden="true" style="font-size: 18px; color: #5DCAA5">shopping_cart</span>Bravo</span><span class="fchip"><span class="ms" aria-hidden="true" style="font-size: 18px; color: #FFD166">local_taxi</span>Yango</span></div></div>
+<div style="padding: 16px 16px 20px"><span class="over" style="margin-bottom: 10px">All categories</span><div class="g">
+<button class="c"><span class="bt" style="background: #5DCAA529"><span class="ms" aria-hidden="true" style="color: #5DCAA5">shopping_cart</span></span><span class="l">Groceries</span></button><button class="c"><span class="bt" style="background: #FF9F6E29"><span class="ms" aria-hidden="true" style="color: #FF9F6E">restaurant</span></span><span class="l">Cafe &amp; Restaurants</span></button><button class="c"><span class="bt" style="background: #F5B54429"><span class="ms" aria-hidden="true" style="color: #F5B544">work</span></span><span class="l">Work</span></button><button class="c"><span class="bt" style="background: #FFD16629"><span class="ms" aria-hidden="true" style="color: #FFD166">local_taxi</span></span><span class="l">Transport</span></button><button class="c"><span class="bt" style="background: #8AB4F829"><span class="ms" aria-hidden="true" style="color: #8AB4F8">directions_car</span></span><span class="l">Car</span></button><button class="c"><span class="bt" style="background: #FF7A6629"><span class="ms" aria-hidden="true" style="color: #FF7A66">medical_services</span></span><span class="l">Health</span></button><button class="c"><span class="bt" style="background: #F49AC229"><span class="ms" aria-hidden="true" style="color: #F49AC2">content_cut</span></span><span class="l">Grooming</span></button><button class="c"><span class="bt" style="background: #9AD0A829"><span class="ms" aria-hidden="true" style="color: #9AD0A8">bolt</span></span><span class="l">Utilities</span></button></div></div></section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

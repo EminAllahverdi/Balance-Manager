@@ -1,0 +1,1192 @@
+{
+   "attachments" : {},
+   "boards" : {
+      "AccountEditor.dc.html" : {
+         "h" : 844,
+         "page" : "accounts",
+         "title" : "Edit account",
+         "w" : 390,
+         "x" : 470,
+         "y" : 0
+      },
+      "AccountSheet.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "Quick add — account sheet",
+         "w" : 390,
+         "x" : 2350,
+         "y" : 0
+      },
+      "Accounts.dc.html" : {
+         "h" : 844,
+         "page" : "accounts",
+         "title" : "Accounts",
+         "w" : 390,
+         "x" : 0,
+         "y" : 0
+      },
+      "AccountsArchived.dc.html" : {
+         "h" : 844,
+         "page" : "accounts",
+         "title" : "Archived, folded open",
+         "w" : 390,
+         "x" : 1410,
+         "y" : 0
+      },
+      "AdjustBalance.dc.html" : {
+         "h" : 844,
+         "page" : "accounts",
+         "title" : "Adjust balance",
+         "w" : 390,
+         "x" : 940,
+         "y" : 0
+      },
+      "AppIcon.dc.html" : {
+         "h" : 844,
+         "page" : "widgets",
+         "title" : "App icon",
+         "w" : 860,
+         "x" : 2154,
+         "y" : 0
+      },
+      "AppLock.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "App lock",
+         "w" : 390,
+         "x" : 1410,
+         "y" : 0
+      },
+      "AutoConfirm.dc.html" : {
+         "h" : 844,
+         "page" : "confirm",
+         "title" : "Auto-confirm asks first",
+         "w" : 390,
+         "x" : 940,
+         "y" : 1224
+      },
+      "BackupRestore.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Restore a backup",
+         "w" : 390,
+         "x" : 470,
+         "y" : 1224
+      },
+      "BackupSettings.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Settings — backup",
+         "w" : 390,
+         "x" : 0,
+         "y" : 1224
+      },
+      "BankAccess.dc.html" : {
+         "h" : 844,
+         "page" : "confirm",
+         "title" : "Notification access",
+         "w" : 390,
+         "x" : 0,
+         "y" : 1224
+      },
+      "BankApps.dc.html" : {
+         "h" : 844,
+         "page" : "confirm",
+         "title" : "Bank apps",
+         "w" : 390,
+         "x" : 470,
+         "y" : 1224
+      },
+      "BillEditor.dc.html" : {
+         "h" : 1280,
+         "page" : "loans",
+         "title" : "I paid for others — the bill",
+         "w" : 390,
+         "x" : 0,
+         "y" : 3000
+      },
+      "BillPayback.dc.html" : {
+         "h" : 844,
+         "page" : "loans",
+         "title" : "Paid back, or marked as my share",
+         "w" : 390,
+         "x" : 940,
+         "y" : 3000
+      },
+      "Categories.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Categories & sub-categories",
+         "w" : 390,
+         "x" : 0,
+         "y" : 3672
+      },
+      "CategoriesArchived.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Archived and restore",
+         "w" : 390,
+         "x" : 470,
+         "y" : 3672
+      },
+      "ColourRing.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Own colour — hue ring",
+         "w" : 390,
+         "x" : 1410,
+         "y" : 3672
+      },
+      "ColourRows.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Colours — two rows, the last opens the hue ring",
+         "w" : 390,
+         "x" : 940,
+         "y" : 3672
+      },
+      "Confirm.dc.html" : {
+         "h" : 844,
+         "page" : "confirm",
+         "title" : "Bank notifications to confirm",
+         "w" : 390,
+         "x" : 0,
+         "y" : 0
+      },
+      "ConfirmNotRead.dc.html" : {
+         "h" : 844,
+         "page" : "confirm",
+         "title" : "Not read, and why",
+         "w" : 390,
+         "x" : 940,
+         "y" : 0
+      },
+      "ConfirmWithdrawal.dc.html" : {
+         "h" : 844,
+         "page" : "confirm",
+         "title" : "A cash withdrawal",
+         "w" : 390,
+         "x" : 470,
+         "y" : 0
+      },
+      "DebtBorrowed.dc.html" : {
+         "h" : 844,
+         "page" : "loans",
+         "title" : "New debt — borrowed or lent",
+         "w" : 390,
+         "x" : 470,
+         "y" : 1620
+      },
+      "DebtPaidForMe.dc.html" : {
+         "h" : 844,
+         "page" : "loans",
+         "title" : "New debt — paid for me",
+         "w" : 390,
+         "x" : 0,
+         "y" : 1620
+      },
+      "DebtPay.dc.html" : {
+         "h" : 844,
+         "page" : "loans",
+         "title" : "Pay back one debt",
+         "w" : 390,
+         "x" : 1410,
+         "y" : 1620
+      },
+      "DebtPayAll.dc.html" : {
+         "h" : 844,
+         "page" : "loans",
+         "title" : "Pay back everything",
+         "w" : 390,
+         "x" : 1880,
+         "y" : 1620
+      },
+      "DebtRunning.dc.html" : {
+         "h" : 1000,
+         "page" : "loans",
+         "title" : "New debt — lent, already running",
+         "w" : 390,
+         "x" : 940,
+         "y" : 1620
+      },
+      "DeleteAccount.dc.html" : {
+         "h" : 844,
+         "page" : "accounts",
+         "title" : "Delete an archived account",
+         "w" : 390,
+         "x" : 1880,
+         "y" : 0
+      },
+      "FilterCategory.dc.html" : {
+         "h" : 844,
+         "page" : "history",
+         "title" : "Filter sheet — category",
+         "w" : 390,
+         "x" : 470,
+         "y" : 1224
+      },
+      "FilterMonth.dc.html" : {
+         "h" : 844,
+         "page" : "history",
+         "title" : "Filter sheet — month",
+         "w" : 390,
+         "x" : 0,
+         "y" : 1224
+      },
+      "FilterPerson.dc.html" : {
+         "h" : 844,
+         "page" : "history",
+         "title" : "Filter sheet — person or account",
+         "w" : 390,
+         "x" : 940,
+         "y" : 1224
+      },
+      "Groceries.dc.html" : {
+         "h" : 1380,
+         "page" : "insights",
+         "title" : "Groceries — with receipts, the whole page",
+         "w" : 390,
+         "x" : 940,
+         "y" : 0
+      },
+      "GroceriesEmpty.dc.html" : {
+         "h" : 844,
+         "page" : "insights",
+         "title" : "Groceries — before any receipt",
+         "w" : 390,
+         "x" : 470,
+         "y" : 0
+      },
+      "History.dc.html" : {
+         "h" : 844,
+         "page" : "history",
+         "title" : "History + filters",
+         "w" : 390,
+         "x" : 0,
+         "y" : 0
+      },
+      "HistoryCategory.dc.html" : {
+         "h" : 844,
+         "page" : "history",
+         "title" : "Category transactions, from Home",
+         "w" : 390,
+         "x" : 470,
+         "y" : 0
+      },
+      "HistoryDebts.dc.html" : {
+         "h" : 844,
+         "page" : "history",
+         "title" : "History — debt entries",
+         "w" : 390,
+         "x" : 940,
+         "y" : 0
+      },
+      "HistoryDeleteAsk.dc.html" : {
+         "h" : 844,
+         "page" : "history",
+         "title" : "The question, naming the entry",
+         "w" : 390,
+         "x" : 470,
+         "y" : 2448
+      },
+      "HistorySwipe.dc.html" : {
+         "h" : 844,
+         "page" : "history",
+         "title" : "Swipe a row to the left",
+         "w" : 390,
+         "x" : 0,
+         "y" : 2448
+      },
+      "HomeBackupNotice.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Home — not backed up",
+         "w" : 390,
+         "x" : 1410,
+         "y" : 0
+      },
+      "HomeChart.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Home — pie chart",
+         "w" : 390,
+         "x" : 940,
+         "y" : 0
+      },
+      "HomeLight.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Home — light theme",
+         "w" : 390,
+         "x" : 2350,
+         "y" : 0
+      },
+      "HomePast.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Home — past month",
+         "w" : 390,
+         "x" : 1880,
+         "y" : 0
+      },
+      "HomePerson.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Home — by person",
+         "w" : 390,
+         "x" : 470,
+         "y" : 0
+      },
+      "Insights.dc.html" : {
+         "h" : 844,
+         "page" : "insights",
+         "title" : "Insights",
+         "w" : 390,
+         "x" : 0,
+         "y" : 0
+      },
+      "LoanEditor.dc.html" : {
+         "h" : 1240,
+         "page" : "loans",
+         "title" : "New loan, with what the contract says",
+         "w" : 390,
+         "x" : 1410,
+         "y" : 0
+      },
+      "Loans.dc.html" : {
+         "h" : 844,
+         "page" : "loans",
+         "title" : "Loans & debts",
+         "w" : 390,
+         "x" : 0,
+         "y" : 0
+      },
+      "LoansAdd.dc.html" : {
+         "h" : 844,
+         "page" : "loans",
+         "title" : "Add a loan or debt",
+         "w" : 390,
+         "x" : 940,
+         "y" : 0
+      },
+      "LoansBill.dc.html" : {
+         "h" : 844,
+         "page" : "loans",
+         "title" : "What they still owe",
+         "w" : 390,
+         "x" : 470,
+         "y" : 3000
+      },
+      "LoansPeople.dc.html" : {
+         "h" : 844,
+         "page" : "loans",
+         "title" : "Loans & debts — people",
+         "w" : 390,
+         "x" : 470,
+         "y" : 0
+      },
+      "Main.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Home — by category",
+         "w" : 390,
+         "x" : 0,
+         "y" : 0
+      },
+      "OnboardingBackup.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "First run 4 — back up to Google Drive",
+         "w" : 390,
+         "x" : 2350,
+         "y" : 0
+      },
+      "OnboardingBackupExisting.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "Backup — the account already has backups",
+         "w" : 390,
+         "x" : 470,
+         "y" : 1224
+      },
+      "OnboardingCategories.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "First run 3 — categories",
+         "w" : 390,
+         "x" : 1410,
+         "y" : 0
+      },
+      "OnboardingImport.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "First run 6 — import, only if chosen",
+         "w" : 390,
+         "x" : 3290,
+         "y" : 0
+      },
+      "OnboardingImportSheet.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "Import — what it brings",
+         "w" : 390,
+         "x" : 3760,
+         "y" : 0
+      },
+      "OnboardingPeople.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "First run 2 — who it is for",
+         "w" : 390,
+         "x" : 470,
+         "y" : 0
+      },
+      "OnboardingPerson.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "New person",
+         "w" : 390,
+         "x" : 940,
+         "y" : 0
+      },
+      "OnboardingReminders.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "First run 5 — reminders",
+         "w" : 390,
+         "x" : 2820,
+         "y" : 0
+      },
+      "OnboardingRestore.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "Welcome — restore a backup",
+         "w" : 390,
+         "x" : 0,
+         "y" : 1224
+      },
+      "OnboardingTemplate.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "Category template",
+         "w" : 390,
+         "x" : 1880,
+         "y" : 0
+      },
+      "OnboardingWelcome.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "First run 1 — welcome",
+         "w" : 390,
+         "x" : 0,
+         "y" : 0
+      },
+      "PropAccountEditor.dc.html" : {
+         "h" : 1000,
+         "page" : "accounts",
+         "title" : "Default, In total and On widget as switches in the editor",
+         "w" : 390,
+         "x" : 940,
+         "y" : 1224
+      },
+      "PropAccounts.dc.html" : {
+         "h" : 920,
+         "page" : "accounts",
+         "title" : "Total and its actions in one box; star for default",
+         "w" : 390,
+         "x" : 0,
+         "y" : 1224
+      },
+      "PropAccountsDefault.dc.html" : {
+         "h" : 844,
+         "page" : "accounts",
+         "title" : "Tapping a star moves the default",
+         "w" : 390,
+         "x" : 470,
+         "y" : 1224
+      },
+      "PropAddDebt.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "Debt, a fourth kind: new, or paid back",
+         "w" : 390,
+         "x" : 0,
+         "y" : 3672
+      },
+      "PropAddDebtDetails.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "A debt on the keypad page",
+         "w" : 390,
+         "x" : 470,
+         "y" : 3672
+      },
+      "PropAddWaiting.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "+ opens with what your bank sent",
+         "w" : 390,
+         "x" : 0,
+         "y" : 4896
+      },
+      "PropAddWaitingOpen.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "Tapping one opens it filled in",
+         "w" : 390,
+         "x" : 470,
+         "y" : 4896
+      },
+      "PropReportsCards.dc.html" : {
+         "h" : 844,
+         "page" : "insights",
+         "title" : "B — report cards at the top of Insights",
+         "w" : 390,
+         "x" : 940,
+         "y" : 3220
+      },
+      "PropReportsGroceries.dc.html" : {
+         "h" : 844,
+         "page" : "insights",
+         "title" : "A — Reports: Groceries",
+         "w" : 390,
+         "x" : 470,
+         "y" : 3220
+      },
+      "PropReportsSpending.dc.html" : {
+         "h" : 844,
+         "page" : "insights",
+         "title" : "A — Insights becomes Reports: Spending",
+         "w" : 390,
+         "x" : 0,
+         "y" : 3220
+      },
+      "PropVoiceDebt.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "A debt by voice, filled in",
+         "w" : 390,
+         "x" : 940,
+         "y" : 3672
+      },
+      "PropWidgets.dc.html" : {
+         "h" : 380,
+         "page" : "adding",
+         "title" : "Widgets: a Debt key, and a count on the +",
+         "w" : 424,
+         "x" : 1410,
+         "y" : 3672
+      },
+      "QuickAdd.dc.html" : {
+         "h" : 844,
+         "is_interactive" : true,
+         "page" : "adding",
+         "title" : "Quick add 1 — pick a category",
+         "w" : 390,
+         "x" : 0,
+         "y" : 0
+      },
+      "QuickAddDetails.dc.html" : {
+         "h" : 844,
+         "is_interactive" : true,
+         "page" : "adding",
+         "title" : "Quick add 2 — amount and every detail",
+         "w" : 390,
+         "x" : 470,
+         "y" : 0
+      },
+      "QuickAddEdit.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "Edit transaction",
+         "w" : 390,
+         "x" : 0,
+         "y" : 1224
+      },
+      "QuickAddFilled.dc.html" : {
+         "h" : 844,
+         "is_interactive" : true,
+         "page" : "adding",
+         "title" : "Quick add — merchant and note added",
+         "w" : 390,
+         "x" : 1880,
+         "y" : 0
+      },
+      "QuickAddMerchant.dc.html" : {
+         "h" : 844,
+         "is_interactive" : true,
+         "page" : "adding",
+         "title" : "Quick add — adding a merchant",
+         "w" : 390,
+         "x" : 940,
+         "y" : 0
+      },
+      "QuickAddNote.dc.html" : {
+         "h" : 844,
+         "is_interactive" : true,
+         "page" : "adding",
+         "title" : "Quick add — writing a note",
+         "w" : 390,
+         "x" : 1410,
+         "y" : 0
+      },
+      "ReceiptAdd.dc.html" : {
+         "h" : 844,
+         "page" : "insights",
+         "title" : "Add a receipt — three ways",
+         "w" : 390,
+         "x" : 0,
+         "y" : 1760
+      },
+      "ReceiptCheck.dc.html" : {
+         "h" : 1080,
+         "page" : "insights",
+         "title" : "Check the receipt — when the items don't add up",
+         "w" : 390,
+         "x" : 470,
+         "y" : 1760
+      },
+      "ReceiptDetail.dc.html" : {
+         "h" : 844,
+         "page" : "insights",
+         "title" : "A saved receipt",
+         "w" : 390,
+         "x" : 1410,
+         "y" : 0
+      },
+      "ReceiptSaved.dc.html" : {
+         "h" : 844,
+         "page" : "insights",
+         "title" : "Saved — offers quick add when no entry matches",
+         "w" : 390,
+         "x" : 940,
+         "y" : 1760
+      },
+      "Recurring.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Recurring payments",
+         "w" : 390,
+         "x" : 0,
+         "y" : 2448
+      },
+      "RecurringEditor.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Edit recurring payment",
+         "w" : 390,
+         "x" : 470,
+         "y" : 2448
+      },
+      "ReminderTime.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Reminder time",
+         "w" : 390,
+         "x" : 940,
+         "y" : 0
+      },
+      "RemindersAfterRestore.dc.html" : {
+         "h" : 844,
+         "page" : "firstrun",
+         "title" : "After a restore, before Home",
+         "w" : 390,
+         "x" : 940,
+         "y" : 1224
+      },
+      "Settings.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Settings",
+         "w" : 390,
+         "x" : 0,
+         "y" : 0
+      },
+      "SettingsBottom.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Settings — the end of the page",
+         "w" : 390,
+         "x" : 470,
+         "y" : 0
+      },
+      "Transfer.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "Transfer between accounts",
+         "w" : 390,
+         "x" : 470,
+         "y" : 1224
+      },
+      "VoiceHeard.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "Quick add, filled in from what was heard",
+         "w" : 390,
+         "x" : 940,
+         "y" : 2448
+      },
+      "VoiceIdle.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "By voice — before you speak, or after a miss",
+         "w" : 390,
+         "x" : 0,
+         "y" : 2448
+      },
+      "VoiceListening.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "By voice — listening",
+         "w" : 390,
+         "x" : 470,
+         "y" : 2448
+      },
+      "WidgetBalanceSheet.dc.html" : {
+         "h" : 844,
+         "page" : "widgets",
+         "title" : "Widget balance sheet",
+         "w" : 390,
+         "x" : 1684,
+         "y" : 0
+      },
+      "WidgetBalanceVoice.dc.html" : {
+         "h" : 420,
+         "page" : "widgets",
+         "title" : "Widget 4×1 — balance and voice",
+         "w" : 424,
+         "x" : 1180,
+         "y" : 0
+      },
+      "Widgets.dc.html" : {
+         "h" : 940,
+         "page" : "widgets",
+         "title" : "Home-screen widgets",
+         "w" : 1100,
+         "x" : 0,
+         "y" : 0
+      }
+   },
+   "createdOnFiles" : {
+      "at" : "2026-10-31T17:30:00Z",
+      "v" : 1
+   },
+   "designSystems" : [
+      {
+         "artifact" : "https://claude.ai/artifact/4ifuwdoahAni7s3raTtnZJ",
+         "copiedAt" : "2026-10-31T17:27:33Z",
+         "namespace" : "balancetracker",
+         "title" : "Balance Tracker Design System",
+         "version" : null
+      }
+   ],
+   "launch" : {
+      "page" : "home",
+      "view" : "canvas"
+   },
+   "noteOrder" : [
+      "homeRow",
+      "addQuick",
+      "addEdit",
+      "addVoice",
+      "histRow",
+      "histFilters",
+      "histSwipe",
+      "insRow",
+      "insReceipt",
+      "accRow",
+      "loansRow",
+      "loansPeople",
+      "loansBill",
+      "confRow",
+      "confSetup",
+      "setRow",
+      "setBackup",
+      "setRecurring",
+      "setCatalog",
+      "runSteps",
+      "runOther",
+      "widgetsRow",
+      "propAccounts",
+      "propReports",
+      "propDebts",
+      "propWaiting"
+   ],
+   "notes" : {
+      "accRow" : {
+         "kind" : "title1",
+         "maxW" : 2270,
+         "page" : "accounts",
+         "text" : "Accounts",
+         "w" : 240,
+         "x" : 0,
+         "y" : -260
+      },
+      "addEdit" : {
+         "kind" : "title1",
+         "maxW" : 860,
+         "page" : "adding",
+         "text" : "Edit, and move money",
+         "w" : 240,
+         "x" : 0,
+         "y" : 964
+      },
+      "addQuick" : {
+         "kind" : "title1",
+         "maxW" : 2740,
+         "page" : "adding",
+         "text" : "Quick add",
+         "w" : 240,
+         "x" : 0,
+         "y" : -260
+      },
+      "addVoice" : {
+         "kind" : "title1",
+         "maxW" : 1330,
+         "page" : "adding",
+         "text" : "By voice",
+         "w" : 240,
+         "x" : 0,
+         "y" : 2188
+      },
+      "confRow" : {
+         "kind" : "title1",
+         "maxW" : 1330,
+         "page" : "confirm",
+         "text" : "To confirm",
+         "w" : 240,
+         "x" : 0,
+         "y" : -260
+      },
+      "confSetup" : {
+         "kind" : "title1",
+         "maxW" : 1330,
+         "page" : "confirm",
+         "text" : "Setting it up",
+         "w" : 240,
+         "x" : 0,
+         "y" : 964
+      },
+      "histFilters" : {
+         "kind" : "title1",
+         "maxW" : 1330,
+         "page" : "history",
+         "text" : "Filters",
+         "w" : 240,
+         "x" : 0,
+         "y" : 964
+      },
+      "histRow" : {
+         "kind" : "title1",
+         "maxW" : 1330,
+         "page" : "history",
+         "text" : "History",
+         "w" : 240,
+         "x" : 0,
+         "y" : -260
+      },
+      "histSwipe" : {
+         "kind" : "title1",
+         "maxW" : 860,
+         "page" : "history",
+         "text" : "Delete with a swipe",
+         "w" : 240,
+         "x" : 0,
+         "y" : 2188
+      },
+      "homeRow" : {
+         "kind" : "title1",
+         "maxW" : 2740,
+         "page" : "home",
+         "text" : "Home",
+         "w" : 240,
+         "x" : 0,
+         "y" : -260
+      },
+      "insReceipt" : {
+         "kind" : "title1",
+         "maxW" : 1330,
+         "page" : "insights",
+         "text" : "Adding a receipt",
+         "w" : 240,
+         "x" : 0,
+         "y" : 1500
+      },
+      "insRow" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "insights",
+         "text" : "Insights and groceries",
+         "w" : 240,
+         "x" : 0,
+         "y" : -260
+      },
+      "loansBill" : {
+         "kind" : "title1",
+         "maxW" : 1330,
+         "page" : "loans",
+         "text" : "I paid for others",
+         "w" : 240,
+         "x" : 0,
+         "y" : 2740
+      },
+      "loansPeople" : {
+         "kind" : "title1",
+         "maxW" : 2270,
+         "page" : "loans",
+         "text" : "Debts with people",
+         "w" : 240,
+         "x" : 0,
+         "y" : 1360
+      },
+      "loansRow" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "loans",
+         "text" : "Loans & debts",
+         "w" : 240,
+         "x" : 0,
+         "y" : -260
+      },
+      "propAccounts" : {
+         "kind" : "title1",
+         "maxW" : 1330,
+         "page" : "accounts",
+         "text" : "Proposal — one box, quieter cards",
+         "w" : 240,
+         "x" : 0,
+         "y" : 964
+      },
+      "propDebts" : {
+         "kind" : "title1",
+         "maxW" : 1834,
+         "page" : "adding",
+         "text" : "Proposal — debts from + and by voice",
+         "w" : 240,
+         "x" : 0,
+         "y" : 3412
+      },
+      "propReports" : {
+         "kind" : "title1",
+         "maxW" : 1330,
+         "page" : "insights",
+         "text" : "Proposal — a home for reports",
+         "w" : 240,
+         "x" : 0,
+         "y" : 2960
+      },
+      "propWaiting" : {
+         "kind" : "title1",
+         "maxW" : 860,
+         "page" : "adding",
+         "text" : "Proposal — bank entries in +",
+         "w" : 240,
+         "x" : 0,
+         "y" : 4636
+      },
+      "runOther" : {
+         "kind" : "title1",
+         "maxW" : 1330,
+         "page" : "firstrun",
+         "text" : "Other ways through",
+         "w" : 240,
+         "x" : 0,
+         "y" : 964
+      },
+      "runSteps" : {
+         "kind" : "title1",
+         "maxW" : 4150,
+         "page" : "firstrun",
+         "text" : "First run, step by step",
+         "w" : 240,
+         "x" : 0,
+         "y" : -260
+      },
+      "setBackup" : {
+         "kind" : "title1",
+         "maxW" : 860,
+         "page" : "settings",
+         "text" : "Backup",
+         "w" : 240,
+         "x" : 0,
+         "y" : 964
+      },
+      "setCatalog" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "settings",
+         "text" : "Categories and colours",
+         "w" : 240,
+         "x" : 0,
+         "y" : 3412
+      },
+      "setRecurring" : {
+         "kind" : "title1",
+         "maxW" : 860,
+         "page" : "settings",
+         "text" : "Recurring payments",
+         "w" : 240,
+         "x" : 0,
+         "y" : 2188
+      },
+      "setRow" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "settings",
+         "text" : "Settings",
+         "w" : 240,
+         "x" : 0,
+         "y" : -260
+      },
+      "widgetsRow" : {
+         "kind" : "title1",
+         "maxW" : 3014,
+         "page" : "widgets",
+         "text" : "Widgets and the icon",
+         "w" : 240,
+         "x" : 0,
+         "y" : -260
+      }
+   },
+   "order" : [
+      "Main.dc.html",
+      "HomePerson.dc.html",
+      "HomeChart.dc.html",
+      "HomeBackupNotice.dc.html",
+      "HomePast.dc.html",
+      "HomeLight.dc.html",
+      "QuickAdd.dc.html",
+      "QuickAddDetails.dc.html",
+      "QuickAddMerchant.dc.html",
+      "QuickAddNote.dc.html",
+      "QuickAddFilled.dc.html",
+      "AccountSheet.dc.html",
+      "QuickAddEdit.dc.html",
+      "Transfer.dc.html",
+      "VoiceIdle.dc.html",
+      "VoiceListening.dc.html",
+      "VoiceHeard.dc.html",
+      "History.dc.html",
+      "HistoryCategory.dc.html",
+      "HistoryDebts.dc.html",
+      "FilterMonth.dc.html",
+      "FilterCategory.dc.html",
+      "FilterPerson.dc.html",
+      "HistorySwipe.dc.html",
+      "HistoryDeleteAsk.dc.html",
+      "Insights.dc.html",
+      "GroceriesEmpty.dc.html",
+      "Groceries.dc.html",
+      "ReceiptDetail.dc.html",
+      "ReceiptAdd.dc.html",
+      "ReceiptCheck.dc.html",
+      "ReceiptSaved.dc.html",
+      "Accounts.dc.html",
+      "AccountEditor.dc.html",
+      "AdjustBalance.dc.html",
+      "AccountsArchived.dc.html",
+      "DeleteAccount.dc.html",
+      "Loans.dc.html",
+      "LoansPeople.dc.html",
+      "LoansAdd.dc.html",
+      "LoanEditor.dc.html",
+      "DebtPaidForMe.dc.html",
+      "DebtBorrowed.dc.html",
+      "DebtRunning.dc.html",
+      "DebtPay.dc.html",
+      "DebtPayAll.dc.html",
+      "BillEditor.dc.html",
+      "LoansBill.dc.html",
+      "BillPayback.dc.html",
+      "Confirm.dc.html",
+      "ConfirmWithdrawal.dc.html",
+      "ConfirmNotRead.dc.html",
+      "BankAccess.dc.html",
+      "BankApps.dc.html",
+      "AutoConfirm.dc.html",
+      "Settings.dc.html",
+      "SettingsBottom.dc.html",
+      "ReminderTime.dc.html",
+      "AppLock.dc.html",
+      "BackupSettings.dc.html",
+      "BackupRestore.dc.html",
+      "Recurring.dc.html",
+      "RecurringEditor.dc.html",
+      "Categories.dc.html",
+      "CategoriesArchived.dc.html",
+      "ColourRows.dc.html",
+      "ColourRing.dc.html",
+      "OnboardingWelcome.dc.html",
+      "OnboardingPeople.dc.html",
+      "OnboardingPerson.dc.html",
+      "OnboardingCategories.dc.html",
+      "OnboardingTemplate.dc.html",
+      "OnboardingBackup.dc.html",
+      "OnboardingReminders.dc.html",
+      "OnboardingImport.dc.html",
+      "OnboardingImportSheet.dc.html",
+      "OnboardingRestore.dc.html",
+      "OnboardingBackupExisting.dc.html",
+      "RemindersAfterRestore.dc.html",
+      "Widgets.dc.html",
+      "WidgetBalanceVoice.dc.html",
+      "WidgetBalanceSheet.dc.html",
+      "AppIcon.dc.html",
+      "PropAccounts.dc.html",
+      "PropAccountsDefault.dc.html",
+      "PropAccountEditor.dc.html",
+      "PropReportsSpending.dc.html",
+      "PropReportsGroceries.dc.html",
+      "PropReportsCards.dc.html",
+      "PropAddDebt.dc.html",
+      "PropAddDebtDetails.dc.html",
+      "PropVoiceDebt.dc.html",
+      "PropWidgets.dc.html",
+      "PropAddWaiting.dc.html",
+      "PropAddWaitingOpen.dc.html"
+   ],
+   "pages" : [
+      {
+         "id" : "home",
+         "name" : "Home"
+      },
+      {
+         "id" : "adding",
+         "name" : "Adding"
+      },
+      {
+         "id" : "history",
+         "name" : "History"
+      },
+      {
+         "id" : "insights",
+         "name" : "Insights & groceries"
+      },
+      {
+         "id" : "accounts",
+         "name" : "Accounts"
+      },
+      {
+         "id" : "loans",
+         "name" : "Loans & debts"
+      },
+      {
+         "id" : "confirm",
+         "name" : "To confirm"
+      },
+      {
+         "id" : "settings",
+         "name" : "Settings"
+      },
+      {
+         "id" : "firstrun",
+         "name" : "First run"
+      },
+      {
+         "id" : "widgets",
+         "name" : "Widgets & icon"
+      }
+   ],
+   "title" : "Balance Tracker — App Screens",
+   "v" : 3
+}

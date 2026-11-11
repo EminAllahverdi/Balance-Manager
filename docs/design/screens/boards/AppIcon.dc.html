@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App icon</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=block" rel="stylesheet">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+.t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--text-primary:#F2F4F7;--text-secondary:#AEB6C1}
+</style>
+</helmet>
+<div class="t-dark" style="width: 860px; height: 844px; padding: 48px; background: var(--bg-canvas); color: var(--text-primary); font-family: Manrope, system-ui, sans-serif; display: flex; flex-direction: column; gap: 32px">
+<h1 style="margin: 0; font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.5px">App icon</h1>
+<section aria-label="Launcher masks" style="display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 13px; line-height: 18px; font-weight: 600; color: var(--text-secondary)">Launcher shapes</div>
+<div style="display: flex; gap: 32px">
+<img src="../../app-icon-512.png" alt="Cibim icon in a round mask" style="width: 232px; height: 232px; display: block; border-radius: 50%">
+<img src="../../app-icon-512.png" alt="Cibim icon in a rounded square mask" style="width: 232px; height: 232px; display: block; border-radius: 24%">
+<img src="../../app-icon-512.png" alt="Cibim icon in a teardrop mask" style="width: 232px; height: 232px; display: block; border-radius: 50% 50% 12% 50%">
+</div>
+</section>
+<div style="display: flex; gap: 32px">
+<section aria-label="Sizes" style="flex: 1 1 0; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 13px; line-height: 18px; font-weight: 600; color: var(--text-secondary)">Sizes</div>
+<div style="display: flex; align-items: center; gap: 24px; height: 176px; padding: 0 24px; border-radius: 28px; background: var(--bg-surface)">
+<img src="../../app-icon-512.png" alt="Icon at 96 px" style="width: 96px; height: 96px; display: block; border-radius: 50%">
+<img src="../../app-icon-512.png" alt="Icon at 64 px" style="width: 64px; height: 64px; display: block; border-radius: 50%">
+<img src="../../app-icon-512.png" alt="Icon at 48 px" style="width: 48px; height: 48px; display: block; border-radius: 50%">
+<img src="../../app-icon-512.png" alt="Icon at 36 px" style="width: 36px; height: 36px; display: block; border-radius: 50%">
+<img src="../../app-icon-512.png" alt="Icon at 24 px" style="width: 24px; height: 24px; display: block; border-radius: 50%">
+</div>
+</section>
+<section aria-label="Themed icon" style="width: 232px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 13px; line-height: 18px; font-weight: 600; color: var(--text-secondary)">Themed icon</div>
+<div style="display: flex; align-items: center; justify-content: center; height: 176px; border-radius: 28px; background: var(--bg-surface)">
+<img src="../../app-icon-monochrome.svg" alt="One-colour Cibim icon" style="width: 128px; height: 128px; display: block; border-radius: 50%; background: #E3E6E1">
+</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 860, "height": 844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

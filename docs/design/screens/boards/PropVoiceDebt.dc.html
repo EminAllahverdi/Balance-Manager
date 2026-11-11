@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Proposal — a debt by voice, filled in</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Space+Grotesk:wght@500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;display=block" rel="stylesheet">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+.scr{font-family:Manrope,system-ui,sans-serif;background:var(--bg-canvas);color:var(--text-primary);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.ms{font-family:'Material Symbols Rounded';font-weight:400;font-style:normal;font-size:22px;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;font-feature-settings:'liga';-webkit-font-smoothing:antialiased;display:inline-block;flex:none}
+.num{font-family:'Space Grotesk',Manrope,sans-serif;font-weight:500}
+.over{font-size:11px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;background:var(--bg-surface-raised);border:1px solid var(--border-default);font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;flex:none}
+.chip.sel{background:var(--bg-surface-high);border-color:var(--accent-fill)}
+.sheet{background:var(--bg-surface);border-radius:28px 28px 0 0;position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:10px auto 0;flex:none}
+.from{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;min-height:44px;flex:none}
+.t{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.sec{padding:12px 16px 0}
+.line{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.p{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1 1 0;font-size:12px;line-height:16px;font-weight:600;color:var(--text-muted)}
+.av{width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#0B0D10;opacity:.55}
+.pad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.k{height:54px;border-radius:14px;background:var(--bg-surface-raised);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:24px}
+.save{grid-column:4;grid-row:2 / span 3;border-radius:14px;background:var(--accent-fill);color:var(--accent-on);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:700;font-size:15px}
+.heard{margin:12px 16px 0;padding:8px 12px;border-radius:18px;background:var(--bg-surface-raised);display:flex;align-items:center;gap:8px;font-size:12px;line-height:16px;font-weight:500;color:var(--text-secondary)}
+.t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--bg-surface-raised:#181C21;--bg-surface-high:#1F242B;--border-default:#1F242B;--border-strong:#2A3038;--text-primary:#F2F4F7;--text-secondary:#AEB6C1;--text-muted:#8A94A3;--accent-fill:#C8F169;--accent-on:#0B0D10;--accent-text:#C8F169;--person-me:#5B9DFF;--person-wife:#FF7AB6;--person-daughter:#FFB547;--person-mom:#A78BFA;--person-family:#8A94A3;--scrim:rgba(0,0,0,0.62);--money-expense:#FF7A66;--money-income:#4ADE9B;--status-warning:#F5B544}
+.seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--bg-surface-raised)}
+.seg>button{flex:1 1 0;text-align:center;padding:6px 8px;border-radius:999px;font-size:13px;font-weight:600;color:var(--text-muted)}
+.seg>button.on{background:var(--bg-surface-high);color:var(--text-primary)}
+.fchip{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 12px;border-radius:999px;background:var(--bg-surface-raised);border:1px solid var(--border-default);font-size:13px;font-weight:600;white-space:nowrap;flex:1 1 0}
+.g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 6px}
+.c{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.bt{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;flex:none}
+.bt .ms{font-size:28px}
+.l{font-size:12px;line-height:15px;font-weight:600;color:var(--text-secondary);text-align:center;height:30px;overflow:hidden}
+.cap{font-size:12px;line-height:16px;font-weight:500;color:var(--text-secondary)}
+.col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card{background:var(--bg-surface-raised);border-radius:18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:600;flex:none}
+.btn.lime{background:var(--accent-fill);color:var(--accent-on)}
+.btn.plain{background:var(--bg-surface-high);color:var(--text-primary)}
+.icb{width:44px;height:44px;border-radius:22px;background:var(--bg-surface-raised);display:flex;align-items:center;justify-content:center;flex:none}
+.source{margin:12px 16px 0;padding:8px 12px;border-radius:18px;background:var(--bg-surface-raised);display:flex;align-items:center;gap:8px;font-size:12px;line-height:16px;font-weight:500;color:var(--text-secondary)}
+</style>
+</helmet>
+<div class="scr t-dark" style="width: 390px; height: 844px">
+<div style="position: absolute; inset: 0; background: var(--scrim)"></div>
+<section class="sheet" aria-label="Add — I lent" style="top: 100px">
+<div class="handle"></div>
+<div class="heard"><span class="ms" aria-hidden="true" style="font-size: 16px; color: var(--accent-text)">mic</span>“lent Sam 20 manat from cash”</div>
+<div style="padding: 12px 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="display: flex; align-items: center; gap: 10px; min-height: 44px"><span class="t" style="background: #8A94A329"><span class="ms" aria-hidden="true" style="color: #8A94A3">call_made</span></span><span style="display: flex; align-items: center; gap: 2px; font-size: 15px; font-weight: 700">I lent<span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-secondary)">expand_more</span></span></span>
+<button class="from"><span class="over" style="margin: 0">From</span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 700"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-secondary)">account_balance_wallet</span>Cash<span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-secondary)">expand_more</span></span></button>
+</div>
+<div style="padding: 8px 20px 0; display: flex; align-items: center; gap: 4px"><span class="num" style="font-size: 44px; line-height: 48px; letter-spacing: -1.5px">₼20.00</span><span style="width: 2px; height: 40px; background: var(--accent-fill)"></span></div>
+<span class="cap" style="padding: 2px 20px 0">Leaves Cash, and isn't spending. Sam owes you ₼20.00.</span>
+<div class="sec" style="padding-top: 14px"><span class="over">Who</span><div class="line"><button class="chip sel">Sam</button><button class="chip">Alex</button><button class="chip">Kamal</button><button class="chip" aria-label="Type a name" style="padding: 0 10px"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-secondary)">edit</span></button></div></div>
+<div class="sec"><span class="over">Pay back in parts</span><div class="line"><button class="chip sel">Once</button><button class="chip">2</button><button class="chip">3</button><button class="chip">6</button><button class="chip">12</button></div></div>
+<div class="sec"><span class="over">Date and note</span><div class="line"><button class="chip sel">Today</button><button class="chip">Yesterday</button><button class="chip" aria-label="Pick an older date" style="padding: 0 10px"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-secondary)">calendar_month</span></button><button class="chip"><span class="ms" aria-hidden="true" style="font-size: 16px; color: var(--text-secondary)">notes</span>Note</button></div></div>
+<div class="pad" style="margin-top: auto; padding: 12px 16px 20px">
+<button class="k">1</button><button class="k">2</button><button class="k">3</button><button class="k" aria-label="Clear" style="background: var(--bg-surface-high)">C</button>
+<button class="k">4</button><button class="k">5</button><button class="k">6</button><button class="save"><span class="ms" aria-hidden="true" style="font-size: 28px">check</span>Save</button>
+<button class="k">7</button><button class="k">8</button><button class="k">9</button>
+<button class="k">.</button><button class="k">0</button><button class="k" aria-label="Delete"><span class="ms" aria-hidden="true">backspace</span></button>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

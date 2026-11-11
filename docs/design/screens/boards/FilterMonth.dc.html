@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Filter sheet — month</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;display=block" rel="stylesheet">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+.scr{font-family:Manrope,system-ui,sans-serif;background:var(--bg-canvas);color:var(--text-primary);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.ms{font-family:'Material Symbols Rounded';font-weight:400;font-style:normal;font-size:22px;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;font-feature-settings:'liga';-webkit-font-smoothing:antialiased;display:inline-block;flex:none}
+.sheet{background:var(--bg-surface);border-radius:28px 28px 0 0}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:10px auto 0}
+.opt{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 12px;border-radius:18px;font-size:15px;font-weight:600;width:100%}
+.mon{height:48px;border-radius:14px;background:var(--bg-surface-raised);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.mon.on{background:var(--accent-fill);color:var(--accent-on)}
+.step{width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary)}
+.t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--bg-surface-raised:#181C21;--border-strong:#2A3038;--text-primary:#F2F4F7;--text-secondary:#AEB6C1;--accent-fill:#C8F169;--accent-on:#0B0D10;--scrim:rgba(0,0,0,0.62)}
+</style>
+</helmet>
+<div class="scr t-dark" style="width: 390px; height: 844px">
+<h1 style="margin: 0; padding: 16px; font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.5px">History</h1>
+<div style="position: absolute; inset: 0; background: var(--scrim)"></div>
+<section class="sheet" aria-label="Month" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px 24px; display: flex; flex-direction: column; gap: 8px">
+<div class="handle"></div>
+<h2 style="margin: 14px 0 4px; font-size: 18px; line-height: 24px; font-weight: 700">Month</h2>
+<button class="opt">All time</button>
+<div style="display: flex; align-items: center"><button class="step" aria-label="Previous year"><span class="ms" aria-hidden="true">chevron_left</span></button><span style="flex: 1 1 0; text-align: center; font-size: 18px; font-weight: 700">2026</span><button class="step" aria-label="Next year" disabled style="opacity: 0.3"><span class="ms" aria-hidden="true">chevron_right</span></button></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<button class="mon">Jan</button><button class="mon">Feb</button><button class="mon">Mar</button>
+<button class="mon">Apr</button><button class="mon">May</button><button class="mon">Jun</button>
+<button class="mon">Jul</button><button class="mon">Aug</button><button class="mon">Sep</button>
+<button class="mon">Oct</button><button class="mon on">Nov</button><button class="mon" disabled style="opacity: 0.35">Dec</button>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

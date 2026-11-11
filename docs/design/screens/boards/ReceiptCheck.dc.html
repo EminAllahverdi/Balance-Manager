@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Check the receipt, when the items don't add up</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Space+Grotesk:wght@500&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;display=block" rel="stylesheet">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+.scr{font-family:Manrope,system-ui,sans-serif;background:var(--bg-canvas);color:var(--text-primary);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.ms{font-family:'Material Symbols Rounded';font-weight:400;font-style:normal;font-size:22px;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;font-feature-settings:'liga';-webkit-font-smoothing:antialiased;display:inline-block;flex:none}
+.fill{font-variation-settings:'FILL' 1}
+.num{font-family:'Space Grotesk',Manrope,sans-serif;font-weight:500}
+.cap{font-size:12px;line-height:16px;font-weight:500;color:var(--text-secondary)}
+.muted{color:var(--text-muted)}
+.over{font-size:11px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;background:var(--bg-surface-raised);border:1px solid var(--border-default);font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;flex:none}
+.chip.on{background:var(--accent-fill);color:var(--accent-on);border-color:var(--accent-fill)}
+.tile{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.gt{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.gt .ms{font-size:20px}
+.row{background:var(--bg-surface);border-radius:18px}
+.iconbtn{width:44px;height:44px;border-radius:22px;background:var(--bg-surface-raised);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);flex:none}
+.dot{width:8px;height:8px;border-radius:4px;flex:none;display:inline-block}
+.toggle{width:44px;height:26px;border-radius:13px;background:var(--bg-surface-high);position:relative;flex:none}
+.toggle>i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:10px;background:var(--text-muted)}
+.toggle.on{background:var(--accent-fill)}
+.toggle.on>i{left:21px;background:var(--accent-on)}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:10px auto 0;flex:none}
+.field{height:52px;padding:0 16px;display:flex;align-items:center;border-radius:16px;background:var(--bg-surface-raised);font-size:15px;font-weight:500}
+.field.ph{color:var(--text-muted)}
+.group{display:flex;flex-direction:column;gap:8px}
+.wrap{display:flex;flex-wrap:wrap;gap:8px}
+.segf{display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--bg-surface-raised)}
+.segf>span{flex:1 1 0;text-align:center;padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--text-muted)}
+.segf>span.on{background:var(--bg-surface-high);color:var(--text-primary)}
+.opt{padding:12px 16px;display:flex;flex-direction:column;gap:2px}
+.save{height:56px;border-radius:999px;background:var(--accent-fill);color:var(--accent-on);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;flex:none}
+.line{display:flex;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--border-default)}
+.av{width:40px;height:40px;border-radius:20px;background:var(--bg-surface-high);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scrim{position:absolute;inset:0;background:var(--scrim)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg-surface);border-radius:28px 28px 0 0;padding:0 16px 20px;display:flex;flex-direction:column;gap:14px}
+.dialog{position:absolute;left:32px;right:32px;background:var(--bg-surface-raised);border-radius:28px;padding:24px;display:flex;flex-direction:column;gap:16px}
+.dialog h2{margin:0;font-size:22px;line-height:28px;font-weight:700}
+.dialog p{margin:0;font-size:14px;line-height:20px;color:var(--text-secondary)}
+.acts{display:flex;justify-content:flex-end;gap:24px;font-size:14px;font-weight:600;color:var(--accent-text)}
+.bar{height:6px;border-radius:3px;background:var(--bg-surface-high);overflow:hidden}
+.bar>i{display:block;height:6px;border-radius:3px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:17px;color:var(--text-secondary);white-space:pre-wrap;word-break:break-word}
+.hd{flex:none;display:flex;align-items:center;gap:12px;padding:16px 16px 8px}
+.hd h1{margin:0;flex:1 1 0;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-0.5px}
+.fab{position:absolute;right:16px;bottom:24px;display:inline-flex;align-items:center;gap:6px;height:56px;padding:0 22px;border-radius:20px;background:var(--accent-fill);color:var(--accent-on);font-size:15px;font-weight:600}
+.t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--bg-surface-raised:#181C21;--bg-surface-high:#1F242B;--border-default:#1F242B;--border-strong:#2A3038;--text-primary:#F2F4F7;--text-secondary:#AEB6C1;--text-muted:#8A94A3;--accent-fill:#C8F169;--accent-on:#0B0D10;--accent-text:#C8F169;--money-expense:#FF7A66;--money-income:#4ADE9B;--status-warning:#F5B544;--person-me:#5B9DFF;--person-wife:#FF7AB6;--person-daughter:#FFB547;--person-mom:#A78BFA;--person-family:#8A94A3;--scrim:rgba(0,0,0,0.62)}
+</style>
+</helmet>
+<div class="scr t-dark" style="width: 390px; height: 1080px">
+<header class="hd"><button class="iconbtn" aria-label="Back"><span class="ms" aria-hidden="true" style="color: var(--text-primary)">arrow_back</span></button><h1>Groceries</h1></header><div style="display: flex; align-items: center; padding: 0 8px"><button class="iconbtn" aria-label="Month before" style="background: none"><span class="ms" aria-hidden="true">chevron_left</span></button><span style="flex: 1 1 0; text-align: center; font-size: 15px; font-weight: 600">November 2026</span><button class="iconbtn" aria-label="Month after" style="background: none"><span class="ms" aria-hidden="true" style="opacity: 0.3">chevron_right</span></button></div>
+<div class="scrim"></div><section class="sheet" aria-label="Check the receipt" style="top: 48px; gap: 12px"><div class="handle"></div><h2 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 700">Check the receipt</h2>
+<div role="img" aria-label="The receipt" style="height: 140px; border-radius: 18px; background: #E9E6DF; display: flex; align-items: center; justify-content: center; color: #5C6570; font-size: 13px; font-weight: 600">[The receipt picture, its top]</div>
+<div class="field">Yashil Bazar Ganjlik</div><div style="display: flex; align-items: center"><span style="flex: 1 1 0; font-size: 15px; color: var(--text-secondary)">Today</span><span class="num" style="font-size: 20px">₼20.75</span></div>
+<span class="cap" style="color: var(--status-warning)">The items come to ₼19.89, not ₼20.75. Something may have been misread or missed, like a discount.</span>
+<span class="over">7 items</span>
+<div style="display: flex; align-items: center; gap: 10px; min-height: 44px"><span class="gt" style="background: #FF7A6629"><span class="ms" aria-hidden="true" style="color: #FF7A66">egg</span></span><div class="col"><span class="ell" style="font-size: 15px">QATIQ ATENA 450Q.</span><span class="cap">1 × ₼1.35</span></div><span class="num" style="font-size: 15px">₼1.35</span><button aria-label="Leave out QATIQ ATENA 450Q." style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-muted)">close</span></button></div><div style="display: flex; align-items: center; gap: 10px; min-height: 44px"><span class="gt" style="background: #5DCAA529"><span class="ms" aria-hidden="true" style="color: #5DCAA5">bakery_dining</span></span><div class="col"><span class="ell" style="font-size: 15px">COREK AG</span><span class="cap">1 × ₼0.60</span></div><span class="num" style="font-size: 15px">₼0.60</span><button aria-label="Leave out COREK AG" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-muted)">close</span></button></div><div style="display: flex; align-items: center; gap: 10px; min-height: 44px"><span class="gt" style="background: #F5B54429"><span class="ms" aria-hidden="true" style="color: #F5B544">local_drink</span></span><div class="col"><span class="ell" style="font-size: 15px">SU BADAMLI 1.5L</span><span class="cap">3 × ₼1.00</span></div><span class="num" style="font-size: 15px">₼3.00</span><button aria-label="Leave out SU BADAMLI 1.5L" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-muted)">close</span></button></div><div style="display: flex; align-items: center; gap: 10px; min-height: 44px"><span class="gt" style="background: #4ADE9B29"><span class="ms" aria-hidden="true" style="color: #4ADE9B">cake</span></span><div class="col"><span class="ell" style="font-size: 15px">SAQQIZ NANE 13.6G.</span><span class="cap">2 × ₼0.80</span></div><span class="num" style="font-size: 15px">₼1.60</span><button aria-label="Leave out SAQQIZ NANE 13.6G." style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-muted)">close</span></button></div><div style="display: flex; align-items: center; gap: 10px; min-height: 44px"><span class="gt" style="background: #FFD16629"><span class="ms" aria-hidden="true" style="color: #FFD166">set_meal</span></span><div class="col"><span class="ell" style="font-size: 15px">TOYUQ FILESI</span><span class="cap">0.756 × ₼12.40</span></div><span class="num" style="font-size: 15px">₼9.37</span><button aria-label="Leave out TOYUQ FILESI" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-muted)">close</span></button></div><div style="display: flex; align-items: center; gap: 10px; min-height: 44px"><span class="gt" style="background: #FF7A6629"><span class="ms" aria-hidden="true" style="color: #FF7A66">egg</span></span><div class="col"><span class="ell" style="font-size: 15px">SUD ATENA 1L</span><span class="cap">2 × ₼1.95</span></div><span class="num" style="font-size: 15px">₼3.90</span><button aria-label="Leave out SUD ATENA 1L" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-muted)">close</span></button></div><div style="display: flex; align-items: center; gap: 10px; min-height: 44px"><span class="gt" style="background: #8AB4F829"><span class="ms" aria-hidden="true" style="color: #8AB4F8">cleaning_services</span></span><div class="col"><span class="ell" style="font-size: 15px">PAKET</span><span class="cap">1 × ₼0.07</span></div><span class="num" style="font-size: 15px">₼0.07</span><button aria-label="Leave out PAKET" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 18px; color: var(--text-muted)">close</span></button></div><button class="save">Save receipt</button></section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

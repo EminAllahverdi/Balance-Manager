@@ -5,7 +5,8 @@ Personal Android app for tracking every expense and income for one household, ca
 ## Where the design lives
 - Design system (tokens, type, guidelines): https://claude.ai/artifact/4ifuwdoahAni7s3raTtnZJ. A copy is in `docs/design/` (`tokens.json`, `README.md`).
 - Screens: https://claude.ai/artifact/SxvUVfe8cVcaBCsfdG8jhW. One page per area of the app (Home, Adding, History, Insights & groceries, Accounts, Loans & debts, To confirm, Settings, First run, Widgets & icon), and on each a titled row per screen group or flow, left to right in the order they happen. A new board goes on its area's page, in the row it belongs to or a new titled one, never in a catch-all row.
-- Keep the design current: once a UI change is confirmed on a device, add anything the artboards don't show to the screens file, and to the design system if it's a new pattern. Features not built yet stay in the design as they are.
+- A copy of the screens is in the repo, so anyone who forks it has them: `docs/design/screens` (`boards/`, one self-contained page each; `canvas.json`; and `index.html`, which lays them out by page and row). After changing the screens file, download its `project/` files and copy them in again: drop the `support.js` script tag, point `/_blob/` images at the icon files in `docs/design`, and check every name, figure and card number on them is made up before committing, because the repo is public.
+- Keep the design current: once a UI change is confirmed on a device, add anything the artboards don't show to the screens file, and to the design system if it's a new pattern, then refresh the repo's copy. Features not built yet stay in the design as they are.
 - Compose implementation: `core/designsystem`. `BtTheme.colors` and `BtTheme.type` mirror `docs/design/tokens.json` one to one. When a token changes, update both.
 - Picking one thing always opens a bottom sheet (`ChoiceSheet` and `OptionRow`), never a dropdown menu or spinner, even for a short list.
 

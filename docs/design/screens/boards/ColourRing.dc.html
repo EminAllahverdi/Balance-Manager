@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Own colour, hue ring</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&amp;display=block" rel="stylesheet">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+.scr{font-family:Manrope,system-ui,sans-serif;background:var(--bg-canvas);color:var(--text-primary);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.ms{font-family:'Material Symbols Rounded';font-weight:400;font-style:normal;font-size:22px;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;font-feature-settings:'liga';-webkit-font-smoothing:antialiased;display:inline-block;flex:none}
+.over{font-size:11px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted)}
+.ring{width:232px;height:232px;border-radius:50%;background:conic-gradient(from 90deg,hsl(0,62%,70%),hsl(60,62%,70%),hsl(120,62%,70%),hsl(180,62%,70%),hsl(240,62%,70%),hsl(300,62%,70%),hsl(360,62%,70%));-webkit-mask:radial-gradient(circle,transparent 87px,#000 88px);mask:radial-gradient(circle,transparent 87px,#000 88px)}
+.track{height:14px;border-radius:7px}
+.thumb{position:absolute;top:-7px;width:28px;height:28px;border-radius:14px;background:var(--bg-surface);border:3px solid var(--text-primary)}
+.sheet{background:var(--bg-surface);border-radius:28px 28px 0 0}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:10px auto 0}
+.t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--bg-surface-raised:#181C21;--border-default:#1F242B;--border-strong:#2A3038;--text-primary:#F2F4F7;--text-secondary:#AEB6C1;--text-muted:#8A94A3;--accent-fill:#C8F169;--accent-on:#0B0D10;--scrim:rgba(0,0,0,0.62)}
+</style>
+</helmet>
+<div class="scr t-dark" style="width: 390px; height: 844px">
+<div style="position: absolute; inset: 0; background: var(--scrim)"></div>
+<section class="sheet" aria-label="Your own colour" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px 24px; display: flex; flex-direction: column; gap: 16px">
+<div class="handle"></div>
+<h2 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 700">Your own colour</h2>
+<div style="position: relative; height: 232px; display: flex; align-items: center; justify-content: center">
+<div class="ring" role="img" aria-label="Hue ring"></div>
+<span style="position: absolute; left: 236px; top: 34px; width: 34px; height: 34px; border-radius: 17px; background: hsl(330,62%,70%); border: 3px solid var(--bg-surface)"></span>
+<span style="position: absolute; width: 72px; height: 72px; border-radius: 22px; background: rgba(230,140,190,0.16); display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="font-size: 40px; color: hsl(330,62%,70%)">shopping_cart</span></span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="over">Strength</span><div style="position: relative"><div class="track" style="background: linear-gradient(90deg, hsl(330,15%,70%), hsl(330,95%,70%))"></div><span class="thumb" style="left: 150px"></span></div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="over">Lightness</span><div style="position: relative"><div class="track" style="background: linear-gradient(90deg, hsl(330,62%,45%), hsl(330,62%,82%))"></div><span class="thumb" style="left: 262px"></span></div></div>
+<div style="display: flex; gap: 8px">
+<div style="flex: 1 1 0; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 18px; background: #121519; border: 1px solid #1F242B"><span style="width: 40px; height: 40px; border-radius: 12px; background: rgba(230,140,190,0.16); display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="color: hsl(330,62%,70%)">shopping_cart</span></span><span style="font-size: 12px; font-weight: 500; color: #AEB6C1">On Dark</span></div>
+<div style="flex: 1 1 0; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 18px; background: #FFFFFF; border: 1px solid #E3E6E1"><span style="width: 40px; height: 40px; border-radius: 12px; background: rgba(230,140,190,0.16); display: flex; align-items: center; justify-content: center"><span class="ms" aria-hidden="true" style="color: hsl(330,55%,48%)">shopping_cart</span></span><span style="font-size: 12px; font-weight: 500; color: #5C6570">On Light</span></div>
+</div>
+<button style="height: 56px; border-radius: 999px; background: var(--accent-fill); color: var(--accent-on); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600">Use this colour</button>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

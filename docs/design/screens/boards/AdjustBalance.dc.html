@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Adjust balance</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;family=Space+Grotesk:wght@500&amp;display=block" rel="stylesheet">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+.scr{font-family:Manrope,system-ui,sans-serif;background:var(--bg-canvas);color:var(--text-primary);position:relative;overflow:hidden;display:flex;flex-direction:column}
+.cap{font-size:12px;line-height:16px;font-weight:500;color:var(--text-secondary)}
+.muted{color:var(--text-muted)}
+.over{font-size:11px;line-height:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;background:var(--bg-surface-raised);border:1px solid var(--border-default);font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;flex:none}
+.chip.on{background:var(--accent-fill);color:var(--accent-on);border-color:var(--accent-fill)}
+.dot{width:8px;height:8px;border-radius:4px;flex:none}
+.sheet{background:var(--bg-surface);border-radius:28px 28px 0 0}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:10px auto 0}
+.t-dark{--bg-canvas:#0B0D10;--bg-surface:#121519;--bg-surface-raised:#181C21;--border-default:#1F242B;--border-strong:#2A3038;--text-primary:#F2F4F7;--text-secondary:#AEB6C1;--text-muted:#8A94A3;--accent-fill:#C8F169;--accent-on:#0B0D10;--scrim:rgba(0,0,0,0.62)}
+</style>
+</helmet>
+<div class="scr t-dark" style="width: 390px; height: 844px">
+<h1 style="margin: 0; padding: 16px; font-size: 24px; line-height: 30px; font-weight: 700; letter-spacing: -0.5px">Accounts</h1>
+<div style="position: absolute; inset: 0; background: var(--scrim)"></div>
+<section class="sheet" aria-label="Adjust balance" style="position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px 24px; display: flex; flex-direction: column; gap: 16px">
+<div class="handle"></div>
+<h2 style="margin: 4px 0 0; font-size: 18px; line-height: 24px; font-weight: 700">Adjust balance</h2>
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="over">Account</span><div style="display: flex; gap: 8px"><button class="chip on"><span class="dot" style="background: #5DCAA5"></span>Salary</button><button class="chip"><span class="dot" style="background: #C8F169"></span>Taksit</button><button class="chip"><span class="dot" style="background: #F5B544"></span>Cash</button></div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="over">Actual balance</span><div style="display: flex; gap: 8px"><label style="flex: 1 1 0; height: 52px; border-radius: 18px; background: var(--bg-surface-raised); display: flex; align-items: center; padding: 0 16px; font-size: 15px; font-weight: 500">2,200.50</label><button aria-label="Flip sign" style="width: 52px; height: 52px; border-radius: 18px; background: var(--bg-surface-raised); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">+/−</button></div></div>
+<span class="cap">Now ₼1,846.20 · Change +₼31.91</span>
+<span class="cap muted">This adds a correction so the account matches your bank. It isn't counted as spending or income.</span>
+<button style="height: 56px; border-radius: 999px; background: var(--accent-fill); color: var(--accent-on); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600">Save balance</button>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
