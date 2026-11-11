@@ -466,7 +466,8 @@ private fun ForWhom(state: QuickAddUiState, vm: QuickAddViewModel) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    PersonAvatar(p, size = 44.dp, selected = on, modifier = if (on) Modifier else Modifier.padding(4.dp))
+                    // Plain, so the lime ring is the only colour saying who's picked.
+                    PersonAvatar(p, size = 44.dp, selected = on, plain = true, modifier = if (on) Modifier else Modifier.padding(4.dp))
                     Text(p.name, style = BtTheme.type.caption, color = if (on) c.textPrimary else c.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }

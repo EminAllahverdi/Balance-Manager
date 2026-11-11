@@ -78,19 +78,28 @@ fun CategoryTile(icon: String, color: Long, modifier: Modifier = Modifier, size:
 /**
  * Person avatar: the initial on their colour, or their photo inside a ring of it. A photo would hide the colour, and the
  * colour is what ties them to their dots and bars everywhere else, so it stays in view. [selected] adds a lime ring outside.
+ *
+ * [plain] leaves the colour out: the initial on grey, or the photo alone. For pickers, where the lime ring says which one is
+ * picked and a person's own colour, lime or yellow above all, would read as a second selection.
  */
 @Composable
-fun PersonAvatar(person: Person, modifier: Modifier = Modifier, size: Dp = 40.dp, selected: Boolean = false) {
-    val ring = if (selected) Modifier.border(2.dp, BtTheme.colors.accentFill, CircleShape).padding(4.dp) else Modifier
+fun PersonAvatar(person: Person, modifier: Modifier = Modifier, size: Dp = 40.dp, selected: Boolean = false, plain: Boolean = false) {
+    val c = BtTheme.colors
+    val ring = if (selected) Modifier.border(2.dp, c.accentFill, CircleShape).padding(4.dp) else Modifier
     val hue = person.color.toColor()
     if (person.avatarUri != null) {
-        val band = (size * PHOTO_RING).coerceAtLeast(2.dp)
-        Box(modifier = modifier.then(ring).size(size).border(band, hue, CircleShape).padding(band + 1.5.dp).clip(CircleShape).background(hue)) {
+        val band = if (plain) 0.dp else (size * PHOTO_RING).coerceAtLeast(2.dp)
+        val inside = if (plain) Modifier.clip(CircleShape).background(c.bgSurfaceHigh) else Modifier.border(band, hue, CircleShape).padding(band + 1.5.dp).clip(CircleShape).background(hue)
+        Box(modifier = modifier.then(ring).size(size).then(inside)) {
             AsyncImage(model = person.avatarUri, contentDescription = person.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
     } else {
-        Box(modifier = modifier.then(ring).size(size).clip(CircleShape).background(hue), contentAlignment = Alignment.Center) {
-            Text(person.initial, style = TextStyle(fontWeight = FontWeight.ExtraBold, fontSize = (size.value * 0.38f).sp), color = Color(0xFF0B0D10))
+        Box(modifier = modifier.then(ring).size(size).clip(CircleShape).background(if (plain) c.bgSurfaceHigh else hue), contentAlignment = Alignment.Center) {
+            Text(
+                person.initial,
+                style = TextStyle(fontWeight = FontWeight.ExtraBold, fontSize = (size.value * 0.38f).sp),
+                color = if (plain) c.textPrimary else Color(0xFF0B0D10),
+            )
         }
     }
 }
