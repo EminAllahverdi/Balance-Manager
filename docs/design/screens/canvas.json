@@ -326,7 +326,7 @@
          "page" : "history",
          "title" : "History — debt entries",
          "w" : 390,
-         "x" : 940,
+         "x" : 1410,
          "y" : 0
       },
       "HistoryDeleteAsk.dc.html" : {
@@ -336,6 +336,14 @@
          "w" : 390,
          "x" : 470,
          "y" : 2448
+      },
+      "HistoryReportsWeek.dc.html" : {
+         "h" : 844,
+         "page" : "history",
+         "title" : "A category from Reports, in the week its chart showed",
+         "w" : 390,
+         "x" : 940,
+         "y" : 0
       },
       "HistorySwipe.dc.html" : {
          "h" : 844,
@@ -1066,6 +1074,7 @@
       "VoiceHeard.dc.html",
       "History.dc.html",
       "HistoryCategory.dc.html",
+      "HistoryReportsWeek.dc.html",
       "HistoryDebts.dc.html",
       "FilterMonth.dc.html",
       "FilterCategory.dc.html",
