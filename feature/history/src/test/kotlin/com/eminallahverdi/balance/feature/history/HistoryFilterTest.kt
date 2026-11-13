@@ -1,5 +1,6 @@
 package com.eminallahverdi.balance.feature.history
 
+import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.common.rawText
 import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.designsystem.component.label
@@ -7,6 +8,7 @@ import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.AccountType
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
+import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.Debt
 import com.eminallahverdi.balance.core.model.DebtDirection
 import com.eminallahverdi.balance.core.model.DebtEntryRole
@@ -199,5 +201,44 @@ class HistoryFilterTest {
 
     @Test fun `search finds who a debt is with`() {
         assertThat(HistoryFilter(query = "sam").matches(debtRow(owed, 50_00))).isTrue()
+    }
+
+    @Test fun `a whole month from Reports reads as that month`() {
+        val october = DateRange.month(YearMonth.of(2026, 10))
+        val filter = initialFilter(null, transport.id, null, from = october.start.toEpochDay(), to = october.endInclusive.toEpochDay())
+        assertThat(filter.month).isEqualTo(YearMonth.of(2026, 10))
+        assertThat(filter.span).isNull()
+        assertThat(filter.categoryId).isEqualTo(transport.id)
+    }
+
+    @Test fun `a week from Reports keeps its days, and names them`() {
+        val week = DateRange(LocalDate.of(2026, 10, 26), LocalDate.of(2026, 11, 1))
+        val filter = initialFilter(null, transport.id, null, from = week.start.toEpochDay(), to = week.endInclusive.toEpochDay())
+        assertThat(filter.month).isNull()
+        assertThat(filter.range).isEqualTo(week)
+        assertThat(filter.matches(row())).isTrue()
+        val label = "${DateLabels.dayMonth(week.start)} – ${DateLabels.dayMonth(week.endInclusive)}".replace(' ', ' ').replace(" – ", " – ")
+        assertThat(filter.periodLabel { it.toString() }).isEqualTo(label)
+        assertThat(filter.copy(categoryId = null).emptyMessage(YearMonth.of(2026, 11))).isEqualTo(uiText(R.string.history_nothing_in, label))
+    }
+
+    @Test fun `a year from Reports is named by its number`() {
+        val year = DateRange(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
+        assertThat(year.label()).isEqualTo("2026")
+        assertThat(initialFilter(null, null, null, from = year.start.toEpochDay(), to = year.endInclusive.toEpochDay()).span).isEqualTo(year)
+    }
+
+    @Test fun `Clear goes back to this month with nothing narrowed, and keeps the search`() {
+        val now = YearMonth.of(2026, 11)
+        assertThat(HistoryFilter(month = now).canClear(now)).isFalse()
+        val narrowed = HistoryFilter(month = YearMonth.of(2026, 9), span = DateRange(LocalDate.of(2026, 9, 7), LocalDate.of(2026, 9, 13)), query = "bolt", personId = me.id, categoryId = transport.id, accountId = card.id)
+        assertThat(narrowed.canClear(now)).isTrue()
+        assertThat(narrowed.cleared(now)).isEqualTo(HistoryFilter(month = now, query = "bolt"))
+    }
+
+    @Test fun `Clear on a list of only transfers keeps it to transfers, over all time`() {
+        val transfers = initialFilter(null, null, null, kind = "TRANSFER")
+        assertThat(transfers.canClear()).isFalse()
+        assertThat(transfers.copy(accountId = card.id).cleared()).isEqualTo(transfers)
     }
 }

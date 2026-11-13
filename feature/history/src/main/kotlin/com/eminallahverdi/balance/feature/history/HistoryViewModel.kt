@@ -51,7 +51,9 @@ class HistoryViewModel @Inject constructor(
     savedState: SavedStateHandle,
 ) : ViewModel() {
 
-    private val filter = MutableStateFlow(initialFilter(savedState[ARG_MONTH], savedState[ARG_CATEGORY], savedState[ARG_PERSON], savedState[ARG_KIND]))
+    private val filter = MutableStateFlow(
+        initialFilter(savedState[ARG_MONTH], savedState[ARG_CATEGORY], savedState[ARG_PERSON], savedState[ARG_KIND], savedState[ARG_FROM], savedState[ARG_TO]),
+    )
 
     private val rows = filter.map { it.range }.distinctUntilChanged().flatMapLatest { transactions.observeDetails(it) }
 
@@ -77,11 +79,12 @@ class HistoryViewModel @Inject constructor(
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryUiState())
 
-    fun setMonth(month: YearMonth?) = filter.update { it.copy(month = month) }
+    fun setMonth(month: YearMonth?) = filter.update { it.copy(month = month, span = null) }
     fun setQuery(query: String) = filter.update { it.copy(query = query) }
     fun setPerson(id: Long?) = filter.update { it.copy(personId = id) }
     fun setCategory(id: Long?) = filter.update { it.copy(categoryId = id) }
     fun setAccount(id: Long?) = filter.update { it.copy(accountId = id) }
+    fun clearFilters() = filter.update { it.cleared() }
     fun delete(id: Long) { viewModelScope.launch { transactions.delete(id) } }
 
     companion object {
@@ -89,5 +92,7 @@ class HistoryViewModel @Inject constructor(
         const val ARG_CATEGORY = "categoryId"
         const val ARG_PERSON = "personId"
         const val ARG_KIND = "kind"
+        const val ARG_FROM = "from"
+        const val ARG_TO = "to"
     }
 }

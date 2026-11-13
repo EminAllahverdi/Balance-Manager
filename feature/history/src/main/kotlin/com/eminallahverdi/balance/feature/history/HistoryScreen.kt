@@ -102,7 +102,7 @@ fun HistoryRoute(onOpen: (Long) -> Unit, onBack: (() -> Unit)? = null, viewModel
             query = it
             viewModel.setQuery(it)
         }
-        Filters(state, onOpen = { sheet = it })
+        Filters(state, onOpen = { sheet = it }, onClear = viewModel::clearFilters)
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp + bottomInset),
@@ -214,16 +214,25 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
     }
 }
 
+/** The filters as chips. While any is narrowed, Clear comes first, in reach before the row scrolls. */
 @Composable
-private fun Filters(state: HistoryUiState, onOpen: (FilterSheet) -> Unit) {
+private fun Filters(state: HistoryUiState, onOpen: (FilterSheet) -> Unit, onClear: () -> Unit) {
     val filter = state.filter
     val person = state.people.firstOrNull { it.id == filter.personId }
     Row(
         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        if (filter.canClear()) {
+            BtChip(
+                text = stringResource(R.string.history_clear_filters),
+                selected = false,
+                onClick = onClear,
+                leading = { Icon(Icons.Rounded.Close, null, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(16.dp)) },
+            )
+        }
         FilterChip(
-            label = filter.month?.label() ?: stringResource(R.string.history_all_time),
+            label = filter.periodLabel { it.label() } ?: stringResource(R.string.history_all_time),
             active = false,
             onClick = { onOpen(FilterSheet.MONTH) },
             leading = { Icon(Icons.Rounded.CalendarMonth, null, tint = BtTheme.colors.textSecondary, modifier = Modifier.size(16.dp)) },
@@ -270,7 +279,7 @@ private fun Summary(state: HistoryUiState) {
         state.people.firstOrNull { it.id == filter.personId }?.name,
         state.categories.firstOrNull { it.id == filter.categoryId }?.name,
         state.accounts.firstOrNull { it.id == filter.accountId }?.name,
-        filter.month?.let { DateLabels.monthName(it.atDay(1)) } ?: stringResource(R.string.history_all_time),
+        filter.periodLabel { DateLabels.monthName(it.atDay(1)) } ?: stringResource(R.string.history_all_time),
     )
     BtCard(bordered = true) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

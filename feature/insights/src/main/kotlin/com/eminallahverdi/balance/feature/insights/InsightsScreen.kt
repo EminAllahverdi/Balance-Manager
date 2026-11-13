@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.NorthEast
 import androidx.compose.material.icons.rounded.SouthEast
 import androidx.compose.material3.Icon
@@ -58,6 +59,7 @@ import com.eminallahverdi.balance.core.designsystem.component.toColor
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.CategoryChange
+import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.InsightBar
 import com.eminallahverdi.balance.core.model.InsightOverview
 import com.eminallahverdi.balance.core.model.InsightPeriod
@@ -76,10 +78,11 @@ private const val TOP_CHANGES = 3
 
 /**
  * How the money moved: period by period, who it was for, and what changed most. It sits under Reports' tabs, which give it
- * its title, so the period is picked in the corner of its first card.
+ * its title, so the period is picked in the corner of its first card. [onOpenCategory] opens a category's entries in the
+ * period the chart has selected, as a row on Home does for its month.
  */
 @Composable
-fun InsightsRoute(viewModel: InsightsViewModel = hiltViewModel()) {
+fun InsightsRoute(onOpenCategory: (categoryId: Long, range: DateRange) -> Unit = { _, _ -> }, viewModel: InsightsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val c = BtTheme.colors
     var showAll by rememberSaveable { mutableStateOf(false) }
@@ -112,7 +115,7 @@ fun InsightsRoute(viewModel: InsightsViewModel = hiltViewModel()) {
                     Column {
                         (if (showAll) overview.changes else overview.changes.take(TOP_CHANGES)).forEachIndexed { i, change ->
                             if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
-                            ChangeRow(change, previous)
+                            ChangeRow(change, previous) { onOpenCategory(change.category.id, overview.selected.range) }
                         }
                     }
                 }
@@ -258,24 +261,29 @@ private fun Stat(title: String, value: String, color: Color, caption: String, mo
     }
 }
 
+/**
+ * A category, what it came to and how that changed, opening its entries. The change sits under the name, so a longer
+ * comparison, as Azerbaijani's is, never cuts the name short.
+ */
 @Composable
-private fun ChangeRow(item: CategoryChange, previous: String) {
+private fun ChangeRow(item: CategoryChange, previous: String, onClick: () -> Unit) {
     val c = BtTheme.colors
     val tint = changeColor(item.change, neutral = c.textSecondary)
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         CategoryTile(item.category.icon, item.category.color)
-        Text(item.category.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(MoneyFormat.format(item.amount), style = BtTheme.type.amountSmall.copy(fontSize = 15.sp, lineHeight = 20.sp), color = c.textPrimary)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(item.category.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 Icon(if (item.change.minor > 0) Icons.Rounded.NorthEast else Icons.Rounded.SouthEast, null, tint = tint, modifier = Modifier.size(14.dp))
-                Text(stringResource(R.string.insights_versus, signedChange(item.change), previous), style = BtTheme.type.caption, color = tint)
+                Text(stringResource(R.string.insights_versus, signedChange(item.change), previous), style = BtTheme.type.caption, color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
+        Text(MoneyFormat.format(item.amount), style = BtTheme.type.amountSmall.copy(fontSize = 15.sp, lineHeight = 20.sp), color = c.textPrimary)
+        Icon(Icons.Rounded.ChevronRight, null, tint = c.textMuted, modifier = Modifier.size(18.dp))
     }
 }
 

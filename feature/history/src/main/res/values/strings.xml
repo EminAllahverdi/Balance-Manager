@@ -33,6 +33,7 @@
     <string name="history_back">Back</string>
     <string name="history_search_hint">Search merchant, note or amount</string>
     <string name="history_clear_search">Clear search</string>
+    <string name="history_clear_filters">Clear</string>
     <plurals name="history_transfers">
         <item quantity="one">%d transfer</item>
         <item quantity="other">%d transfers</item>

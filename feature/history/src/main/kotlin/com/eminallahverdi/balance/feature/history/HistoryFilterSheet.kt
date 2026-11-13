@@ -48,7 +48,7 @@ internal fun HistoryFilterSheet(sheet: FilterSheet, state: HistoryUiState, vm: H
     ChoiceSheet(stringResource(sheet.title), onClose) { choose ->
         when (sheet) {
             FilterSheet.MONTH -> {
-                OptionRow(stringResource(R.string.history_all_time), filter.month == null, onClick = { choose { vm.setMonth(null) } })
+                OptionRow(stringResource(R.string.history_all_time), filter.month == null && filter.span == null, onClick = { choose { vm.setMonth(null) } })
                 MonthPicker(filter.month) { month -> choose { vm.setMonth(month) } }
             }
             FilterSheet.CATEGORY -> CategoryPicker(state.categories, filter.categoryId) { id -> choose { vm.setCategory(id) } }

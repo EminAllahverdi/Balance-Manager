@@ -17,16 +17,27 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Locale
 
-/** What the list is narrowed to. [month] null means all time. [kind] is set when the list opens on one kind, like transfers. */
+/**
+ * What the list is narrowed to. [month] null means all time. [span] is a stretch of days that isn't a month, like a week or
+ * a year Reports opened, and stands in for [month] while it's set. [kind] is set when the list opens on one kind, like
+ * transfers.
+ */
 data class HistoryFilter(
     val month: YearMonth? = YearMonth.now(),
+    val span: DateRange? = null,
     val query: String = "",
     val personId: Long? = null,
     val categoryId: Long? = null,
     val accountId: Long? = null,
     val kind: TransactionKind? = null,
 ) {
-    val range: DateRange get() = month?.let(DateRange::month) ?: DateRange.ALL_TIME
+    val range: DateRange get() = span ?: month?.let(DateRange::month) ?: DateRange.ALL_TIME
+
+    /** What Clear goes back to: this month, or all time for a list of one kind, with nothing else narrowed. The search has its own clear. */
+    fun cleared(now: YearMonth = YearMonth.now()): HistoryFilter = HistoryFilter(month = if (kind != null) null else now, query = query, kind = kind)
+
+    /** Whether there's anything for Clear to undo. */
+    fun canClear(now: YearMonth = YearMonth.now()): Boolean = this != cleared(now)
 
     fun matches(d: TransactionDetails): Boolean =
         (kind == null || d.transaction.kind == kind) &&
@@ -46,13 +57,17 @@ data class HistoryFilter(
 }
 
 /**
- * What a list opens with: this month, or what was tapped on Home. [month] is a YearMonth as text. A list of one [kind], like
- * Accounts' See all for transfers, starts on all time, since that's what "all" means there.
+ * What a list opens with: this month, or what was tapped on Home or in Reports. [month] is a YearMonth as text, and [from] and
+ * [to] the days of a period Reports showed, as epoch days. A whole month reads as one, so the month sheet shows it picked. A
+ * list of one [kind], like Accounts' See all for transfers, starts on all time, since that's what "all" means there.
  */
-internal fun initialFilter(month: String?, categoryId: Long?, personId: Long?, kind: String? = null): HistoryFilter {
+internal fun initialFilter(month: String?, categoryId: Long?, personId: Long?, kind: String? = null, from: Long? = null, to: Long? = null): HistoryFilter {
     val only = kind?.let { name -> TransactionKind.entries.firstOrNull { it.name == name } }
+    val days = if (from != null && to != null) DateRange(LocalDate.ofEpochDay(from), LocalDate.ofEpochDay(to)) else null
+    val wholeMonth = days?.let { YearMonth.from(it.start) }?.takeIf { DateRange.month(it) == days }
     return HistoryFilter(
-        month = month?.let(YearMonth::parse) ?: if (only != null) null else YearMonth.now(),
+        month = wholeMonth ?: if (days != null) null else month?.let(YearMonth::parse) ?: if (only != null) null else YearMonth.now(),
+        span = days.takeIf { wholeMonth == null },
         categoryId = categoryId,
         personId = personId,
         kind = only,
@@ -62,11 +77,22 @@ internal fun initialFilter(month: String?, categoryId: Long?, personId: Long?, k
 /** What an empty list says. It only invites a first expense when there's truly nothing yet. */
 internal fun HistoryFilter.emptyMessage(now: YearMonth): UiText = when {
     query.isNotBlank() || personId != null || categoryId != null || accountId != null -> uiText(R.string.history_nothing_matches)
+    span != null -> uiText(R.string.history_nothing_in, span.label())
     kind == TransactionKind.TRANSFER -> if (month == null) uiText(R.string.history_no_transfers_yet) else uiText(R.string.history_no_transfers_in, month.label())
     month == null -> uiText(R.string.history_nothing_yet_first)
     month == now -> uiText(R.string.history_nothing_this_month)
     else -> uiText(R.string.history_nothing_in, month.label())
 }
+
+/** "2026" for a whole year, otherwise its first and last days: "3 Nov – 9 Nov". A line can break at the dash, never inside a date. */
+internal fun DateRange.label(): String =
+    if (start.dayOfYear == 1 && endInclusive == start.withDayOfYear(start.lengthOfYear())) start.year.toString()
+    else "${DateLabels.dayMonth(start).keptTogether()} – ${DateLabels.dayMonth(endInclusive).keptTogether()}"
+
+private fun String.keptTogether(): String = replace(' ', ' ')
+
+/** How the list's period is named: a span, else [month] naming the month, or null for all time. */
+internal fun HistoryFilter.periodLabel(month: (YearMonth) -> String): String? = span?.label() ?: this.month?.let(month)
 
 /** One figure for a set of rows: what was spent, or what came in when nothing was spent, or what moved when it's only transfers. */
 internal fun List<TransactionDetails>.headlineTotal(): Money {

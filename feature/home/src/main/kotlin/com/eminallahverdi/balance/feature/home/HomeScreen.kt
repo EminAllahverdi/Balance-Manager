@@ -203,8 +203,9 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
         if (people.isNotEmpty()) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Each opens the month's entries for that person, as a category row does for its category.
                     people.take(4).forEach { p ->
-                        BtCard(bordered = true, modifier = Modifier.weight(1f)) {
+                        BtCard(bordered = true, modifier = Modifier.weight(1f).clip(BtShapes.md).clickable(role = Role.Button) { onOpen(null, p.person.id) }) {
                             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     PersonDot(p.person.color)

@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.eminallahverdi.balance.R
 import com.eminallahverdi.balance.core.designsystem.component.ScrollingTabs
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
+import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.feature.insights.InsightsRoute
 import com.eminallahverdi.balance.feature.receipts.GroceriesRoute
 import com.eminallahverdi.balance.feature.receipts.ReceiptEntry
@@ -31,10 +32,10 @@ private enum class Report(@StringRes val label: Int) {
 /**
  * The Reports tab: every report in one place, one tap from the bar, without crowding Home. A row of tabs under the title
  * picks one, and the one picked stays picked while the app is open. Each report keeps its period in its own first card, so
- * the top holds one title and one control.
+ * the top holds one title and one control. [onOpenCategory] opens a category's entries in a period a report showed.
  */
 @Composable
-internal fun ReportsRoute(onAddReceipt: (ReceiptEntry) -> Unit) {
+internal fun ReportsRoute(onAddReceipt: (ReceiptEntry) -> Unit, onOpenCategory: (categoryId: Long, range: DateRange) -> Unit) {
     val c = BtTheme.colors
     var shown by rememberSaveable { mutableStateOf(Report.SPENDING) }
     Column(Modifier.fillMaxSize().background(c.bgCanvas)) {
@@ -47,7 +48,7 @@ internal fun ReportsRoute(onAddReceipt: (ReceiptEntry) -> Unit) {
         )
         Box(Modifier.weight(1f)) {
             when (shown) {
-                Report.SPENDING -> InsightsRoute()
+                Report.SPENDING -> InsightsRoute(onOpenCategory)
                 Report.GROCERIES -> GroceriesRoute(onAddExpense = onAddReceipt)
             }
         }

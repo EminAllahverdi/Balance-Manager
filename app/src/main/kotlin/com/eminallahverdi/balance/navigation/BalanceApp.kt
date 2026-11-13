@@ -42,9 +42,19 @@ import kotlinx.serialization.Serializable
 @Serializable data object LoansDestination
 @Serializable data object ConfirmDestination
 
-/** History narrowed to what was tapped on Home. The names match the ARG_ keys in HistoryViewModel. */
-/** History narrowed to what was tapped. A list of one kind, like all transfers, has no month: it starts on all time. */
-@Serializable data class TransactionsDestination(val categoryId: Long? = null, val personId: Long? = null, val month: String? = null, val kind: String? = null)
+/**
+ * History narrowed to what was tapped: a month and a category or person on Home, or a category in the period Reports showed,
+ * [from] to [to] as epoch days. A list of one kind, like all transfers, has no month: it starts on all time. The names match
+ * the ARG_ keys in HistoryViewModel.
+ */
+@Serializable data class TransactionsDestination(
+    val categoryId: Long? = null,
+    val personId: Long? = null,
+    val month: String? = null,
+    val kind: String? = null,
+    val from: Long? = null,
+    val to: Long? = null,
+)
 
 /** The name matches ARG_ACCOUNT in DeleteAccountViewModel. */
 @Serializable data class DeleteAccountDestination(val accountId: Long)
@@ -106,7 +116,14 @@ fun BalanceApp(
             }
             composable<HistoryDestination> { HistoryRoute(onOpen = onOpenTransaction) }
             composable<TransactionsDestination> { HistoryRoute(onOpen = onOpenTransaction, onBack = { nav.popBackStack() }) }
-            composable<InsightsDestination> { ReportsRoute(onAddReceipt) }
+            composable<InsightsDestination> {
+                ReportsRoute(
+                    onAddReceipt = onAddReceipt,
+                    onOpenCategory = { categoryId, range ->
+                        nav.navigate(TransactionsDestination(categoryId = categoryId, from = range.start.toEpochDay(), to = range.endInclusive.toEpochDay())) { launchSingleTop = true }
+                    },
+                )
+            }
             composable<AccountsDestination> {
                 AccountsRoute(
                     onTransfer = onTransfer,

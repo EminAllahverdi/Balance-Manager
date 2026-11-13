@@ -33,6 +33,7 @@
     <string name="history_back">Geri</string>
     <string name="history_search_hint">Mağaza, qeyd və ya məbləğ axtarın</string>
     <string name="history_clear_search">Axtarışı təmizlə</string>
+    <string name="history_clear_filters">Təmizlə</string>
     <plurals name="history_transfers">
         <item quantity="one">%d köçürmə</item>
         <item quantity="other">%d köçürmə</item>
