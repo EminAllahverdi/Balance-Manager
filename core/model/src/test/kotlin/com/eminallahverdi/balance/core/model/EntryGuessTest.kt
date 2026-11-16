@@ -154,6 +154,8 @@ class EntryGuessTest {
 
     @Test fun `merchant names read as words`() {
         assertThat(prettyMerchant("  BRAVO   SUPERMARKET ")).isEqualTo("Bravo Supermarket")
+        assertThat(prettyMerchant("İNŞAAT MARKETİ")).isEqualTo("İnşaat Marketi")
+        assertThat(prettyMerchant("bravo")).isEqualTo("Bravo")
     }
 
     private val debit = Account(1, "Main", AccountType.DEBIT_CARD, "payments", 0, cardEnding = "1111")

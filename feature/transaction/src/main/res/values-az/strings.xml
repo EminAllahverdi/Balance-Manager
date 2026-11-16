@@ -70,7 +70,10 @@
     <string name="quickadd_add_a_note">Qeyd əlavə edin</string>
     <string name="quickadd_clear">Təmizlə</string>
     <string name="quickadd_save">Yadda saxla</string>
-    <string name="quickadd_tap_to_check_or_add">Əvvəlcə yoxlamaq üçün birinə toxunun və ya olduğu kimi əlavə edin.</string>
+    <string name="quickadd_tap_to_check_or_add">Əvvəlcə yoxlamaq üçün birinə toxunun, olduğu kimi əlavə edin və ya keçmək üçün sola sürüşdürün.</string>
+    <string name="quickadd_skip">Keç</string>
+    <string name="quickadd_skipped">%1$s keçildi</string>
+    <string name="quickadd_undo">Geri qaytar</string>
     <string name="quickadd_suggested">Təklif</string>
     <string name="quickadd_check_it_first">Əvvəlcə yoxla</string>
     <string name="quickadd_add">Əlavə et</string>

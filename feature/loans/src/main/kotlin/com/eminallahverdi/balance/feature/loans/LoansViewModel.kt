@@ -26,6 +26,7 @@ import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.annuityPayment
+import com.eminallahverdi.balance.core.model.caseKey
 import com.eminallahverdi.balance.core.model.evenShare
 import com.eminallahverdi.balance.core.model.formatRate
 import com.eminallahverdi.balance.core.model.monthlyFor
@@ -293,7 +294,7 @@ data class PersonDebts(val name: String, val direction: DebtDirection, val debts
 
 internal fun List<DebtBalance>.groupedByPerson(): List<PersonDebts> =
     filterNot { it.isSettled }
-        .groupBy { it.debt.counterparty.lowercase() to it.debt.direction }
+        .groupBy { it.debt.counterparty.caseKey() to it.debt.direction }
         .values
         .map { PersonDebts(it.first().debt.counterparty, it.first().debt.direction, it) }
 
@@ -328,7 +329,7 @@ data class LoansUiState(
     val openDebts: List<PersonDebts> get() = debts.groupedByPerson()
 
     /** Names already used, one person each even from a shared bill, for picking someone again without retyping them. */
-    val knownNames: List<String> get() = debts.flatMap { namesIn(it.debt.counterparty) }.distinctBy { it.lowercase() }
+    val knownNames: List<String> get() = debts.flatMap { namesIn(it.debt.counterparty) }.distinctBy { it.caseKey() }
 
     val topCategories: List<Category> get() = categories.filter { it.parentId == null && it.type == CategoryType.EXPENSE && !it.isArchived }
     val activeAccounts: List<Account> get() = accounts.filterNot { it.isArchived }

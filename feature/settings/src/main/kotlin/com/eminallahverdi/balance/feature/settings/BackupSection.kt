@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.common.DateLabels
+import com.eminallahverdi.balance.core.common.Language
 import com.eminallahverdi.balance.core.datastore.BackupProblem
 import com.eminallahverdi.balance.core.designsystem.component.BtSwitch
 import com.eminallahverdi.balance.core.designsystem.component.ChoiceSheet
@@ -112,7 +113,7 @@ fun DriveRestoreSheet(state: BackupUiState, viewModel: BackupViewModel, onChoose
         if (backups.isEmpty()) Text(stringResource(R.string.settings_no_backups), style = BtTheme.type.body, color = BtTheme.colors.textMuted)
         backups.forEach { backup ->
             OptionRow(
-                text = backupTime(backup.createdAt.toEpochMilli()).replaceFirstChar { it.uppercase() },
+                text = backupTime(backup.createdAt.toEpochMilli()).replaceFirstChar { it.titlecase(Language.locale) },
                 selected = false,
                 onClick = { choose { onChoose(backup) } },
                 caption = backupCaption(backup, viewModel.showsBackupSource),

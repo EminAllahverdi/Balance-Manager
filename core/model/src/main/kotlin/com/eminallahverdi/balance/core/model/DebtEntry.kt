@@ -24,7 +24,7 @@ data class OwedTo(val name: String, val direction: DebtDirection, val debts: Lis
 /** Open debts, one line per person and direction, the most owed first. A name is the same person whatever its case. */
 fun List<DebtBalance>.owedByPerson(): List<OwedTo> =
     filterNot { it.isSettled }
-        .groupBy { it.debt.counterparty.trim().lowercase() to it.debt.direction }
+        .groupBy { it.debt.counterparty.trim().caseKey() to it.debt.direction }
         .values
         .map { group -> OwedTo(group.first().debt.counterparty.trim(), group.first().debt.direction, group.sortedWith(compareBy({ it.debt.date }, { it.debt.id }))) }
         .sortedByDescending { it.left.minor }

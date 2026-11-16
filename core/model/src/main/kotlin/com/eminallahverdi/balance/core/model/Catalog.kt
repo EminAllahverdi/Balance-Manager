@@ -10,9 +10,13 @@ data class Person(
     val avatarUri: String? = null,
     val sortOrder: Int = 0,
     val isArchived: Boolean = false,
-) {
-    val initial: String get() = name.trim().take(1).uppercase()
-}
+)
+
+/**
+ * Lower case for comparing names and searching. Locale.ROOT turns Azerbaijani's İ into an i with a second dot as a
+ * separate character, which matches neither the i typed nor a word boundary, so İ becomes a plain i first.
+ */
+fun String.caseKey(): String = replace('İ', 'i').lowercase(java.util.Locale.ROOT)
 
 enum class CategoryType { EXPENSE, INCOME }
 

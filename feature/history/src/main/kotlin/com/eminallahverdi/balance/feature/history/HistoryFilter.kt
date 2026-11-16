@@ -12,10 +12,10 @@ import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
+import com.eminallahverdi.balance.core.model.caseKey
 import com.eminallahverdi.balance.core.model.sum
 import java.time.LocalDate
 import java.time.YearMonth
-import java.util.Locale
 
 /**
  * What the list is narrowed to. [month] null means all time. [span] is a stretch of days that isn't a month, like a week or
@@ -47,10 +47,10 @@ data class HistoryFilter(
             matchesQuery(d)
 
     private fun matchesQuery(d: TransactionDetails): Boolean {
-        val q = query.trim().lowercase(Locale.ROOT)
+        val q = query.trim().caseKey()
         if (q.isEmpty()) return true
         val text = listOfNotNull(d.merchant?.name, d.category?.name, d.parentCategory?.name, d.debt?.counterparty, d.transaction.note)
-        return text.any { it.lowercase(Locale.ROOT).contains(q) } || plainAmount(d.transaction.amount).contains(q.replace(',', '.'))
+        return text.any { it.caseKey().contains(q) } || plainAmount(d.transaction.amount).contains(q.replace(',', '.'))
     }
 
     private fun plainAmount(amount: Money): String = MoneyFormat.format(amount.abs()).removePrefix(MoneyFormat.SYMBOL).replace(",", "")

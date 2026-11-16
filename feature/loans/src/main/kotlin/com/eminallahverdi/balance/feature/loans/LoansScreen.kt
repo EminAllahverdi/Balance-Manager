@@ -42,12 +42,14 @@ import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.FittedAmount
 import com.eminallahverdi.balance.core.designsystem.component.FloatingAddButton
 import com.eminallahverdi.balance.core.designsystem.component.Overline
+import com.eminallahverdi.balance.core.designsystem.component.initialOf
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.DebtBalance
 import com.eminallahverdi.balance.core.model.DebtDirection
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.RecurringPayment
+import com.eminallahverdi.balance.core.model.caseKey
 import com.eminallahverdi.balance.core.model.interestLeft
 
 private const val LOAN_COLOR = 0xFFF5B544
@@ -92,7 +94,7 @@ fun LoansRoute(onBack: () -> Unit, viewModel: LoansViewModel = hiltViewModel()) 
             }
             if (state.openDebts.isNotEmpty()) {
                 item(key = "people") { Overline(stringResource(R.string.loans_people), Modifier.padding(top = 4.dp, start = 4.dp)) }
-                items(state.openDebts, key = { "p${it.name.lowercase()}${it.direction}" }) { person -> PersonCard(person, state, viewModel) }
+                items(state.openDebts, key = { "p${it.name.caseKey()}${it.direction}" }) { person -> PersonCard(person, state, viewModel) }
             }
         }
         FloatingAddButton(stringResource(R.string.loans_new_loan_or_debt), viewModel::openNew, Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(16.dp))
@@ -202,7 +204,7 @@ private fun PersonCard(person: PersonDebts, state: LoansUiState, vm: LoansViewMo
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Box(Modifier.size(40.dp).clip(BtShapes.full).background(c.bgSurfaceHigh), contentAlignment = Alignment.Center) {
-                    Text(person.name.take(1).uppercase(), style = BtTheme.type.bodyStrong, color = c.textPrimary)
+                    Text(initialOf(person.name), style = BtTheme.type.bodyStrong, color = c.textPrimary)
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

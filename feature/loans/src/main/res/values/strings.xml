@@ -51,6 +51,7 @@
     <string name="loans_commission">Commission</string>
     <string name="loans_category">Category</string>
     <string name="loans_sub_category">Sub-category</string>
+    <string name="loans_category_counts">Any expense here counts as one of its payments, whatever the amount, so give the loan a sub-category of its own.</string>
     <string name="loans_payments_from">Payments from</string>
     <string name="loans_loan_moves_no_money">Adding a loan moves no money. Each payment comes out of this account when you log it.</string>
     <string name="loans_next_payment">Next payment</string>

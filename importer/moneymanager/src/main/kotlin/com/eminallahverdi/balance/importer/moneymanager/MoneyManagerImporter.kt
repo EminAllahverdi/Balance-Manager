@@ -14,6 +14,7 @@ import com.eminallahverdi.balance.core.database.entity.TransactionEntity
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.AccountType
 import com.eminallahverdi.balance.core.model.CategoryType
+import com.eminallahverdi.balance.core.model.caseKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.IOException
 import javax.inject.Inject
@@ -45,10 +46,10 @@ class MoneyManagerImporter @Inject constructor(
             resolver.openInputStream(uri)?.use { ImportMapping.parse(it.readBytes().decodeToString()) } ?: throw IOException("Can't open the mapping")
         } ?: ImportMapping()
         val plan = planImport(backup, mapping)
-        val existing = db.categoryDao().getAll().filter { it.parentId == null }.map { it.name.lowercase() to it.type }.toSet()
+        val existing = db.categoryDao().getAll().filter { it.parentId == null }.map { it.name.caseKey() to it.type }.toSet()
         val added = plan.entries.mapNotNull { entry -> entry.category?.let { it to entry.categoryType.name } }
             .distinct()
-            .filter { (name, type) -> (name.lowercase() to type) !in existing }
+            .filter { (name, type) -> (name.caseKey() to type) !in existing }
             .map { it.first }
         ImportPreview(plan, added)
     }

@@ -24,6 +24,7 @@ import com.eminallahverdi.balance.core.model.ParsedReceipt
 import com.eminallahverdi.balance.core.model.Receipt
 import com.eminallahverdi.balance.core.model.TextPiece
 import com.eminallahverdi.balance.core.model.TransactionKind
+import com.eminallahverdi.balance.core.model.caseKey
 import com.eminallahverdi.balance.core.model.fiscalIdFrom
 import com.eminallahverdi.balance.core.model.groceryReport
 import com.eminallahverdi.balance.core.model.parseReceiptText
@@ -82,7 +83,7 @@ private val GROCERY_NAMES = setOf("groceries", "grocery", "market", "supermarket
 /** The category the user keeps groceries in: by its name, or by the shopping cart the template gives it. */
 internal fun groceriesCategory(categories: List<Category>): Category? {
     val top = categories.filter { it.parentId == null && it.type == CategoryType.EXPENSE && !it.isArchived }
-    return top.firstOrNull { it.name.trim().lowercase() in GROCERY_NAMES } ?: top.firstOrNull { it.icon == "shopping_cart" }
+    return top.firstOrNull { it.name.trim().caseKey() in GROCERY_NAMES } ?: top.firstOrNull { it.icon == "shopping_cart" }
 }
 
 private const val MONTHS_COMPARED = 12L

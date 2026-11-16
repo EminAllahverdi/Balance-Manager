@@ -72,4 +72,5 @@
         <item quantity="one">%d məhsul</item>
         <item quantity="other">%d məhsul</item>
     </plurals>
+    <string name="receipts_ok">Oldu</string>
 </resources>

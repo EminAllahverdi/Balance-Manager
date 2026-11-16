@@ -88,15 +88,21 @@ data class RecurringPayment(
         get() = nextDate.minusDays(if (frequency == RecurringFrequency.WEEKLY) WEEKLY_EARLY_DAYS else EARLY_DAYS)
 
     /**
-     * Whether [expense] is this occurrence, logged by hand: the same name, or the same category and amount.
-     * Each occurrence has its own days, up to where the next one's start, so one entry can't settle two.
+     * Whether [expense] is this occurrence, logged by hand: the same name, or the same category and amount. A loan's
+     * category, usually a sub-category of its own, is where its payments go, so anything spent there counts, whatever the
+     * amount: an early or rounded payment still moves the loan on. Other payments share their category, as subscriptions
+     * do, so the amount has to match too. Each occurrence has its own days, up to where the next one's start, so one entry
+     * can't settle two.
      */
     fun isLoggedBy(expense: TransactionDetails): Boolean {
         val entry = expense.transaction
         if (entry.kind != TransactionKind.EXPENSE) return false
         if (entry.date.isBefore(firstLoggedDay) || !entry.date.isBefore(advanced().firstLoggedDay)) return false
-        return expense.merchant?.name.equals(name, ignoreCase = true) || (entry.categoryId == categoryId && entry.amount == amountDue)
+        return expense.merchant?.name.equals(name, ignoreCase = true) || (entry.categoryId == categoryId && (loan != null || entry.amount == amountDue))
     }
+
+    /** Whether an entry could settle this occurrence yet: its days have begun, a little before the date itself. */
+    fun isOpen(today: LocalDate): Boolean = !isFinished && !firstLoggedDay.isAfter(today)
 
     private companion object {
         const val WEEKS_PER_YEAR = 52

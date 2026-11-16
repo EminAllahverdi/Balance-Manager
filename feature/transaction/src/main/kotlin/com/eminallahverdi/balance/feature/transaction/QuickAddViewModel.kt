@@ -32,6 +32,7 @@ import com.eminallahverdi.balance.core.model.SpokenLanguage
 import com.eminallahverdi.balance.core.model.SpokenNames
 import com.eminallahverdi.balance.core.model.Transaction
 import com.eminallahverdi.balance.core.model.TransactionKind
+import com.eminallahverdi.balance.core.model.caseKey
 import com.eminallahverdi.balance.core.model.monthlyFor
 import com.eminallahverdi.balance.core.model.namesIn
 import com.eminallahverdi.balance.core.model.owedByPerson
@@ -114,6 +115,8 @@ data class QuickAddUiState(
     val debts: List<DebtBalance> = emptyList(),
     /** Ready-made entries from bank notifications, still waiting on To confirm, with what each would be saved as. */
     val waiting: List<PendingItem> = emptyList(),
+    /** A bank entry just swiped away, with Undo beside its name for a few seconds. */
+    val skipped: PendingItem? = null,
     val saved: Boolean = false,
 ) {
     /**
@@ -135,7 +138,7 @@ data class QuickAddUiState(
     val owedLines: List<OwedTo> get() = debts.owedByPerson()
 
     /** Names already used, one person each even from a shared bill, so someone is picked again without retyping. */
-    val knownNames: List<String> get() = debts.flatMap { namesIn(it.debt.counterparty) }.distinctBy { it.lowercase() }
+    val knownNames: List<String> get() = debts.flatMap { namesIn(it.debt.counterparty) }.distinctBy { it.caseKey() }
 
     /** What a debt can be saved with: who, how much, and what it needs besides, or not more than is owed when paying back. */
     private val canSaveDebt: Boolean
@@ -307,7 +310,7 @@ class QuickAddViewModel @Inject constructor(
     private suspend fun loadFromSpeech(text: String, language: SpokenLanguage): SpokenEntry {
         val categories = catalog.categories.first()
         val debts = debtRepository.debts.first()
-        val debtNames = debts.flatMap { namesIn(it.debt.counterparty) }.distinctBy { it.lowercase() }
+        val debtNames = debts.flatMap { namesIn(it.debt.counterparty) }.distinctBy { it.caseKey() }
         val names = SpokenNames(categories, catalog.people.first(), catalog.accounts.first(), catalog.merchants.first(), transactions.categoryUse(), debtNames)
         val spoken = parseSpokenEntry(text, names, language)
         val category = categories.firstOrNull { it.id == spoken.categoryId }
@@ -415,6 +418,25 @@ class QuickAddViewModel @Inject constructor(
             _state.update { it.copy(saved = true) }
         }
     }
+
+    /** A bank entry skipped with a swipe, as To confirm's Skip does: it stops waiting, and [undoSkip] brings it back. */
+    fun skipPending(item: PendingItem) {
+        viewModelScope.launch {
+            bankAlerts.skip(item.entry.id)
+            _state.update { it.copy(skipped = item) }
+        }
+    }
+
+    fun undoSkip() {
+        val item = _state.value.skipped ?: return
+        viewModelScope.launch {
+            bankAlerts.unskip(item.entry.id)
+            _state.update { it.copy(skipped = null) }
+        }
+    }
+
+    /** The Undo note has had its time. */
+    fun forgetSkipped() = _state.update { it.copy(skipped = null) }
 
     /** Back to the Debt tab's first page, as tapping the kind on an entry does. */
     fun showDebtKinds() = _state.update { it.copy(step = QuickAddStep.DEBT, debt = null, categoryId = null, subCategoryId = null, typing = null) }

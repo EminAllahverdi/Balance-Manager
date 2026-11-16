@@ -96,13 +96,17 @@ fun PersonAvatar(person: Person, modifier: Modifier = Modifier, size: Dp = 40.dp
     } else {
         Box(modifier = modifier.then(ring).size(size).clip(CircleShape).background(if (plain) c.bgSurfaceHigh else hue), contentAlignment = Alignment.Center) {
             Text(
-                person.initial,
+                initialOf(person.name),
                 style = TextStyle(fontWeight = FontWeight.ExtraBold, fontSize = (size.value * 0.38f).sp),
                 color = if (plain) c.textPrimary else Color(0xFF0B0D10),
             )
         }
     }
 }
+
+/** A name's first letter as a capital in the language showing, so Azerbaijani's ilkin starts with İ, not I. */
+@Composable
+fun initialOf(name: String): String = name.trim().take(1).uppercase(LocalConfiguration.current.locales[0])
 
 /** How thick a photo's ring of the person's colour is, against the avatar's size. */
 private const val PHOTO_RING = 0.08f
@@ -202,11 +206,22 @@ fun BtCard(modifier: Modifier = Modifier, bordered: Boolean = false, shape: andr
     )
 }
 
-/** Small capitals over a group, uppercased in the language showing, so Azerbaijani keeps its dotted İ. */
+/**
+ * Small capitals over a group, uppercased in the language showing, so Azerbaijani keeps its dotted İ. [name] is something
+ * the user typed inside [text], like a category's name: it's uppercased by its own letters instead, so an English
+ * Groceries stays GROCERIES in Azerbaijani rather than becoming GROCERİES.
+ */
 @Composable
-fun Overline(text: String, modifier: Modifier = Modifier, color: Color = BtTheme.colors.textMuted) {
-    Text(text.uppercase(LocalConfiguration.current.locales[0]), style = BtTheme.type.overline, color = color, modifier = modifier)
+fun Overline(text: String, modifier: Modifier = Modifier, color: Color = BtTheme.colors.textMuted, name: String? = null) {
+    val locale = LocalConfiguration.current.locales[0]
+    val shown = if (name.isNullOrEmpty() || name !in text) text.uppercase(locale) else text.split(name).joinToString(name.uppercase(nameLocale(name))) { it.uppercase(locale) }
+    Text(shown, style = BtTheme.type.overline, color = color, modifier = modifier)
 }
+
+/** Azerbaijani's rules for a name with Azerbaijani letters in it, and plain ones otherwise. Only i comes out differently. */
+private fun nameLocale(name: String): java.util.Locale = if (AZERBAIJANI_LETTERS.containsMatchIn(name)) java.util.Locale.forLanguageTag("az") else java.util.Locale.ROOT
+
+private val AZERBAIJANI_LETTERS = Regex("[əƏıİğĞşŞçÇöÖüÜ]")
 
 @Composable
 fun BtIconButton(icon: ImageVector, contentDescription: String, onClick: () -> Unit, modifier: Modifier = Modifier) {

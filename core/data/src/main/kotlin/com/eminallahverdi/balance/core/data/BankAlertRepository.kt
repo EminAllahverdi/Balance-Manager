@@ -17,6 +17,7 @@ import com.eminallahverdi.balance.core.model.PendingStatus
 import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.Transaction
 import com.eminallahverdi.balance.core.model.TransactionKind
+import com.eminallahverdi.balance.core.model.caseKey
 import com.eminallahverdi.balance.core.model.guessFor
 import com.eminallahverdi.balance.core.model.parseBankNotification
 import com.eminallahverdi.balance.core.model.whyNotRead
@@ -24,7 +25,6 @@ import java.security.MessageDigest
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -188,10 +188,13 @@ class BankAlertRepository @Inject constructor(
     suspend fun markAdded(entry: PendingEntry, merchantName: String) {
         dao.setStatus(entry.id, PendingStatus.ADDED.name)
         if (entry.merchant.isBlank()) return
-        merchantDao.findByName(merchantName.trim())?.let { dao.upsertAlias(MerchantAliasEntity(entry.merchant.lowercase(Locale.ROOT), it.id)) }
+        merchantDao.findByName(merchantName.trim())?.let { dao.upsertAlias(MerchantAliasEntity(entry.merchant.caseKey(), it.id)) }
     }
 
     suspend fun skip(id: Long) = dao.setStatus(id, PendingStatus.SKIPPED.name)
+
+    /** Takes back a skip made a moment ago, so the entry waits on To confirm again. */
+    suspend fun unskip(id: Long) = dao.setStatus(id, PendingStatus.WAITING.name)
 
     private fun defaultAccountId(settings: UserPreferences, accounts: List<Account>): Long? {
         val active = accounts.filterNot { it.isArchived }

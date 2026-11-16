@@ -53,6 +53,11 @@ class SpokenDebtTest {
         assertThat(az("Tom və Lisa üçün 30 manat ödədim").let { it.debt to it.counterparty }).isEqualTo(DebtType.PAID_FOR_OTHERS to "Tom and Lisa")
     }
 
+    @Test fun `a name heard in Azerbaijani keeps its dotted capital`() {
+        assertThat(az("ilkinə 20 manat borc verdim").counterparty).isEqualTo("İlkin")
+        assertThat(en("lent ivan 20 manat").counterparty).isEqualTo("Ivan")
+    }
+
     @Test fun `an ordinary expense isn't a debt`() {
         val said = en("12 manat lunch from card")
         assertThat(said.debt).isNull()

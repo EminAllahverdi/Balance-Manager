@@ -185,7 +185,7 @@ private fun SpentCard(report: GroceryReport, categoryName: String?, month: YearM
     BtCard(bordered = true) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Overline(categoryName?.let { stringResource(R.string.receipts_spent_on, it) } ?: stringResource(R.string.receipts_no_groceries_category), Modifier.weight(1f))
+                Overline(categoryName?.let { stringResource(R.string.receipts_spent_on, it) } ?: stringResource(R.string.receipts_no_groceries_category), Modifier.weight(1f), name = categoryName)
                 MonthButton(month, onPickMonth)
             }
             FittedAmount(MoneyFormat.format(report.spent), BtTheme.type.amountLarge)

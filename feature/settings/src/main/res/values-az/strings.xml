@@ -130,4 +130,5 @@
         <item quantity="one">%d şəxs</item>
         <item quantity="other">%d şəxs</item>
     </plurals>
+    <string name="settings_ok">Oldu</string>
 </resources>

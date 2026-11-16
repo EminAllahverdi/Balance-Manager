@@ -51,6 +51,7 @@
     <string name="loans_commission">Komissiya</string>
     <string name="loans_category">Kateqoriya</string>
     <string name="loans_sub_category">Alt kateqoriya</string>
+    <string name="loans_category_counts">Burada qeyd olunan istənilən xərc, məbləğindən asılı olmayaraq, kreditin ödənişi sayılır. Ona görə kredit üçün ayrıca alt kateqoriya seçin.</string>
     <string name="loans_payments_from">Ödənişlər hansı hesabdan</string>
     <string name="loans_loan_moves_no_money">Kredit əlavə etmək pulu hərəkət etdirmir. Hər ödəniş qeyd edəndə bu hesabdan çıxılır.</string>
     <string name="loans_next_payment">Növbəti ödəniş</string>

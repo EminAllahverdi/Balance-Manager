@@ -32,13 +32,21 @@ class RecurringRepository @Inject constructor(
         dao.upsert(payment.advanced().toEntity())
     }
 
-    /** Moves past payments whose entry is already in the list, so a reminder only shows for one that's missing. */
+    /**
+     * Moves past payments whose entry is already in the list, so a reminder only shows for one that's missing. One paid a
+     * few days early is settled as soon as it's in, so a loan's progress moves on the day it's paid.
+     */
     suspend fun settleLogged(today: LocalDate = LocalDate.now()) {
-        dao.dueBy(today.toEpochDay()).map { it.toModel() }.forEach { payment ->
+        dao.dueBy(today.plusDays(EARLY_WINDOW_DAYS).toEpochDay()).map { it.toModel() }.forEach { payment ->
             var next = payment
-            while (next.isDue(today) && isLogged(next, today)) next = next.logged()
+            while (next.isOpen(today) && isLogged(next, today)) next = next.logged()
             if (next != payment) dao.upsert(next.toEntity())
         }
+    }
+
+    private companion object {
+        /** The furthest ahead a payment's days begin, as [RecurringPayment.firstLoggedDay] has them for a monthly one. */
+        const val EARLY_WINDOW_DAYS = 10L
     }
 
     private suspend fun isLogged(payment: RecurringPayment, today: LocalDate): Boolean =

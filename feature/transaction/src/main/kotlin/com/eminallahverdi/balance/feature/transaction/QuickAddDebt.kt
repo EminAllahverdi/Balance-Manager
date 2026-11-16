@@ -39,11 +39,13 @@ import com.eminallahverdi.balance.core.designsystem.component.BtChip
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.Overline
+import com.eminallahverdi.balance.core.designsystem.component.initialOf
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.DebtDirection
 import com.eminallahverdi.balance.core.model.DebtType
 import com.eminallahverdi.balance.core.model.OwedTo
+import com.eminallahverdi.balance.core.model.caseKey
 import com.eminallahverdi.balance.core.model.evenShare
 
 /** Grey, like every debt's tile elsewhere: a debt isn't a category, so it doesn't borrow one's colour. */
@@ -127,7 +129,7 @@ private fun OwedRow(line: OwedTo, onClick: () -> Unit) {
     val iOwe = line.direction == DebtDirection.I_OWE
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(Modifier.size(36.dp).clip(BtShapes.full).background(c.bgSurfaceHigh), contentAlignment = Alignment.Center) {
-            Text(line.name.take(1).uppercase(), style = BtTheme.type.bodyStrong, color = c.textPrimary)
+            Text(initialOf(line.name), style = BtTheme.type.bodyStrong, color = c.textPrimary)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(line.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -225,11 +227,11 @@ internal fun DebtCaption(state: QuickAddUiState) {
 @Composable
 internal fun DebtWho(state: QuickAddUiState, vm: QuickAddViewModel) {
     val debt = state.debt ?: return
-    val picked = debt.names.map { it.lowercase() }.toSet()
-    val shown = (debt.names + state.knownNames.filterNot { it.lowercase() in picked }).take(WHO_CHIPS)
+    val picked = debt.names.map { it.caseKey() }.toSet()
+    val shown = (debt.names + state.knownNames.filterNot { it.caseKey() in picked }).take(WHO_CHIPS)
     Section(if (debt.type == DebtType.PAID_FOR_OTHERS) stringResource(R.string.quickadd_who_owes_you) else stringResource(R.string.quickadd_who)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            shown.forEach { name -> BtChip(name, name.lowercase() in picked, { vm.pickName(name) }, outlined = true) }
+            shown.forEach { name -> BtChip(name, name.caseKey() in picked, { vm.pickName(name) }, outlined = true) }
             IconChip(Icons.Rounded.Edit, stringResource(R.string.quickadd_type_a_name), selected = state.typing == QuickAddText.NAME) { vm.startTyping(QuickAddText.NAME) }
         }
     }

@@ -56,6 +56,7 @@ import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.DebtDirection
 import com.eminallahverdi.balance.core.model.RecurringPayment
+import com.eminallahverdi.balance.core.model.caseKey
 import com.eminallahverdi.balance.core.model.interestLeft
 import com.eminallahverdi.balance.core.model.totalCost
 import java.time.LocalDate
@@ -144,6 +145,8 @@ internal fun LoanEditorSheet(draft: LoanDraft, state: LoansUiState, vm: LoansVie
                 }
             }
         }
+        // Any expense filed there counts as a payment, so the loan wants a category of its own.
+        Text(stringResource(R.string.loans_category_counts), style = BtTheme.type.caption, color = BtTheme.colors.textMuted, modifier = Modifier.padding(start = 4.dp))
         EditorField(stringResource(R.string.loans_payments_from)) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 AccountChips(state, draft.accountId) { id -> vm.updateLoan { copy(accountId = id) } }
@@ -264,8 +267,8 @@ internal fun DebtEditorSheet(draft: DebtDraft, state: LoansUiState, vm: LoansVie
 internal fun BillEditorSheet(draft: BillDraft, state: LoansUiState, vm: LoansViewModel) {
     val c = BtTheme.colors
     val subCategories = state.subCategoriesOf(draft.categoryId)
-    val named = draft.others.map { it.lowercase() }.toSet()
-    val names = state.knownNames.filter { it.lowercase() !in named }
+    val named = draft.others.map { it.caseKey() }.toSet()
+    val names = state.knownNames.filter { it.caseKey() !in named }
     var pickDate by remember { mutableStateOf(false) }
 
     SheetFrame(vm::closeSheet) {

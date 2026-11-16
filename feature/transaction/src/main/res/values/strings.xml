@@ -70,7 +70,10 @@
     <string name="quickadd_add_a_note">Add a note</string>
     <string name="quickadd_clear">Clear</string>
     <string name="quickadd_save">Save</string>
-    <string name="quickadd_tap_to_check_or_add">Tap one to check it first, or Add it as it is.</string>
+    <string name="quickadd_tap_to_check_or_add">Tap one to check it first, Add it as it is, or swipe it left to skip it.</string>
+    <string name="quickadd_skip">Skip</string>
+    <string name="quickadd_skipped">Skipped %1$s</string>
+    <string name="quickadd_undo">Undo</string>
     <string name="quickadd_suggested">Suggested</string>
     <string name="quickadd_check_it_first">Check it first</string>
     <string name="quickadd_add">Add</string>

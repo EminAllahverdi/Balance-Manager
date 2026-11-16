@@ -24,4 +24,5 @@
     <string name="ds_paid_back_by">%1$s borcu qaytardı</string>
     <string name="ds_your_share">Sizin payınız</string>
     <string name="ds_paid_for">%1$s üçün ödənildi</string>
+    <string name="ds_ok">Oldu</string>
 </resources>

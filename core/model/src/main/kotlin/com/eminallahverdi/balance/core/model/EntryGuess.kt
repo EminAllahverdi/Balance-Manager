@@ -48,7 +48,7 @@ fun guessFor(
         return EntryGuess("", categoryId = null, personId = null, accountId = from, isKnown = false, toAccountId = cash)
     }
     val words = wordsIn("${entry.merchant} ${entry.title}")
-    val confirmed = aliases[entry.merchant.lowercase(Locale.ROOT)]?.let { id -> merchants.firstOrNull { it.id == id } }
+    val confirmed = aliases[entry.merchant.caseKey()]?.let { id -> merchants.firstOrNull { it.id == id } }
     val merchant = confirmed
         ?: merchants.firstOrNull { it.name.equals(prettyMerchant(entry.merchant), ignoreCase = true) }
         ?: merchants.filter { it.lastCategoryId != null }.sortedByDescending { it.useCount }.firstOrNull { nameIsIn(it.name, words) }
@@ -68,9 +68,14 @@ fun guessFor(
     )
 }
 
-/** BRAVO SUPERMARKET reads as Bravo Supermarket, until the user names it something else. */
+/**
+ * BRAVO SUPERMARKET reads as Bravo Supermarket, until the user names it something else. A word keeps its own capital, so
+ * İNŞAAT reads as İnşaat, not Inşaat.
+ */
 fun prettyMerchant(raw: String): String =
-    raw.trim().lowercase(Locale.ROOT).split(Regex("\\s+")).joinToString(" ") { word -> word.replaceFirstChar { it.titlecase(Locale.ROOT) } }
+    raw.trim().split(Regex("\\s+")).joinToString(" ") { word ->
+        if (word.isEmpty()) word else word.first().let { if (it.isUpperCase()) it.toString() else it.titlecase(Locale.ROOT) } + word.drop(1).caseKey()
+    }
 
 /** A recurring payment or loan this looks like: its name in the text, or its amount within days of when it's due. */
 private fun paymentFor(entry: PendingEntry, words: Set<String>, recurring: List<RecurringPayment>): RecurringPayment? {
@@ -89,7 +94,7 @@ internal fun categoryFromWords(words: Set<String>, categories: List<Category>): 
         ?: spendable.firstOrNull { it.icon == hint.icon }
 }
 
-private fun wordsIn(text: String): Set<String> = text.lowercase(Locale.ROOT).split(Regex("""[^\p{L}\d]+""")).filter { it.isNotEmpty() }.toSet()
+private fun wordsIn(text: String): Set<String> = text.caseKey().split(Regex("""[^\p{L}\d]+""")).filter { it.isNotEmpty() }.toSet()
 
 /** Every word of [name] is in the text. Short names stay out of it, as they'd match by chance. */
 private fun nameIsIn(name: String, words: Set<String>): Boolean {

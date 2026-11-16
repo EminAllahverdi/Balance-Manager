@@ -55,7 +55,7 @@ fun parseSpokenEntry(text: String, names: SpokenNames, language: SpokenLanguage)
     // A debt first: its name is someone outside the household, so it's taken before people are looked for.
     val debt = debtSaid(words)
     if (debt != null) {
-        val who = takeCounterparty(words, text, debt, names.debtNames)
+        val who = takeCounterparty(words, text, debt, names.debtNames, language)
         val accounts = names.accounts.filterNot { it.isArchived }
         val account = takeBest(words, accounts) { it.name } ?: accountByType(words, accounts)
         val categories = names.categories.filterNot { it.isArchived }
@@ -102,6 +102,9 @@ fun parseSpokenEntry(text: String, names: SpokenNames, language: SpokenLanguage)
 private class Word(val lower: String, val azerbaijani: Boolean) {
     val folded: String = fold(lower)
 }
+
+/** A name as it's written: its first letter a capital in the language spoken, so Azerbaijani's ilkin is İlkin, not Ilkin. */
+private fun String.capitalised(language: SpokenLanguage): String = replaceFirstChar { it.titlecase(Locale.forLanguageTag(language.tag)) }
 
 private fun fold(text: String): String = Normalizer.normalize(
     text.replace('ə', 'e').replace('ı', 'i').replace('Ə', 'e'),
@@ -511,7 +514,7 @@ private fun newMerchant(words: List<Word>, language: SpokenLanguage): String? {
                 ?.takeIf { fold(it) !in STOP_WORDS }
         }
     } ?: return null
-    return word.replaceFirstChar { it.titlecase(Locale.ROOT) }
+    return word.capitalised(language)
 }
 
 /**
@@ -543,7 +546,7 @@ private val NOT_A_NAME = setOf(
  * it's the word in the place the language puts them: after "lent" or "from", before "paid back" or "qaytardı", in the
  * dative before "borc verdim" (Samə), in the ablative before "borc aldım" (Samdan), and every name for a bill.
  */
-private fun takeCounterparty(words: MutableList<Word>, text: String, debt: DebtType, known: List<String>): String? {
+private fun takeCounterparty(words: MutableList<Word>, text: String, debt: DebtType, known: List<String>, language: SpokenLanguage): String? {
     val found = generateSequence { takeBest(words, known) { it } }.take(MOST_NAMES).toList()
     if (found.isNotEmpty()) return if (debt == DebtType.PAID_FOR_OTHERS) joinNames(found) else found.first()
     val heard = Regex("""[\p{L}][\p{L}'’-]*|\d+""").findAll(text).map { it.value }.toList()
@@ -559,13 +562,13 @@ private fun takeCounterparty(words: MutableList<Word>, text: String, debt: DebtT
             ?: index("borc").takeIf { it >= 0 }?.let { lastBefore(it) }?.withoutEnding(listOf("dan", "den", "dən"), emptyList())
         DebtType.PAID_BACK -> index("paid", "pays", "gave", "gives", "sent", "qaytar*").takeIf { it >= 0 }?.let { lastBefore(it) ?: firstAfter(it) }
         DebtType.PAID_FOR_ME -> index("paid", "pays", "covered", "treated", "menim", "evezime").takeIf { it >= 0 }?.let { lastBefore(it) }
-        DebtType.PAID_FOR_OTHERS -> return billNames(heard, lower)
+        DebtType.PAID_FOR_OTHERS -> return billNames(heard, lower, language)
     } ?: return null
-    return name.replaceFirstChar { it.titlecase(Locale.ROOT) }
+    return name.capitalised(language)
 }
 
 /** Everyone a bill was paid for: the names after "paid for" in English, or before "üçün" in Azerbaijani. */
-private fun billNames(heard: List<String>, lower: List<String>): String? {
+private fun billNames(heard: List<String>, lower: List<String>, language: SpokenLanguage): String? {
     val joins = setOf("and", "ve", ",")
     // "paid for Sam and Alex", or with the amount between: "paid 20 manat for Sam and Alex".
     val paid = lower.indexOf("paid")
@@ -580,7 +583,7 @@ private fun billNames(heard: List<String>, lower: List<String>): String? {
             .takeWhile { (_, word) -> word in joins || (word !in NOT_A_NAME && !word.first().isDigit()) }
             .filter { (_, word) -> word !in joins }.map { it.first }.toList().reversed()
     }
-    return names.takeIf { it.isNotEmpty() }?.map { n -> n.replaceFirstChar { it.titlecase(Locale.ROOT) } }?.let(::joinNames)
+    return names.takeIf { it.isNotEmpty() }?.map { it.capitalised(language) }?.let(::joinNames)
 }
 
 /** "Leylaya" is Leyla and "Samə" is Sam: a vowel-ending name takes a y before the ending, a consonant-ending one doesn't. */

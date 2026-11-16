@@ -3,7 +3,6 @@ package com.eminallahverdi.balance.core.model
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
-import java.util.Locale
 
 private val DATE_FORMATS = listOf(DateTimeFormatter.ISO_LOCAL_DATE, DateTimeFormatter.ofPattern("d.M.uuuu"), DateTimeFormatter.ofPattern("d/M/uuuu"))
 private val DELIMITERS = listOf(',', ';', '\t')
@@ -51,7 +50,7 @@ data class CsvPreview(
 )
 
 /** Names match whatever their case or stray spaces, so CARD in a file is the Card in the app. */
-fun nameKey(name: String): String = name.trim().lowercase(Locale.ROOT)
+fun nameKey(name: String): String = name.trim().caseKey()
 
 /**
  * Reads a file like the ones Export CSV writes, or anyone's spreadsheet saved as CSV. Columns are found by name in any

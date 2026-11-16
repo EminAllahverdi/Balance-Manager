@@ -20,4 +20,10 @@ class CategoryTest {
         assertThat(followed.icon).isEqualTo("spa")
         assertThat(followed.color).isEqualTo(new.color)
     }
+
+    @Test fun `names compare the same with a dotted capital or a plain i`() {
+        assertThat("İlkin".caseKey()).isEqualTo("ilkin".caseKey())
+        assertThat("ŞƏKİ".caseKey()).isEqualTo("şəki")
+        assertThat("SAM".caseKey()).isEqualTo("sam")
+    }
 }

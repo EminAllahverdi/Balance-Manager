@@ -116,4 +116,17 @@ class RecurringPaymentTest {
     @Test fun `progress is how much of the run is paid`() {
         assertThat(LoanTerms(paymentsMade = 1, paymentsLeft = 3).progress).isEqualTo(0.25f)
     }
+
+    @Test fun `anything spent in a loan's category counts as its payment, whatever the amount`() {
+        assertThat(loan(made = 2, left = 3).isLoggedBy(expense(date.minusDays(3), categoryId = 3, minor = 1_050_00))).isTrue()
+        assertThat(loan(made = 2, left = 3).isLoggedBy(expense(date, categoryId = 7, minor = 1_000_00))).isFalse()
+        // A subscription shares its category, so its amount still has to match.
+        assertThat(payment().isLoggedBy(expense(date, categoryId = 3, minor = 8_00))).isFalse()
+    }
+
+    @Test fun `a payment is open to settle from a few days before its date`() {
+        assertThat(payment().isOpen(date.minusDays(10))).isTrue()
+        assertThat(payment().isOpen(date.minusDays(11))).isFalse()
+        assertThat(loan(made = 3, left = 1).logged().isOpen(date.plusYears(1))).isFalse()
+    }
 }
