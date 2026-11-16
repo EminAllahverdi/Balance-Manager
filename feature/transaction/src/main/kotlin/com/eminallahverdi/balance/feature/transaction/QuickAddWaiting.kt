@@ -111,10 +111,14 @@ private fun SwipeToSkip(item: PendingItem, vm: QuickAddViewModel, content: @Comp
     )
     SwipeToDismissBox(
         state = swipe,
-        backgroundContent = { SkipBehind(skipLabel) },
+        // Only while it's being swiped: at rest the row hides it, and one with no Add chip would show it beside its amount.
+        backgroundContent = { if (swipe.dismissDirection == SwipeToDismissBoxValue.EndToStart) SkipBehind(skipLabel) },
         enableDismissFromStartToEnd = false,
         modifier = Modifier.semantics { customActions = listOf(CustomAccessibilityAction(skipLabel) { vm.skipPending(current); true }) },
-    ) { content() }
+    ) {
+        // The card's own colour, so what's behind shows only where the row has moved away.
+        Box(Modifier.background(BtTheme.colors.bgSurface)) { content() }
+    }
 }
 
 /** What a swipe uncovers: Skip, in plain colours, since nothing is lost. */
