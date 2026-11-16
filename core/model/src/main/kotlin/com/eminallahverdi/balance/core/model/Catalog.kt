@@ -44,6 +44,19 @@ data class Category(
         icon = if (icon == oldParent.icon) newParent.icon else icon,
         color = if (color == oldParent.color) newParent.color else color,
     )
+
+    /**
+     * The colour a sub-category shows as, in History's ring and the list of categories alike: its own, or while it still
+     * has [parent]'s, one from [palette] by its place among [siblings], the parent's sub-categories. So a parent's
+     * sub-categories tell apart, and each keeps its colour from month to month. The parent itself is its own colour.
+     */
+    fun shownColour(parent: Category, siblings: List<Category>, palette: List<Long>): Long {
+        if (id == parent.id || color != parent.color) return color
+        val choices = palette.filter { it != parent.color }
+        if (choices.isEmpty()) return color
+        val place = siblings.sortedWith(compareBy({ it.sortOrder }, { it.id })).indexOfFirst { it.id == id }.coerceAtLeast(0)
+        return choices[place % choices.size]
+    }
 }
 
 enum class AccountType { DEBIT_CARD, CREDIT_CARD, CASH, SAVINGS }

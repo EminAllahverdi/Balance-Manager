@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -57,6 +58,7 @@ import com.eminallahverdi.balance.core.designsystem.component.rememberReorderSta
 import com.eminallahverdi.balance.core.designsystem.component.reorderHandle
 import com.eminallahverdi.balance.core.designsystem.component.reorderItem
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
+import com.eminallahverdi.balance.core.designsystem.theme.CategoryPalette
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.Person
 
@@ -98,6 +100,10 @@ fun CatalogRoute(onBack: () -> Unit, onRemoveCategory: (Long) -> Unit = {}, view
     state.editor?.let { CatalogEditorSheet(it, state, viewModel) }
 }
 
+/** A sub-category's dot sits under its parent's tile, and its name under the parent's name. */
+private val SUB_DOT_START = 63.dp
+private val SUB_DOT_WIDTH = 23.dp
+
 /** Clears the add button at the end of the list. */
 private val ListPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 120.dp)
 
@@ -118,6 +124,8 @@ private fun CategoryList(state: CatalogUiState, vm: CatalogViewModel) {
             val id = group.category.id
             CategoryCard(
                 group = group,
+                // Archived ones too, so each keeps its place and its colour.
+                siblings = state.allCategories.filter { it.parentId == id },
                 expanded = state.expandedId == id,
                 people = people,
                 vm = vm,
@@ -130,7 +138,7 @@ private fun CategoryList(state: CatalogUiState, vm: CatalogViewModel) {
 }
 
 @Composable
-private fun CategoryCard(group: CategoryGroup, expanded: Boolean, people: Map<Long, Person>, vm: CatalogViewModel, handle: Modifier, modifier: Modifier = Modifier) {
+private fun CategoryCard(group: CategoryGroup, siblings: List<Category>, expanded: Boolean, people: Map<Long, Person>, vm: CatalogViewModel, handle: Modifier, modifier: Modifier = Modifier) {
     val c = BtTheme.colors
     val category = group.category
     BtCard(modifier, bordered = expanded) {
@@ -152,7 +160,7 @@ private fun CategoryCard(group: CategoryGroup, expanded: Boolean, people: Map<Lo
                 Icon(if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = c.textMuted, modifier = Modifier.size(20.dp))
             }
             if (expanded) {
-                group.subCategories.forEach { sub -> SubCategoryRow(sub, people[sub.defaultPersonId ?: category.defaultPersonId], vm) }
+                group.subCategories.forEach { sub -> SubCategoryRow(sub, sub.shownColour(category, siblings, CategoryPalette), people[sub.defaultPersonId ?: category.defaultPersonId], vm) }
                 ActionRow(Icons.Rounded.Add, stringResource(R.string.catalog_add_sub_category)) { vm.newSubCategory(group) }
                 ActionRow(Icons.Rounded.Edit, stringResource(R.string.catalog_edit_category)) { vm.edit(category) }
             }
@@ -164,15 +172,17 @@ private fun CategoryCard(group: CategoryGroup, expanded: Boolean, people: Map<Lo
 private fun subCategoryCount(n: Int) = pluralStringResource(R.plurals.catalog_sub_categories, n, n)
 
 @Composable
-private fun SubCategoryRow(sub: Category, person: Person?, vm: CatalogViewModel) {
+private fun SubCategoryRow(sub: Category, colour: Long, person: Person?, vm: CatalogViewModel) {
     val c = BtTheme.colors
     Column {
         Divider()
         Row(
-            Modifier.fillMaxWidth().clickable { vm.edit(sub) }.padding(start = 52.dp, end = 14.dp, top = 12.dp, bottom = 12.dp),
+            Modifier.fillMaxWidth().clickable { vm.edit(sub) }.padding(start = SUB_DOT_START, end = 14.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // The colour it shows as in History's ring, under the parent's tile, with the name under the parent's.
+            Box(Modifier.width(SUB_DOT_WIDTH)) { PersonDot(colour, 10.dp) }
             Text(sub.name, style = BtTheme.type.bodyStrong, color = c.textPrimary, modifier = Modifier.weight(1f))
             person?.let { PersonLabel(it) }
             Icon(Icons.Rounded.MoreVert, null, tint = c.textMuted, modifier = Modifier.size(20.dp))

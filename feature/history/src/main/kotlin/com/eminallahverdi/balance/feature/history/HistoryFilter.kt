@@ -193,10 +193,5 @@ internal fun List<TransactionDetails>.subCategoryRing(parent: Category, all: Lis
     val spent = filter { it.transaction.kind == TransactionKind.EXPENSE }
     if (spent.isEmpty()) return null
     val shares = spent.groupBy { it.category ?: parent }.map { (category, rows) -> Share(category, rows.map { it.transaction.amount }.sum()) }
-    fun colourOf(category: Category): Long {
-        if (category.id == parent.id || category.color != parent.color) return category.color
-        val place = children.indexOfFirst { it.id == category.id }.coerceAtLeast(0)
-        return palette.filter { it != parent.color }.let { it[place % it.size] }
-    }
-    return pieSlices(shares).map { RingSlice(it.category?.name, it.category?.let(::colourOf) ?: restColor, it.amount, it.percent) }
+    return pieSlices(shares).map { slice -> RingSlice(slice.category?.name, slice.category?.shownColour(parent, children, palette) ?: restColor, slice.amount, slice.percent) }
 }

@@ -47,23 +47,33 @@ internal fun AccountGrid(inTotal: List<AccountBalance>, outside: List<AccountBal
     val all = inTotal.map { it to true } + outside.map { it to false }
     if (all.isEmpty()) return
     val pages = all.chunked(PER_PAGE)
+    // Four or fewer fit on one page, which is laid out as it is: a pager of one page could still be dragged a little
+    // sideways, and stay there.
+    if (pages.size == 1) {
+        GridPage(pages.single(), rows = (all.size + PER_ROW - 1) / PER_ROW, balance, onOpen)
+        return
+    }
     val pager = rememberPagerState { pages.size }
-    // With more than one page, each is as tall as a full one, so nothing below moves while swiping between them.
-    val rows = if (pages.size > 1) PER_PAGE / PER_ROW else (all.size + PER_ROW - 1) / PER_ROW
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Each page is as tall as a full one, so nothing below moves while swiping between them.
         HorizontalPager(pager, Modifier.fillMaxWidth(), pageSpacing = 16.dp, verticalAlignment = Alignment.Top) { page ->
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(rows) { r ->
-                    val row = pages[page].drop(r * PER_ROW).take(PER_ROW)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        row.forEach { (b, counted) -> AccountTile(b, counted, balance, Modifier.weight(1f)) { onOpen(b.account.id) } }
-                        // An empty place keeps a tile's height without showing one.
-                        repeat(PER_ROW - row.size) { AccountTile(all.first().first, true, balance, Modifier.weight(1f).alpha(0f).clearAndSetSemantics {}) {} }
-                    }
-                }
+            GridPage(pages[page], rows = PER_PAGE / PER_ROW, balance, onOpen)
+        }
+        PageDots(pager.currentPage, pages.size)
+    }
+}
+
+/** One page of the grid: [rows] rows of two, any empty place keeping a tile's height without showing one. */
+@Composable
+private fun GridPage(items: List<Pair<AccountBalance, Boolean>>, rows: Int, balance: (Money) -> String, onOpen: (Long) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        repeat(rows) { r ->
+            val row = items.drop(r * PER_ROW).take(PER_ROW)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { (b, counted) -> AccountTile(b, counted, balance, Modifier.weight(1f)) { onOpen(b.account.id) } }
+                repeat(PER_ROW - row.size) { AccountTile(items.first().first, true, balance, Modifier.weight(1f).alpha(0f).clearAndSetSemantics {}) {} }
             }
         }
-        if (pages.size > 1) PageDots(pager.currentPage, pages.size)
     }
 }
 
