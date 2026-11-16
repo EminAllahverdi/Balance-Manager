@@ -241,4 +241,27 @@ class HistoryFilterTest {
         assertThat(transfers.canClear()).isFalse()
         assertThat(transfers.copy(accountId = card.id).cleared()).isEqualTo(transfers)
     }
+
+    @Test fun `a category's ring splits it by sub-category, with its own entries as a part, in steady colours`() {
+        val bus = Category(12, "Bus", CategoryType.EXPENSE, parentId = 10, icon = "directions_bus", color = 0xFF222222, sortOrder = 1)
+        val all = listOf(transport, taxi, bus)
+        val palette = listOf(0xFF111111, 0xFFAAAAAA, 0xFFBBBBBB)
+        val ring = listOf(row(700), row(300), row(500, category = bus), row(200, category = transport, parent = null)).subCategoryRing(transport, all, palette, 0xFF000000)!!
+        assertThat(ring.map { it.name }).containsExactly("Taxi", "Bus", "Transport").inOrder()
+        assertThat(ring.map { it.amount }).containsExactly(Money(1_000), Money(500), Money(200)).inOrder()
+        // Taxi kept Transport's colour, so it takes the palette's first that isn't Transport's; Bus has its own.
+        assertThat(ring.map { it.color }).containsExactly(0xFFAAAAAA, 0xFF222222, 0xFF111111).inOrder()
+    }
+
+    @Test fun `a category with no sub-categories keeps the bar`() {
+        assertThat(listOf(row(700)).subCategoryRing(transport.copy(id = 99), listOf(transport), listOf(0xFFAAAAAA), 0)).isNull()
+    }
+
+    @Test fun `all time asked for as days is all time, not a span`() {
+        val all = initialFilter(null, categoryId = 7, personId = null, from = DateRange.ALL_TIME.start.toEpochDay(), to = DateRange.ALL_TIME.endInclusive.toEpochDay())
+        assertThat(all.month).isNull()
+        assertThat(all.span).isNull()
+        assertThat(all.range).isEqualTo(DateRange.ALL_TIME)
+        assertThat(all.categoryId).isEqualTo(7)
+    }
 }

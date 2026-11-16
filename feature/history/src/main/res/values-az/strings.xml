@@ -42,4 +42,6 @@
         <item quantity="one">%d əməliyyat</item>
         <item quantity="other">%d əməliyyat</item>
     </plurals>
+    <string name="history_spent">Xərclənib</string>
+    <string name="history_the_rest">Qalanı</string>
 </resources>

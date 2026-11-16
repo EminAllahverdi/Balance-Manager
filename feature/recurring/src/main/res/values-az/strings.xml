@@ -36,4 +36,27 @@
         <item quantity="one">Təxminən bir ayda · %d ödəniş</item>
         <item quantity="other">Təxminən bir ayda · %d ödəniş</item>
     </plurals>
+    <string name="recurring_planned_payments">Planlı ödənişlər</string>
+    <string name="recurring_plan_a_payment">Ödəniş planlaşdır</string>
+    <string name="recurring_planned_hint">Bu ay nə ödəyəcəyinizi planlaşdırın, məsələn, kirayəni və ya məktəb ekskursiyasını. Əsas səhifə bundan sonra hesablarınızda nə qalacağını göstərəcək.</string>
+    <string name="recurring_to_pay">Ödəniləcək</string>
+    <string name="recurring_later">Sonra</string>
+    <string name="recurring_paid">Ödənilib</string>
+    <string name="recurring_from_recurring">Müntəzəm ödənişlərinizdən</string>
+    <string name="recurring_planned_how">Planlı ödəniş onun üçün eyni adla, ya da eyni kateqoriya və məbləğlə əməliyyat əlavə edildikdə və ya onu işarələdikdə cəmdən çıxır.</string>
+    <string name="recurring_leaves">Hesablarınızda %1$s var, ondan %2$s qalır</string>
+    <string name="recurring_paid_on">Ödənilib: %1$s</string>
+    <string name="recurring_not_paid">Hələ ödənilməyib</string>
+    <string name="recurring_mark_paid">Ödənilmiş kimi qeyd et</string>
+    <string name="recurring_edit_planned">Planlı ödənişə düzəliş</string>
+    <string name="recurring_name_like_rent">Ad, məsələn Kirayə</string>
+    <string name="recurring_when">Nə vaxt</string>
+    <string name="recurring_end_of_month">Ayın sonu</string>
+    <string name="recurring_pick_a_day">Gün seçin</string>
+    <string name="recurring_category_optional">Kateqoriya · istəyə görə</string>
+    <string name="recurring_remove_planned_text">Plandan çıxır. Onun üçün əlavə etdiyiniz əməliyyatlar tarixçədə qalır.</string>
+    <plurals name="recurring_left_to_pay">
+        <item quantity="one">%1$s · %2$d ödəniş qalıb</item>
+        <item quantity="other">%1$s · %2$d ödəniş qalıb</item>
+    </plurals>
 </resources>

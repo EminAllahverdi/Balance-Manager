@@ -27,11 +27,38 @@ data class InsightOverview(
     val people: List<Person>,
     /** Biggest move first, either way. */
     val changes: List<CategoryChange>,
+    /** The selected period added up day by day, against the one before. */
+    val pace: SpendingPace,
 ) {
     val selected: InsightBar get() = bars[selectedIndex]
     val spent: Money get() = selected.spent
     val saved: Money get() = income - spent
     val isCurrent: Boolean get() = selectedIndex == bars.lastIndex
+}
+
+/**
+ * Spending added up day by day through a period, against the period before it: day i of one is day i of the other, the
+ * same day of the week, month or year. [current] stops at today while the period is running; [previous] runs to its end.
+ */
+data class SpendingPace(
+    val current: List<Money>,
+    val previous: List<Money>,
+    /** Days in the period, which the chart is as wide as. */
+    val length: Int,
+    val isRunning: Boolean,
+) {
+    val spent: Money get() = current.lastOrNull() ?: Money.ZERO
+
+    /** What the period before had spent by the same day, or in all once this one is over. */
+    val previousByNow: Money
+        get() = when {
+            previous.isEmpty() -> Money.ZERO
+            !isRunning || current.isEmpty() -> if (isRunning) Money.ZERO else previous.last()
+            else -> previous[minOf(current.lastIndex, previous.lastIndex)]
+        }
+
+    /** Positive when this period is ahead. */
+    val change: Money get() = spent - previousByNow
 }
 
 /** Pure, like [SpendingCalculator], so it can be unit-tested without a database. */
@@ -79,6 +106,32 @@ object InsightsCalculator {
             days = days,
             people = people.filter { person -> bars.any { bar -> bar.byPerson.any { it.key.id == person.id } } },
             changes = categoryChanges(current, previous),
+            pace = pace(current.range, previous.range, items, today),
+        )
+    }
+
+    /**
+     * Each period's spending added up day by day. A period still running stops at today, so its line ends where today is;
+     * the one before runs to its end. Spent counts what [SpendingCalculator] counts, so the line ends on the bar's figure.
+     */
+    fun pace(range: DateRange, previousRange: DateRange, items: List<TransactionDetails>, today: LocalDate): SpendingPace {
+        val byDay = items.filter { it.transaction.countsInReports && it.transaction.kind == TransactionKind.EXPENSE }
+            .groupBy { it.transaction.date }
+            .mapValues { (_, rows) -> rows.map { it.transaction.amount }.sum() }
+        fun runningTotal(from: LocalDate, to: LocalDate): List<Money> {
+            var total = Money.ZERO
+            return (0..to.toEpochDay() - from.toEpochDay()).map { day ->
+                total += byDay[from.plusDays(day)] ?: Money.ZERO
+                total
+            }
+        }
+        val running = !today.isAfter(range.endInclusive)
+        val end = if (running) maxOf(today, range.start) else range.endInclusive
+        return SpendingPace(
+            current = if (today.isBefore(range.start)) emptyList() else runningTotal(range.start, end),
+            previous = runningTotal(previousRange.start, previousRange.endInclusive),
+            length = (range.endInclusive.toEpochDay() - range.start.toEpochDay() + 1).toInt(),
+            isRunning = running,
         )
     }
 

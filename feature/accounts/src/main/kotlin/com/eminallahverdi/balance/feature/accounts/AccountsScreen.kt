@@ -122,6 +122,7 @@ fun AccountsRoute(
     onDeleteArchived: (Long) -> Unit,
     onSeeAllTransfers: () -> Unit,
     onOpenRecurring: () -> Unit,
+    onOpenPlanned: () -> Unit = {},
     viewModel: AccountsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -148,6 +149,7 @@ fun AccountsRoute(
         // What's owed and what's coming round again sit together, below the balances they come out of.
         item(key = "loans") { PlaceRow("handshake", stringResource(R.string.accounts_loans_debts), caption = null, onOpenLoans) }
         item(key = "recurring") { PlaceRow("event_repeat", stringResource(R.string.accounts_recurring_payments), state.recurringSummary ?: stringResource(R.string.accounts_none_yet), onOpenRecurring) }
+        item(key = "planned") { PlaceRow("event_available", stringResource(R.string.accounts_planned_payments), caption = null, onOpenPlanned) }
         if (state.archived.isNotEmpty()) {
             item(key = "archived") { ArchivedHeader(state.archived.size, archivedOpen) { archivedOpen = !archivedOpen } }
             if (archivedOpen) items(state.archived, key = { "a${it.id}" }) { account -> ArchivedRow(account, viewModel, onDeleteArchived) }

@@ -131,4 +131,9 @@
         <item quantity="one">%d person</item>
         <item quantity="other">%d people</item>
     </plurals>
+    <string name="settings_accounts_on_home">Accounts on Home</string>
+    <string name="settings_accounts_one_row">One row</string>
+    <string name="settings_accounts_grid">Grid of four</string>
+    <string name="settings_accounts_grid_caption">Swipe sideways for the rest.</string>
+    <string name="settings_accounts_tap">Either way, tapping an account opens its transactions.</string>
 </resources>

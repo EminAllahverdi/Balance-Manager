@@ -95,6 +95,7 @@ fun InsightsRoute(onOpenCategory: (categoryId: Long, range: DateRange) -> Unit =
         val overview = state.overview ?: return@LazyColumn
         item { ChartCard(state.period, overview, viewModel) }
         item { Stats(state, overview) }
+        item { PaceCard(state.period, overview) }
         if (overview.changes.isNotEmpty()) {
             item {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -154,7 +155,7 @@ private fun ChartCard(period: InsightPeriod, overview: InsightOverview, vm: Insi
 
 /** Spending less is the good direction, so it's the income colour. */
 @Composable
-private fun changeColor(change: Money, neutral: Color): Color = when {
+internal fun changeColor(change: Money, neutral: Color): Color = when {
     change.minor > 0 -> BtTheme.colors.moneyExpense
     change.minor < 0 -> BtTheme.colors.moneyIncome
     else -> neutral

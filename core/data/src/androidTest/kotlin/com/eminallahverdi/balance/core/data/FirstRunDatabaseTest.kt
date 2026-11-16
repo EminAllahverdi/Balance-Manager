@@ -27,7 +27,7 @@ class FirstRunDatabaseTest {
 
     @Before fun setUp() {
         db = Room.inMemoryDatabaseBuilder(context, BalanceDatabase::class.java).build()
-        catalog = CatalogRepository(db, db.personDao(), db.categoryDao(), db.accountDao(), db.merchantDao(), db.transactionDao(), db.recurringPaymentDao())
+        catalog = CatalogRepository(db, db.personDao(), db.categoryDao(), db.accountDao(), db.merchantDao(), db.transactionDao(), db.recurringPaymentDao(), db.debtDao(), db.plannedPaymentDao())
         importer = CsvImporter(db)
     }
 

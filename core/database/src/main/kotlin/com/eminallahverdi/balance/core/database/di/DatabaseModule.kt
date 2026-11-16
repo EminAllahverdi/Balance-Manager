@@ -24,6 +24,7 @@ object DatabaseModule {
     @Provides fun merchantDao(db: BalanceDatabase) = db.merchantDao()
     @Provides fun transactionDao(db: BalanceDatabase) = db.transactionDao()
     @Provides fun recurringPaymentDao(db: BalanceDatabase) = db.recurringPaymentDao()
+    @Provides fun plannedPaymentDao(db: BalanceDatabase) = db.plannedPaymentDao()
     @Provides fun debtDao(db: BalanceDatabase) = db.debtDao()
     @Provides fun receiptDao(db: BalanceDatabase) = db.receiptDao()
     @Provides fun pendingEntryDao(db: BalanceDatabase) = db.pendingEntryDao()

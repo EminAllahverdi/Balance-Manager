@@ -25,7 +25,7 @@ class DebtRenameDatabaseTest {
 
     @Before fun setUp() = runBlocking<Unit> {
         db = Room.inMemoryDatabaseBuilder(context, BalanceDatabase::class.java).build()
-        val catalog = CatalogRepository(db, db.personDao(), db.categoryDao(), db.accountDao(), db.merchantDao(), db.transactionDao(), db.recurringPaymentDao())
+        val catalog = CatalogRepository(db, db.personDao(), db.categoryDao(), db.accountDao(), db.merchantDao(), db.transactionDao(), db.recurringPaymentDao(), db.debtDao(), db.plannedPaymentDao())
         val transactions = TransactionRepository(db.transactionDao(), db.merchantDao(), db.debtDao(), catalog)
         debts = DebtRepository(db, db.debtDao(), db.transactionDao(), transactions)
         card = db.accountDao().upsert(AccountEntity(name = "Card", type = "DEBIT_CARD", icon = "credit_card", color = 0))

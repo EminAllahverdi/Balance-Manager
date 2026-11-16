@@ -4,14 +4,17 @@ import androidx.room.withTransaction
 import com.eminallahverdi.balance.core.database.BalanceDatabase
 import com.eminallahverdi.balance.core.database.dao.AccountDao
 import com.eminallahverdi.balance.core.database.dao.CategoryDao
+import com.eminallahverdi.balance.core.database.dao.DebtDao
 import com.eminallahverdi.balance.core.database.dao.MerchantDao
 import com.eminallahverdi.balance.core.database.dao.PersonDao
+import com.eminallahverdi.balance.core.database.dao.PlannedPaymentDao
 import com.eminallahverdi.balance.core.database.dao.RecurringPaymentDao
 import com.eminallahverdi.balance.core.database.dao.TransactionDao
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.Merchant
 import com.eminallahverdi.balance.core.model.Person
+import com.eminallahverdi.balance.core.model.caseKey
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,6 +31,8 @@ class CatalogRepository @Inject constructor(
     private val merchantDao: MerchantDao,
     private val transactionDao: TransactionDao,
     private val recurringDao: RecurringPaymentDao,
+    private val debtDao: DebtDao,
+    private val plannedDao: PlannedPaymentDao,
 ) {
     val people: Flow<List<Person>> = personDao.observeAll().map { list -> list.map { it.toModel() } }
     val categories: Flow<List<Category>> = categoryDao.observeAll().map { list -> list.map { it.toModel() } }
@@ -72,6 +77,40 @@ class CatalogRepository @Inject constructor(
             categoryDao.delete(category.id); RemoveResult.DELETED
         }
 
+    /** Whether anything is filed under it or its sub-categories: an entry, a recurring payment or a debt. */
+    suspend fun isCategoryUsed(id: Long): Boolean = categoryDao.usageCount(id) > 0
+
+    /**
+     * Files everything under [from] as [to] and deletes [from]. Its sub-categories become [to]'s with their entries, and
+     * one named like a sub-category [to] already has goes into that one. Only where things are filed changes, so every
+     * balance stays as it is, but past months' categories don't.
+     */
+    suspend fun moveCategory(from: Long, to: Long) = db.withTransaction {
+        val all = categoryDao.getAll().map { it.toModel() }
+        val source = all.first { it.id == from }
+        val target = all.first { it.id == to }
+        var order = all.count { it.parentId == to }
+        all.filter { it.parentId == from }.forEach { child ->
+            val twin = all.firstOrNull { it.parentId == to && it.name.caseKey() == child.name.caseKey() }
+            if (twin != null) {
+                refile(child.id, twin.id)
+                categoryDao.delete(child.id)
+            } else {
+                categoryDao.upsert(child.copy(parentId = to, sortOrder = order++).followParentStyle(source, target).toEntity())
+            }
+        }
+        refile(from, to)
+        categoryDao.delete(from)
+    }
+
+    private suspend fun refile(from: Long, to: Long) {
+        transactionDao.moveCategory(from, to, Instant.now().toEpochMilli())
+        recurringDao.moveCategory(from, to)
+        plannedDao.moveCategory(from, to)
+        debtDao.moveCategory(from, to)
+        merchantDao.replaceLastCategory(from, to)
+    }
+
     suspend fun removeAccount(account: Account): RemoveResult =
         if (accountDao.usageCount(account.id) > 0) {
             accountDao.upsert(account.copy(isArchived = true).toEntity()); RemoveResult.ARCHIVED
@@ -86,6 +125,7 @@ class CatalogRepository @Inject constructor(
         transactionDao.moveAccount(from, to, now)
         transactionDao.moveToAccount(from, to, now)
         recurringDao.moveAccount(from, to)
+        plannedDao.moveAccount(from, to)
         merchantDao.replaceLastAccount(from, to)
     }
 

@@ -1,6 +1,7 @@
-package com.eminallahverdi.balance.feature.catalog
+package com.eminallahverdi.balance.core.designsystem.component
 
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
@@ -28,7 +29,7 @@ private const val ROWS_PER_SECOND = 4f
 
 /** Drag-to-reorder for a LazyColumn. Reorderable items use a Long key; anything else stays put. */
 @Stable
-internal class ReorderState(
+class ReorderState(
     private val list: LazyListState,
     private val scope: CoroutineScope,
     private val onMove: State<(from: Long, to: Long) -> Unit>,
@@ -119,7 +120,7 @@ internal class ReorderState(
 }
 
 @Composable
-internal fun rememberReorderState(list: LazyListState, onMove: (Long, Long) -> Unit, onDrop: () -> Unit): ReorderState {
+fun rememberReorderState(list: LazyListState, onMove: (Long, Long) -> Unit, onDrop: () -> Unit): ReorderState {
     val scope = rememberCoroutineScope()
     val move = rememberUpdatedState(onMove)
     val drop = rememberUpdatedState(onDrop)
@@ -127,7 +128,7 @@ internal fun rememberReorderState(list: LazyListState, onMove: (Long, Long) -> U
 }
 
 /** Put on the drag handle. */
-internal fun Modifier.reorderHandle(state: ReorderState, id: Long): Modifier = pointerInput(state, id) {
+fun Modifier.reorderHandle(state: ReorderState, id: Long): Modifier = pointerInput(state, id) {
     detectDragGestures(
         onDragStart = { state.start(id) },
         onDragEnd = state::end,
@@ -138,13 +139,31 @@ internal fun Modifier.reorderHandle(state: ReorderState, id: Long): Modifier = p
     }
 }
 
+/**
+ * Put on a whole row that has no handle: holding it lifts it, with a small buzz, and it then follows the finger. A tap
+ * still reaches the row's own click.
+ */
+fun Modifier.reorderOnLongPress(state: ReorderState, id: Long, onLift: () -> Unit): Modifier = pointerInput(state, id) {
+    detectDragGesturesAfterLongPress(
+        onDragStart = {
+            onLift()
+            state.start(id)
+        },
+        onDragEnd = state::end,
+        onDragCancel = state::end,
+    ) { change, amount ->
+        change.consume()
+        state.drag(amount.y)
+    }
+}
+
 /** Put on the whole row, so it follows the finger above its neighbours. */
-internal fun Modifier.reorderItem(state: ReorderState, id: Long): Modifier =
+fun Modifier.reorderItem(state: ReorderState, id: Long): Modifier =
     zIndex(if (state.draggingId == id) 1f else 0f)
         .graphicsLayer { translationY = if (state.draggingId == id) state.offset else 0f }
 
 /** Moves the item with [from]'s key to where [to]'s item is. */
-internal fun <T> List<T>.moved(from: Long, to: Long, id: (T) -> Long): List<T> {
+fun <T> List<T>.moved(from: Long, to: Long, id: (T) -> Long): List<T> {
     val fromIndex = indexOfFirst { id(it) == from }
     val toIndex = indexOfFirst { id(it) == to }
     if (fromIndex < 0 || toIndex < 0) return this

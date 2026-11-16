@@ -14,6 +14,7 @@ import com.eminallahverdi.balance.core.database.entity.MerchantAliasEntity
 import com.eminallahverdi.balance.core.database.entity.MerchantEntity
 import com.eminallahverdi.balance.core.database.entity.PendingEntryEntity
 import com.eminallahverdi.balance.core.database.entity.PersonEntity
+import com.eminallahverdi.balance.core.database.entity.PlannedPaymentEntity
 import com.eminallahverdi.balance.core.database.entity.ReceiptEntity
 import com.eminallahverdi.balance.core.database.entity.ReceiptItemEntity
 import com.eminallahverdi.balance.core.database.entity.ReceiptWithItems
@@ -95,6 +96,9 @@ interface MerchantDao {
 
     @Query("UPDATE merchant SET last_account_id = :to WHERE last_account_id = :from")
     suspend fun replaceLastAccount(from: Long, to: Long?)
+
+    @Query("UPDATE merchant SET last_category_id = :to WHERE last_category_id = :from")
+    suspend fun replaceLastCategory(from: Long, to: Long)
 }
 
 /** Per-account sum of every movement, in minor units. */
@@ -182,6 +186,9 @@ interface TransactionDao {
 
     @Query("UPDATE txn SET to_account_id = :to, updated_at = :now WHERE to_account_id = :from")
     suspend fun moveToAccount(from: Long, to: Long, now: Long)
+
+    @Query("UPDATE txn SET category_id = :to, updated_at = :now WHERE category_id = :from")
+    suspend fun moveCategory(from: Long, to: Long, now: Long)
 }
 
 @Dao
@@ -192,6 +199,7 @@ interface DebtDao {
     @Upsert suspend fun upsert(debt: DebtEntity): Long
     @Query("DELETE FROM debt WHERE id = :id") suspend fun delete(id: Long)
     @Query("SELECT * FROM debt") suspend fun all(): List<DebtEntity>
+    @Query("UPDATE debt SET category_id = :to WHERE category_id = :from") suspend fun moveCategory(from: Long, to: Long)
 }
 
 @Dao
@@ -208,6 +216,7 @@ interface RecurringPaymentDao {
     @Query("DELETE FROM recurring_payment WHERE id = :id") suspend fun delete(id: Long)
     @Query("DELETE FROM recurring_payment WHERE account_id = :accountId") suspend fun deleteForAccount(accountId: Long)
     @Query("UPDATE recurring_payment SET account_id = :to WHERE account_id = :from") suspend fun moveAccount(from: Long, to: Long)
+    @Query("UPDATE recurring_payment SET category_id = :to WHERE category_id = :from") suspend fun moveCategory(from: Long, to: Long)
 }
 
 @Dao
@@ -262,4 +271,16 @@ interface ReceiptDao {
     @Insert suspend fun insert(receipt: ReceiptEntity): Long
     @Insert suspend fun insertItems(items: List<ReceiptItemEntity>)
     @Query("DELETE FROM receipt WHERE id = :id") suspend fun delete(id: Long)
+}
+
+@Dao
+interface PlannedPaymentDao {
+    @Query("SELECT * FROM planned_payment ORDER BY date, id")
+    fun observeAll(): Flow<List<PlannedPaymentEntity>>
+
+    @Upsert suspend fun upsert(payment: PlannedPaymentEntity): Long
+    @Query("DELETE FROM planned_payment WHERE id = :id") suspend fun delete(id: Long)
+    @Query("UPDATE planned_payment SET paid_on = :paidOn WHERE id = :id") suspend fun setPaid(id: Long, paidOn: Long?)
+    @Query("UPDATE planned_payment SET account_id = :to WHERE account_id = :from") suspend fun moveAccount(from: Long, to: Long)
+    @Query("UPDATE planned_payment SET category_id = :to WHERE category_id = :from") suspend fun moveCategory(from: Long, to: Long)
 }

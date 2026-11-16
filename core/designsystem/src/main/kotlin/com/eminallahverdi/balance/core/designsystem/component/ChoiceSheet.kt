@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -60,9 +61,9 @@ fun ChoiceSheet(title: String, onClose: () -> Unit, options: @Composable (choose
     }
 }
 
-/** One choice in a [ChoiceSheet]. A check marks the selected row, and [caption] explains a choice that needs it. */
+/** One choice in a [ChoiceSheet]. A check marks the selected row, [caption] explains a choice that needs it, and [trailing] shows what it comes to, like an amount. */
 @Composable
-fun OptionRow(text: String, selected: Boolean, onClick: () -> Unit, caption: String? = null, leading: (@Composable () -> Unit)? = null) {
+fun OptionRow(text: String, selected: Boolean, onClick: () -> Unit, caption: String? = null, leading: (@Composable () -> Unit)? = null, trailing: (@Composable () -> Unit)? = null) {
     val c = BtTheme.colors
     Row(
         Modifier
@@ -80,6 +81,12 @@ fun OptionRow(text: String, selected: Boolean, onClick: () -> Unit, caption: Str
             Text(text, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (caption != null) Text(caption, style = BtTheme.type.caption, color = c.textSecondary)
         }
-        if (selected) Icon(Icons.Rounded.Check, stringResource(R.string.ds_selected), tint = c.accentText, modifier = Modifier.size(20.dp))
+        trailing?.invoke()
+        if (selected) {
+            Icon(Icons.Rounded.Check, stringResource(R.string.ds_selected), tint = c.accentText, modifier = Modifier.size(20.dp))
+        } else if (trailing != null) {
+            // Keeps what's trailing in one column, check or not.
+            Spacer(Modifier.size(20.dp))
+        }
     }
 }

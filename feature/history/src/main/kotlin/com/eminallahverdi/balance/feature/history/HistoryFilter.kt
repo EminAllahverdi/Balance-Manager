@@ -8,11 +8,14 @@ import com.eminallahverdi.balance.core.common.rawText
 import com.eminallahverdi.balance.core.common.uiText
 import com.eminallahverdi.balance.core.designsystem.component.debtNoteText
 import com.eminallahverdi.balance.core.designsystem.component.label
+import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.Money
+import com.eminallahverdi.balance.core.model.Share
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.caseKey
+import com.eminallahverdi.balance.core.model.pieSlices
 import com.eminallahverdi.balance.core.model.sum
 import java.time.LocalDate
 import java.time.YearMonth
@@ -61,15 +64,18 @@ data class HistoryFilter(
  * [to] the days of a period Reports showed, as epoch days. A whole month reads as one, so the month sheet shows it picked. A
  * list of one [kind], like Accounts' See all for transfers, starts on all time, since that's what "all" means there.
  */
-internal fun initialFilter(month: String?, categoryId: Long?, personId: Long?, kind: String? = null, from: Long? = null, to: Long? = null): HistoryFilter {
+internal fun initialFilter(month: String?, categoryId: Long?, personId: Long?, kind: String? = null, from: Long? = null, to: Long? = null, accountId: Long? = null): HistoryFilter {
     val only = kind?.let { name -> TransactionKind.entries.firstOrNull { it.name == name } }
     val days = if (from != null && to != null) DateRange(LocalDate.ofEpochDay(from), LocalDate.ofEpochDay(to)) else null
     val wholeMonth = days?.let { YearMonth.from(it.start) }?.takeIf { DateRange.month(it) == days }
+    // All time is how a page that lists everything asks, as removing a category does; it's no span of its own.
+    val allTime = days == DateRange.ALL_TIME
     return HistoryFilter(
         month = wholeMonth ?: if (days != null) null else month?.let(YearMonth::parse) ?: if (only != null) null else YearMonth.now(),
-        span = days.takeIf { wholeMonth == null },
+        span = days.takeIf { wholeMonth == null && !allTime },
         categoryId = categoryId,
         personId = personId,
+        accountId = accountId,
         kind = only,
     )
 }
@@ -170,4 +176,27 @@ internal fun TransactionDetails.removal(hideAmounts: Boolean, today: LocalDate =
         TransactionKind.ADJUSTMENT -> Removal(R.string.history_remove_adjustment_q, named, R.string.history_remove_adjustment_text, R.string.history_remove)
         else -> Removal(R.string.history_delete_transaction_q, named, R.string.history_delete_transaction_text, R.string.history_delete)
     }
+}
+
+/** One part of the ring a category's sub-categories make in the summary. A null [name] is everything too small for its own. */
+data class RingSlice(val name: String?, val color: Long, val amount: Money, val percent: Long)
+
+/**
+ * With a category picked, its spending split by sub-category, biggest first, for the summary's ring: up to five and then
+ * the rest. What's filed on the category itself is a part of its own, under its name. A sub-category that kept its parent's
+ * colour takes one from [palette] by its place among its parent's, so it's the same colour every month. Null when the
+ * category has no sub-categories, which leaves the bar.
+ */
+internal fun List<TransactionDetails>.subCategoryRing(parent: Category, all: List<Category>, palette: List<Long>, restColor: Long): List<RingSlice>? {
+    val children = all.filter { it.parentId == parent.id }.sortedWith(compareBy({ it.sortOrder }, { it.id }))
+    if (children.isEmpty()) return null
+    val spent = filter { it.transaction.kind == TransactionKind.EXPENSE }
+    if (spent.isEmpty()) return null
+    val shares = spent.groupBy { it.category ?: parent }.map { (category, rows) -> Share(category, rows.map { it.transaction.amount }.sum()) }
+    fun colourOf(category: Category): Long {
+        if (category.id == parent.id || category.color != parent.color) return category.color
+        val place = children.indexOfFirst { it.id == category.id }.coerceAtLeast(0)
+        return palette.filter { it != parent.color }.let { it[place % it.size] }
+    }
+    return pieSlices(shares).map { RingSlice(it.category?.name, it.category?.let(::colourOf) ?: restColor, it.amount, it.percent) }
 }

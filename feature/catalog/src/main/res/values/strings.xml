@@ -33,4 +33,37 @@
         <item quantity="one">%d sub-category</item>
         <item quantity="other">%d sub-categories</item>
     </plurals>
+    <string name="catalog_remove_title">Remove %1$s</string>
+    <string name="catalog_remove_intro">%1$s has %2$s. Move them to another category before it goes, or keep %1$s archived.</string>
+    <string name="catalog_list_two">%1$s and %2$s</string>
+    <string name="catalog_list_three">%1$s, %2$s and %3$s</string>
+    <string name="catalog_sub_categories_title">Sub-categories</string>
+    <string name="catalog_in_category">In the category</string>
+    <string name="catalog_not_in_sub">%1$s, not in a sub-category</string>
+    <string name="catalog_recurring_payments">Recurring payments</string>
+    <string name="catalog_rows_open_history">Each row opens its transactions in History.</string>
+    <string name="catalog_move_all">Move all to another category</string>
+    <string name="catalog_keep_archived">Keep %1$s archived</string>
+    <string name="catalog_move_where">Move %1$s to</string>
+    <string name="catalog_move_note_children">%1$s go too, as sub-categories of the one you pick, with their recurring payments and the shops that remember them.</string>
+    <string name="catalog_move_note">Its recurring payments and the shops that remember it move too.</string>
+    <string name="catalog_cant_undo">This can\'t be undone, apart from restoring a backup.</string>
+    <string name="catalog_move_to_named">Move to %1$s</string>
+    <string name="catalog_parent">The category itself</string>
+    <plurals name="catalog_n_transactions">
+        <item quantity="one">%d transaction</item>
+        <item quantity="other">%d transactions</item>
+    </plurals>
+    <plurals name="catalog_n_recurring">
+        <item quantity="one">%d recurring payment</item>
+        <item quantity="other">%d recurring payments</item>
+    </plurals>
+    <plurals name="catalog_n_debts">
+        <item quantity="one">%d debt</item>
+        <item quantity="other">%d debts</item>
+    </plurals>
+    <plurals name="catalog_move_n_to">
+        <item quantity="one">Move %1$d transaction to %2$s</item>
+        <item quantity="other">Move %1$d transactions to %2$s</item>
+    </plurals>
 </resources>

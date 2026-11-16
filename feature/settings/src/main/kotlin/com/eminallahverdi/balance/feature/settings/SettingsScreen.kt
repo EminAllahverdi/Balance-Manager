@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Palette
@@ -136,6 +137,8 @@ private fun SettingsList(
                 }
                 Divider()
                 LanguageRow()
+                Divider()
+                HomeAccountsRow(state.preferences.homeAccountsGrid, viewModel::setHomeAccountsGrid)
                 Divider()
                 SettingRow(
                     icon = Icons.Rounded.Category,
@@ -490,4 +493,23 @@ internal fun Chevron() {
 @Composable
 internal fun Divider() {
     Box(Modifier.fillMaxWidth().height(1.dp).background(BtTheme.colors.borderDefault))
+}
+
+/** How Home lays out the accounts under the total: one row that scrolls, or four at a time in a grid that pages sideways. */
+@Composable
+private fun HomeAccountsRow(grid: Boolean, onPick: (Boolean) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val one = stringResource(R.string.settings_accounts_one_row)
+    val four = stringResource(R.string.settings_accounts_grid)
+    SettingRow(icon = Icons.Rounded.GridView, title = stringResource(R.string.settings_accounts_on_home), onClick = { open = true }) {
+        Text(if (grid) four else one, style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+        Chevron()
+    }
+    if (open) {
+        ChoiceSheet(stringResource(R.string.settings_accounts_on_home), onClose = { open = false }) { choose ->
+            OptionRow(text = one, selected = !grid, onClick = { choose { onPick(false) } })
+            OptionRow(text = four, selected = grid, onClick = { choose { onPick(true) } }, caption = stringResource(R.string.settings_accounts_grid_caption))
+            Text(stringResource(R.string.settings_accounts_tap), style = BtTheme.type.caption, color = BtTheme.colors.textMuted, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
+        }
+    }
 }

@@ -6,6 +6,7 @@ import com.eminallahverdi.balance.core.database.entity.DebtEntity
 import com.eminallahverdi.balance.core.database.entity.MerchantEntity
 import com.eminallahverdi.balance.core.database.entity.PendingEntryEntity
 import com.eminallahverdi.balance.core.database.entity.PersonEntity
+import com.eminallahverdi.balance.core.database.entity.PlannedPaymentEntity
 import com.eminallahverdi.balance.core.database.entity.RecurringPaymentEntity
 import com.eminallahverdi.balance.core.database.entity.TransactionEntity
 import com.eminallahverdi.balance.core.model.Account
@@ -20,6 +21,7 @@ import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.PendingEntry
 import com.eminallahverdi.balance.core.model.PendingStatus
 import com.eminallahverdi.balance.core.model.Person
+import com.eminallahverdi.balance.core.model.PlannedPayment
 import com.eminallahverdi.balance.core.model.RecurringFrequency
 import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.Transaction
@@ -118,4 +120,28 @@ internal fun PendingEntryEntity.toModel() = PendingEntry(
     status = PendingStatus.valueOf(status),
     title = title,
     cardEnding = cardEnding,
+)
+
+internal fun PlannedPaymentEntity.toModel() = PlannedPayment(
+    id = id,
+    name = name,
+    amount = Money(amountMinor),
+    date = LocalDate.ofEpochDay(date),
+    accountId = accountId,
+    categoryId = categoryId,
+    recurringId = recurringId,
+    plannedOn = LocalDate.ofEpochDay(plannedOn),
+    paidOn = paidOn?.let(LocalDate::ofEpochDay),
+)
+
+internal fun PlannedPayment.toEntity() = PlannedPaymentEntity(
+    id = id,
+    name = name,
+    amountMinor = amount.minor,
+    date = date.toEpochDay(),
+    accountId = accountId,
+    categoryId = categoryId,
+    recurringId = recurringId,
+    plannedOn = plannedOn.toEpochDay(),
+    paidOn = paidOn?.toEpochDay(),
 )

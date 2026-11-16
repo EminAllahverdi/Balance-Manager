@@ -42,4 +42,6 @@
         <item quantity="one">%d transaction</item>
         <item quantity="other">%d transactions</item>
     </plurals>
+    <string name="history_spent">Spent</string>
+    <string name="history_the_rest">The rest</string>
 </resources>

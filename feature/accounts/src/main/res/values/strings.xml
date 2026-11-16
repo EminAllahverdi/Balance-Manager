@@ -39,6 +39,7 @@
     <string name="accounts_loans_debts">Loans &amp; debts</string>
     <string name="accounts_recurring_payments">Recurring payments</string>
     <string name="accounts_none_yet">None yet</string>
+    <string name="accounts_planned_payments">Planned payments</string>
     <string name="accounts_recent_transfers">Recent transfers</string>
     <string name="accounts_see_all">See all</string>
     <string name="accounts_transfer">Transfer</string>

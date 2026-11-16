@@ -100,6 +100,7 @@ class SettingsViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     fun setTheme(theme: ThemePreference) { viewModelScope.launch { prefs.setTheme(theme) } }
+    fun setHomeAccountsGrid(grid: Boolean) { viewModelScope.launch { prefs.setHomeAccountsGrid(grid) } }
     fun setWidgetBalanceMode(mode: WidgetBalanceMode) { viewModelScope.launch { prefs.setWidgetBalanceMode(mode) } }
     fun setAppLock(enabled: Boolean) { viewModelScope.launch { prefs.setAppLock(enabled) } }
 

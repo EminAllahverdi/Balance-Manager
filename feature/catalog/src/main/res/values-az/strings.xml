@@ -33,4 +33,37 @@
         <item quantity="one">%d alt kateqoriya</item>
         <item quantity="other">%d alt kateqoriya</item>
     </plurals>
+    <string name="catalog_remove_title">%1$s silinsin</string>
+    <string name="catalog_remove_intro">%1$s kateqoriyasında %2$s var. Silinməzdən əvvəl onları başqa kateqoriyaya köçürün və ya %1$s arxivdə qalsın.</string>
+    <string name="catalog_list_two">%1$s və %2$s</string>
+    <string name="catalog_list_three">%1$s, %2$s və %3$s</string>
+    <string name="catalog_sub_categories_title">Alt kateqoriyalar</string>
+    <string name="catalog_in_category">Kateqoriyanın özündə</string>
+    <string name="catalog_not_in_sub">%1$s, alt kateqoriyasız</string>
+    <string name="catalog_recurring_payments">Müntəzəm ödənişlər</string>
+    <string name="catalog_rows_open_history">Hər sətir öz əməliyyatlarını Tarixçədə açır.</string>
+    <string name="catalog_move_all">Hamısını başqa kateqoriyaya köçür</string>
+    <string name="catalog_keep_archived">%1$s arxivdə qalsın</string>
+    <string name="catalog_move_where">%1$s hara köçürülsün</string>
+    <string name="catalog_move_note_children">%1$s alt kateqoriyaları da müntəzəm ödənişləri və onları xatırlayan mağazalarla birlikdə seçdiyiniz kateqoriyanın alt kateqoriyaları kimi köçür.</string>
+    <string name="catalog_move_note">Onun müntəzəm ödənişləri və onu xatırlayan mağazalar da köçür.</string>
+    <string name="catalog_cant_undo">Ehtiyat nüsxəni bərpa etmədən bunu geri qaytarmaq olmayacaq.</string>
+    <string name="catalog_move_to_named">%1$s kateqoriyasına köçür</string>
+    <string name="catalog_parent">Kateqoriyanın özü</string>
+    <plurals name="catalog_n_transactions">
+        <item quantity="one">%d əməliyyat</item>
+        <item quantity="other">%d əməliyyat</item>
+    </plurals>
+    <plurals name="catalog_n_recurring">
+        <item quantity="one">%d müntəzəm ödəniş</item>
+        <item quantity="other">%d müntəzəm ödəniş</item>
+    </plurals>
+    <plurals name="catalog_n_debts">
+        <item quantity="one">%d borc</item>
+        <item quantity="other">%d borc</item>
+    </plurals>
+    <plurals name="catalog_move_n_to">
+        <item quantity="one">%1$d əməliyyatı %2$s kateqoriyasına köçür</item>
+        <item quantity="other">%1$d əməliyyatı %2$s kateqoriyasına köçür</item>
+    </plurals>
 </resources>

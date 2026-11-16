@@ -29,6 +29,7 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,14 +52,24 @@ import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonAvatar
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
 import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
+import com.eminallahverdi.balance.core.designsystem.component.moved
+import com.eminallahverdi.balance.core.designsystem.component.rememberReorderState
+import com.eminallahverdi.balance.core.designsystem.component.reorderHandle
+import com.eminallahverdi.balance.core.designsystem.component.reorderItem
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.Person
 
-/** Categories, sub-categories and people. Everything the user can make their own. */
+/** Categories, sub-categories and people. Everything the user can make their own. [onRemoveCategory] opens the page for removing one in use. */
 @Composable
-fun CatalogRoute(onBack: () -> Unit, viewModel: CatalogViewModel = hiltViewModel()) {
+fun CatalogRoute(onBack: () -> Unit, onRemoveCategory: (Long) -> Unit = {}, viewModel: CatalogViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(state.removing) {
+        state.removing?.let { id ->
+            viewModel.removingShown()
+            onRemoveCategory(id)
+        }
+    }
     Box(Modifier.fillMaxSize().background(BtTheme.colors.bgCanvas)) {
         Column(Modifier.fillMaxSize()) {
             Row(

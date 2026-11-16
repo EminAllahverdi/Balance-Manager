@@ -145,4 +145,30 @@ class InsightsCalculatorTest {
         assertThat(o.people).isEmpty()
         assertThat(o.changes).isEmpty()
     }
+
+    @Test fun `pace adds up day by day and stops at today in a running month`() {
+        val pace = overview(row(LocalDate.of(2026, 11, 1), 100), row(LocalDate.of(2026, 11, 3), 250), row(LocalDate.of(2026, 10, 2), 500), row(LocalDate.of(2026, 10, 30), 900)).pace
+        assertThat(pace.current).containsExactly(Money(100), Money(100), Money(350), Money(350)).inOrder()
+        assertThat(pace.previous).hasSize(31)
+        assertThat(pace.previous.last()).isEqualTo(Money(1_400))
+        assertThat(pace.length).isEqualTo(30)
+        assertThat(pace.isRunning).isTrue()
+        // October had ₼5.00 by the 4th, so November is ₼1.50 behind it.
+        assertThat(pace.previousByNow).isEqualTo(Money(500))
+        assertThat(pace.change).isEqualTo(Money(-150))
+    }
+
+    @Test fun `a past month's pace compares the whole of both`() {
+        val pace = overview(row(LocalDate.of(2026, 10, 2), 500), row(LocalDate.of(2026, 9, 30), 900), selected = 4).pace
+        assertThat(pace.isRunning).isFalse()
+        assertThat(pace.current).hasSize(31)
+        assertThat(pace.previous).hasSize(30)
+        assertThat(pace.previousByNow).isEqualTo(Money(900))
+        assertThat(pace.change).isEqualTo(Money(-400))
+    }
+
+    @Test fun `pace leaves out what isn't spending`() {
+        val pace = overview(row(LocalDate.of(2026, 11, 2), 100), row(LocalDate.of(2026, 11, 2), 700, kind = TransactionKind.INCOME), row(LocalDate.of(2026, 11, 2), 300, kind = TransactionKind.TRANSFER)).pace
+        assertThat(pace.spent).isEqualTo(Money(100))
+    }
 }

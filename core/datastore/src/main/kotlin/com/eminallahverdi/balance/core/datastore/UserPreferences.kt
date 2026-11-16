@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.eminallahverdi.balance.core.model.SpentSpan
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -53,6 +54,10 @@ data class UserPreferences(
     /** Home's card shows the month's pie chart instead of the balance. */
     val homeChart: Boolean = false,
     val homeChartIncome: Boolean = false,
+    /** What Home's Spent and Income cover on the month that's running. */
+    val homeSpentSpan: SpentSpan = SpentSpan.MONTH,
+    /** Home shows the accounts four at a time, in a grid that pages sideways, instead of one row. */
+    val homeAccountsGrid: Boolean = false,
     val driveBackupEnabled: Boolean = false,
     /** Off, backups wait for Wi-Fi. */
     val backupOnMobileData: Boolean = false,
@@ -84,6 +89,8 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
         val seenApps = stringSetPreferencesKey("seen_apps")
         val homeChart = booleanPreferencesKey("home_chart")
         val homeChartIncome = booleanPreferencesKey("home_chart_income")
+        val homeSpentSpan = stringPreferencesKey("home_spent_span")
+        val homeAccountsGrid = booleanPreferencesKey("home_accounts_grid")
         val driveBackup = booleanPreferencesKey("drive_backup")
         val backupMobileData = booleanPreferencesKey("backup_mobile_data")
         val lastBackup = longPreferencesKey("last_backup_at")
@@ -109,6 +116,8 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
             seenApps = p[K.seenApps].orEmpty(),
             homeChart = p[K.homeChart] ?: false,
             homeChartIncome = p[K.homeChartIncome] ?: false,
+            homeSpentSpan = p[K.homeSpentSpan]?.let { runCatching { SpentSpan.valueOf(it) }.getOrNull() } ?: SpentSpan.MONTH,
+            homeAccountsGrid = p[K.homeAccountsGrid] ?: false,
             driveBackupEnabled = p[K.driveBackup] ?: false,
             backupOnMobileData = p[K.backupMobileData] ?: false,
             lastBackupAt = p[K.lastBackup],
@@ -142,6 +151,8 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
     suspend fun addSeenApps(packages: Set<String>) { store.edit { it[K.seenApps] = it[K.seenApps].orEmpty() + packages } }
     suspend fun setHomeChart(enabled: Boolean) { store.edit { it[K.homeChart] = enabled } }
     suspend fun setHomeChartIncome(income: Boolean) { store.edit { it[K.homeChartIncome] = income } }
+    suspend fun setHomeSpentSpan(span: SpentSpan) { store.edit { it[K.homeSpentSpan] = span.name } }
+    suspend fun setHomeAccountsGrid(grid: Boolean) { store.edit { it[K.homeAccountsGrid] = grid } }
     suspend fun setDriveBackup(enabled: Boolean) { store.edit { it[K.driveBackup] = enabled } }
     suspend fun setBackupOnMobileData(enabled: Boolean) { store.edit { it[K.backupMobileData] = enabled } }
     suspend fun setBackupProblem(problem: BackupProblem) { store.edit { it[K.backupProblem] = problem.name } }

@@ -8,6 +8,16 @@
     <string name="home_spent_this_month">Bu ay xərclənib</string>
     <string name="home_spent">Xərclənib</string>
     <string name="home_income">Gəlir</string>
+    <string name="home_spent_today">Bu gün xərclənib</string>
+    <string name="home_spent_this_week">Bu həftə xərclənib</string>
+    <string name="home_income_today">Bugünkü gəlir</string>
+    <string name="home_income_this_week">Bu həftəki gəlir</string>
+    <string name="home_show_spending_for">Hansı dövrün xərcləri göstərilsin</string>
+    <string name="home_span_today">Bu gün</string>
+    <string name="home_span_week">Bu həftə</string>
+    <string name="home_span_month">Bu ay</string>
+    <string name="home_span_week_note">Həftə bazar ertəsindən başlayır.</string>
+    <string name="home_change_period">Dövrü dəyiş</string>
     <string name="home_show_the_balance">Balansı göstər</string>
     <string name="home_show_pie">Dairəvi diaqramı göstər</string>
     <string name="home_spending">Xərclər</string>
@@ -36,4 +46,5 @@
         <item quantity="one">%d kateqoriya</item>
         <item quantity="other">%d kateqoriya</item>
     </plurals>
+    <string name="home_left_after_planned">qalır, %1$s planlaşdırılıb</string>
 </resources>

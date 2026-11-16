@@ -36,4 +36,27 @@
         <item quantity="one">About a month · %d payment</item>
         <item quantity="other">About a month · %d payments</item>
     </plurals>
+    <string name="recurring_planned_payments">Planned payments</string>
+    <string name="recurring_plan_a_payment">Plan a payment</string>
+    <string name="recurring_planned_hint">Plan what you mean to pay this month, like rent or a school trip, and Home shows what\'s left in your accounts after it.</string>
+    <string name="recurring_to_pay">To pay</string>
+    <string name="recurring_later">Later</string>
+    <string name="recurring_paid">Paid</string>
+    <string name="recurring_from_recurring">From your recurring payments</string>
+    <string name="recurring_planned_how">A planned payment comes off the sum once an entry for it is added, with the same name or the same category and amount, or when you tick it.</string>
+    <string name="recurring_leaves">%1$s in your accounts leaves %2$s</string>
+    <string name="recurring_paid_on">Paid %1$s</string>
+    <string name="recurring_not_paid">Not paid yet</string>
+    <string name="recurring_mark_paid">Mark as paid</string>
+    <string name="recurring_edit_planned">Edit planned payment</string>
+    <string name="recurring_name_like_rent">Name, like Rent</string>
+    <string name="recurring_when">When</string>
+    <string name="recurring_end_of_month">End of the month</string>
+    <string name="recurring_pick_a_day">Pick a day</string>
+    <string name="recurring_category_optional">Category · optional</string>
+    <string name="recurring_remove_planned_text">It comes off the plan. Entries you added for it stay in your history.</string>
+    <plurals name="recurring_left_to_pay">
+        <item quantity="one">%1$s · %2$d left to pay</item>
+        <item quantity="other">%1$s · %2$d left to pay</item>
+    </plurals>
 </resources>

@@ -39,6 +39,7 @@
     <string name="accounts_loans_debts">Kreditlər və borclar</string>
     <string name="accounts_recurring_payments">Müntəzəm ödənişlər</string>
     <string name="accounts_none_yet">Hələ yoxdur</string>
+    <string name="accounts_planned_payments">Planlı ödənişlər</string>
     <string name="accounts_recent_transfers">Son köçürmələr</string>
     <string name="accounts_see_all">Hamısı</string>
     <string name="accounts_transfer">Köçürmə</string>

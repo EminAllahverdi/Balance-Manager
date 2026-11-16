@@ -16,6 +16,10 @@
     <string name="insights_saved_this_year">Bu il qənaət</string>
     <string name="insights_same_as">%1$s ilə eyni</string>
     <string name="insights_versus">%2$s ilə müqayisədə %1$s</string>
+    <string name="insights_pace">Xərc tempi · %1$s</string>
+    <string name="insights_so_far">indiyədək</string>
+    <string name="insights_pace_versus">Bu vaxtadək %2$s ilə müqayisədə %1$s</string>
+    <string name="insights_pace_same">Bu vaxtadək %1$s ilə eyni</string>
     <plurals name="insights_days">
         <item quantity="one">%d gün</item>
         <item quantity="other">%d gün</item>

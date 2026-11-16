@@ -211,3 +211,26 @@ data class ReceiptWithItems(
     @Embedded val receipt: ReceiptEntity,
     @Relation(parentColumn = "id", entityColumn = "receipt_id") val items: List<ReceiptItemEntity>,
 )
+
+/** A one-off payment the owner means to make. Whether it's paid is worked out from the entries, unless ticked by hand. */
+@Entity(
+    tableName = "planned_payment",
+    foreignKeys = [
+        ForeignKey(entity = AccountEntity::class, parentColumns = ["id"], childColumns = ["account_id"], onDelete = ForeignKey.SET_NULL),
+        ForeignKey(entity = CategoryEntity::class, parentColumns = ["id"], childColumns = ["category_id"], onDelete = ForeignKey.SET_NULL),
+        ForeignKey(entity = RecurringPaymentEntity::class, parentColumns = ["id"], childColumns = ["recurring_id"], onDelete = ForeignKey.SET_NULL),
+    ],
+    indices = [Index("account_id"), Index("category_id"), Index("recurring_id"), Index("date")],
+)
+data class PlannedPaymentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    @ColumnInfo(name = "amount_minor") val amountMinor: Long,
+    /** LocalDate.toEpochDay(), like the two below. */
+    val date: Long,
+    @ColumnInfo(name = "account_id") val accountId: Long? = null,
+    @ColumnInfo(name = "category_id") val categoryId: Long? = null,
+    @ColumnInfo(name = "recurring_id") val recurringId: Long? = null,
+    @ColumnInfo(name = "planned_on") val plannedOn: Long,
+    @ColumnInfo(name = "paid_on") val paidOn: Long? = null,
+)

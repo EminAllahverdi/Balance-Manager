@@ -1,5 +1,6 @@
 package com.eminallahverdi.balance.feature.catalog
 
+import com.eminallahverdi.balance.core.designsystem.component.moved
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
 import com.google.common.truth.Truth.assertThat

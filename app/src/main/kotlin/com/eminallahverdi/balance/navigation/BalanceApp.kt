@@ -19,15 +19,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
+import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.feature.accounts.AccountsRoute
 import com.eminallahverdi.balance.feature.accounts.DeleteAccountRoute
 import com.eminallahverdi.balance.feature.catalog.CatalogRoute
+import com.eminallahverdi.balance.feature.catalog.RemoveCategoryRoute
 import com.eminallahverdi.balance.feature.confirm.ConfirmRoute
 import com.eminallahverdi.balance.feature.history.HistoryRoute
 import com.eminallahverdi.balance.feature.home.HomeRoute
 import com.eminallahverdi.balance.feature.loans.LoansRoute
 import com.eminallahverdi.balance.feature.receipts.ReceiptEntry
+import com.eminallahverdi.balance.feature.recurring.PlannedRoute
 import com.eminallahverdi.balance.feature.recurring.RecurringRoute
 import com.eminallahverdi.balance.feature.settings.SettingsRoute
 import kotlinx.serialization.Serializable
@@ -39,6 +42,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object SettingsDestination
 @Serializable data object CatalogDestination
 @Serializable data object RecurringDestination
+@Serializable data object PlannedDestination
 @Serializable data object LoansDestination
 @Serializable data object ConfirmDestination
 
@@ -54,10 +58,14 @@ import kotlinx.serialization.Serializable
     val kind: String? = null,
     val from: Long? = null,
     val to: Long? = null,
+    val accountId: Long? = null,
 )
 
 /** The name matches ARG_ACCOUNT in DeleteAccountViewModel. */
 @Serializable data class DeleteAccountDestination(val accountId: Long)
+
+/** The name matches ARG_CATEGORY in RemoveCategoryViewModel. */
+@Serializable data class RemoveCategoryDestination(val categoryId: Long)
 
 /**
  * The main shell: the tab content above the bottom bar. [onAdd] opens quick add, [onTransfer] the same sheet on Transfer,
@@ -110,7 +118,9 @@ fun BalanceApp(
                     onOpenTransactions = { categoryId, personId, month ->
                         nav.navigate(TransactionsDestination(categoryId, personId, month.toString())) { launchSingleTop = true }
                     },
+                    onOpenAccount = { accountId, month -> nav.navigate(TransactionsDestination(month = month.toString(), accountId = accountId)) { launchSingleTop = true } },
                     onOpenRecurring = { nav.navigate(RecurringDestination) { launchSingleTop = true } },
+                    onOpenPlanned = { nav.navigate(PlannedDestination) { launchSingleTop = true } },
                     onOpenConfirm = { nav.navigate(ConfirmDestination) { launchSingleTop = true } },
                 )
             }
@@ -132,6 +142,7 @@ fun BalanceApp(
                     onDeleteArchived = { id -> nav.navigate(DeleteAccountDestination(id)) { launchSingleTop = true } },
                     onSeeAllTransfers = { nav.navigate(TransactionsDestination(kind = TransactionKind.TRANSFER.name)) { launchSingleTop = true } },
                     onOpenRecurring = { nav.navigate(RecurringDestination) { launchSingleTop = true } },
+                    onOpenPlanned = { nav.navigate(PlannedDestination) { launchSingleTop = true } },
                 )
             }
             composable<DeleteAccountDestination> { DeleteAccountRoute(onBack = { nav.popBackStack() }, onOpen = onOpenTransaction) }
@@ -144,8 +155,18 @@ fun BalanceApp(
                     onOpenConfirm = { nav.navigate(ConfirmDestination) { launchSingleTop = true } },
                 )
             }
-            composable<CatalogDestination> { CatalogRoute(onBack = { nav.popBackStack() }) }
+            composable<CatalogDestination> {
+                CatalogRoute(onBack = { nav.popBackStack() }, onRemoveCategory = { id -> nav.navigate(RemoveCategoryDestination(id)) { launchSingleTop = true } })
+            }
+            composable<RemoveCategoryDestination> {
+                RemoveCategoryRoute(
+                    onBack = { nav.popBackStack() },
+                    // Every entry it has, whenever it was: the whole of what would move.
+                    onOpenCategory = { id -> nav.navigate(TransactionsDestination(categoryId = id, from = DateRange.ALL_TIME.start.toEpochDay(), to = DateRange.ALL_TIME.endInclusive.toEpochDay())) { launchSingleTop = true } },
+                )
+            }
             composable<RecurringDestination> { RecurringRoute(onBack = { nav.popBackStack() }, onAddPayment = onAddPayment) }
+            composable<PlannedDestination> { PlannedRoute(onBack = { nav.popBackStack() }) }
         }
         // Settings and its sub-screens are full screen.
         if (destination == null || TopLevelTab.entries.any(isSelected)) {

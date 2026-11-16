@@ -62,7 +62,9 @@ internal fun CatalogEditorSheet(editor: CatalogEditor, state: CatalogUiState, vm
             Modifier.fillMaxWidth().imePadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            val onRemove = if (canRemove) ({ confirmRemove = true }) else null
+            // A category in use opens its own page instead, to move what's in it; one with nothing in it is asked about here.
+            val ask = if (editor is CatalogEditor.CategoryDraft) ({ vm.askToRemoveCategory { confirmRemove = true } }) else ({ confirmRemove = true })
+            val onRemove = if (canRemove) ask else null
             when (editor) {
                 is CatalogEditor.CategoryDraft -> CategoryFields(editor, state, vm, onRemove)
                 is CatalogEditor.PersonDraft -> PersonFields(editor, vm, onRemove)

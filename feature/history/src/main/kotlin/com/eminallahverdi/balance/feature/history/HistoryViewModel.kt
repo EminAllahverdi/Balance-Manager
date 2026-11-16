@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
+import com.eminallahverdi.balance.core.designsystem.theme.CategoryPalette
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.Category
+import com.eminallahverdi.balance.core.model.CategoryType
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
 import com.eminallahverdi.balance.core.model.TransactionDetails
@@ -37,6 +39,10 @@ data class HistoryUiState(
     val total: Money = Money.ZERO,
     val totalIsSpending: Boolean = true,
     val shares: List<Pair<Long, Long>> = emptyList(),
+    /** With a category that has sub-categories picked, how its spending splits between them, in place of the bar. */
+    val ring: List<RingSlice>? = null,
+    /** The picked category's name, a sub-category's too, which the filter list of top-level ones can't give. */
+    val categoryName: String? = null,
     val people: List<Person> = emptyList(),
     val categories: List<Category> = emptyList(),
     val accounts: List<Account> = emptyList(),
@@ -52,7 +58,7 @@ class HistoryViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val filter = MutableStateFlow(
-        initialFilter(savedState[ARG_MONTH], savedState[ARG_CATEGORY], savedState[ARG_PERSON], savedState[ARG_KIND], savedState[ARG_FROM], savedState[ARG_TO]),
+        initialFilter(savedState[ARG_MONTH], savedState[ARG_CATEGORY], savedState[ARG_PERSON], savedState[ARG_KIND], savedState[ARG_FROM], savedState[ARG_TO], savedState[ARG_ACCOUNT]),
     )
 
     private val rows = filter.map { it.range }.distinctUntilChanged().flatMapLatest { transactions.observeDetails(it) }
@@ -71,6 +77,9 @@ class HistoryViewModel @Inject constructor(
             total = matching.headlineTotal(),
             totalIsSpending = matching.hasSpending(),
             shares = matching.categoryShares(),
+            categoryName = categories.firstOrNull { it.id == f.categoryId }?.name,
+            ring = categories.firstOrNull { it.id == f.categoryId && it.parentId == null && it.type == CategoryType.EXPENSE }
+                ?.let { matching.subCategoryRing(it, categories, CategoryPalette, REST_COLOR) },
             // Home still lists what's archived if it has spending, so the filter can name one.
             people = people.filter { !it.isArchived || it.id == f.personId },
             categories = categories.filter { it.parentId == null && (!it.isArchived || it.id == f.categoryId) },
@@ -88,11 +97,14 @@ class HistoryViewModel @Inject constructor(
     fun delete(id: Long) { viewModelScope.launch { transactions.delete(id) } }
 
     companion object {
+        /** The ring's part for everything too small to show on its own. */
+        private const val REST_COLOR = 0xFF8A94A3
         const val ARG_MONTH = "month"
         const val ARG_CATEGORY = "categoryId"
         const val ARG_PERSON = "personId"
         const val ARG_KIND = "kind"
         const val ARG_FROM = "from"
         const val ARG_TO = "to"
+        const val ARG_ACCOUNT = "accountId"
     }
 }

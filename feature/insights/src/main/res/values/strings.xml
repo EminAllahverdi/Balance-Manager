@@ -16,6 +16,10 @@
     <string name="insights_saved_this_year">Saved this year</string>
     <string name="insights_same_as">Same as %1$s</string>
     <string name="insights_versus">%1$s vs %2$s</string>
+    <string name="insights_pace">Pace · %1$s</string>
+    <string name="insights_so_far">so far</string>
+    <string name="insights_pace_versus">%1$s vs %2$s at this point</string>
+    <string name="insights_pace_same">Same as %1$s at this point</string>
     <plurals name="insights_days">
         <item quantity="one">%d day</item>
         <item quantity="other">%d days</item>

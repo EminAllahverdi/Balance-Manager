@@ -131,4 +131,9 @@
         <item quantity="other">%d şəxs</item>
     </plurals>
     <string name="settings_ok">Oldu</string>
+    <string name="settings_accounts_on_home">Əsas səhifədə hesablar</string>
+    <string name="settings_accounts_one_row">Bir sıra</string>
+    <string name="settings_accounts_grid">Dördlü cədvəl</string>
+    <string name="settings_accounts_grid_caption">Qalanları üçün yana sürüşdürün.</string>
+    <string name="settings_accounts_tap">Hər iki halda hesaba toxunanda onun əməliyyatları açılır.</string>
 </resources>

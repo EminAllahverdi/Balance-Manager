@@ -13,6 +13,7 @@ import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.DirectionsBus
 import androidx.compose.material.icons.rounded.DirectionsCar
+import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.FamilyRestroom
 import androidx.compose.material.icons.rounded.FitnessCenter
@@ -88,6 +89,7 @@ object BtIcons {
         "savings" to Icons.Rounded.Savings,
         "handshake" to Icons.Rounded.Handshake,
         "event_repeat" to Icons.Rounded.EventRepeat,
+        "event_available" to Icons.Rounded.EventAvailable,
         "groups" to Icons.Rounded.Groups,
         "volunteer_activism" to Icons.Rounded.VolunteerActivism,
         "call_made" to Icons.AutoMirrored.Rounded.CallMade,

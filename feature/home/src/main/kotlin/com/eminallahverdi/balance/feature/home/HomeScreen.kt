@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -47,6 +48,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -64,11 +67,16 @@ import com.eminallahverdi.balance.core.designsystem.component.FittedAmount
 import com.eminallahverdi.balance.core.designsystem.component.MONTH_PAGES
 import com.eminallahverdi.balance.core.designsystem.component.MonthPicker
 import com.eminallahverdi.balance.core.designsystem.component.MonthTitle
+import com.eminallahverdi.balance.core.designsystem.component.OptionRow
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonAvatar
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
 import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
 import com.eminallahverdi.balance.core.designsystem.component.SplitBar
+import com.eminallahverdi.balance.core.designsystem.component.moved
+import com.eminallahverdi.balance.core.designsystem.component.rememberReorderState
+import com.eminallahverdi.balance.core.designsystem.component.reorderItem
+import com.eminallahverdi.balance.core.designsystem.component.reorderOnLongPress
 import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
@@ -78,6 +86,7 @@ import com.eminallahverdi.balance.core.model.MonthSummary
 import com.eminallahverdi.balance.core.model.PersonSpending
 import com.eminallahverdi.balance.core.model.PieSlice
 import com.eminallahverdi.balance.core.model.Share
+import com.eminallahverdi.balance.core.model.SpentSpan
 import com.eminallahverdi.balance.core.model.pieSlices
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
@@ -90,13 +99,15 @@ private val HEADER_TOP = 16.dp
 private val HEADER_ROW = 44.dp
 private val HEADER_GAP = 14.dp
 
-/** [onOpenTransactions] opens a month's transactions, narrowed to a category, a person, or both. */
+/** [onOpenTransactions] opens a month's transactions, narrowed to a category, a person, or both; [onOpenAccount] one account's. */
 @Composable
 fun HomeRoute(
     onOpenSettings: () -> Unit,
     onOpenTransactions: (categoryId: Long?, personId: Long?, month: YearMonth) -> Unit,
     onOpenRecurring: () -> Unit,
     onOpenConfirm: () -> Unit,
+    onOpenAccount: (accountId: Long, month: YearMonth) -> Unit = { _, _ -> },
+    onOpenPlanned: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -111,7 +122,7 @@ fun HomeRoute(
         HorizontalPager(pager, Modifier.fillMaxSize(), key = { it }) { page ->
             val month = monthOf(page)
             Box(Modifier.fillMaxSize()) {
-                MonthPage(month, state, viewModel, onOpenRecurring, onOpenConfirm, onOpenSettings) { categoryId, personId -> onOpenTransactions(categoryId, personId, month) }
+                MonthPage(month, state, viewModel, onOpenRecurring, onOpenConfirm, onOpenSettings, { id -> onOpenAccount(id, month) }, onOpenPlanned) { categoryId, personId -> onOpenTransactions(categoryId, personId, month) }
                 // On the page, so its name moves with the swipe and a swipe that starts on it is a swipe of the page.
                 MonthTitle(month, onClick = { pickingMonth = true }, Modifier.padding(start = 16.dp, top = HEADER_TOP).height(HEADER_ROW))
             }
@@ -130,7 +141,17 @@ fun HomeRoute(
 }
 
 @Composable
-private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, onOpenRecurring: () -> Unit, onOpenConfirm: () -> Unit, onOpenSettings: () -> Unit, onOpen: (categoryId: Long?, personId: Long?) -> Unit) {
+private fun MonthPage(
+    month: YearMonth,
+    state: HomeUiState,
+    vm: HomeViewModel,
+    onOpenRecurring: () -> Unit,
+    onOpenConfirm: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenAccount: (Long) -> Unit,
+    onOpenPlanned: () -> Unit,
+    onOpen: (categoryId: Long?, personId: Long?) -> Unit,
+) {
     val c = BtTheme.colors
     val summary by remember(month) { vm.summary(month) }.collectAsStateWithLifecycle(null)
     val isCurrent = month == YearMonth.now()
@@ -139,9 +160,25 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
     fun income(m: Money) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m)
     // A balance can go below zero; totals of spending can't.
     fun balance(m: Money) = if (state.hideAmounts) MoneyFormat.HIDDEN else MoneyFormat.format(m, signed = true)
+    val spanTotals by vm.spanTotals.collectAsStateWithLifecycle()
+    // A past month is always the whole month.
+    val span = if (isCurrent) state.spentSpan else SpentSpan.MONTH
+    var pickingSpan by rememberSaveable { mutableStateOf(false) }
+    if (pickingSpan) SpanSheet(span, spanTotals, vm::setSpentSpan) { pickingSpan = false }
+
+    val listState = rememberLazyListState()
+    val haptics = LocalHapticFeedback.current
+    // People in the order they have everywhere. Holding one lifts it to drag; letting go saves the order.
+    var personOrder by remember(summary?.byPerson) { mutableStateOf(summary?.byPerson.orEmpty()) }
+    val reorder = rememberReorderState(
+        list = listState,
+        onMove = { from, to -> personOrder = personOrder.moved(from, to) { it.person.id } },
+        onDrop = { vm.reorderPeople(personOrder.map { it.person }) },
+    )
 
     LazyColumn(
         Modifier.fillMaxSize().padding(top = HEADER_TOP + HEADER_ROW + HEADER_GAP),
+        state = listState,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -155,11 +192,19 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
                             // Balances are what you have today, so they'd be wrong beside a past month's figures.
                             if (isCurrent) {
                                 Overline(stringResource(R.string.home_total_balance))
-                                Text(balance(state.total), style = BtTheme.type.amountDisplay, color = c.textPrimary)
-                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Column {
+                                    Text(balance(state.total), style = BtTheme.type.amountDisplay, color = c.textPrimary)
+                                    // One line, close under the total, and only while something planned is still to pay this month.
+                                    if (!state.plannedToPay.isZero) {
+                                        PlannedLine(balance(state.total - state.plannedToPay), money(state.plannedToPay), onOpenPlanned)
+                                    }
+                                }
+                                if (state.accountsGrid) {
+                                    AccountGrid(state.balances, state.otherBalances, ::balance, onOpenAccount)
+                                } else LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     items(state.balances, key = { it.account.id }) { b ->
                                         Row(
-                                            Modifier.clip(BtShapes.full).background(c.bgSurfaceHigh).padding(horizontal = 10.dp, vertical = 6.dp),
+                                            Modifier.clip(BtShapes.full).clickable(role = Role.Button) { onOpenAccount(b.account.id) }.background(c.bgSurfaceHigh).padding(horizontal = 10.dp, vertical = 6.dp),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                                         ) {
@@ -174,9 +219,33 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
                                 // Keeps the figures below the chart button.
                                 Overline(stringResource(R.string.home_month_summary))
                             }
+                            // The month that's running can show today or this week instead; the rows below stay the month's.
+                            val shown = if (span == SpentSpan.MONTH) SpanTotals(summary?.spent ?: Money.ZERO, summary?.income ?: Money.ZERO) else spanTotals[span] ?: SpanTotals(Money.ZERO, Money.ZERO)
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Stat(if (isCurrent) stringResource(R.string.home_spent_this_month) else stringResource(R.string.home_spent), money(summary?.spent ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingDown, c.moneyExpense, Modifier.weight(1f))
-                                Stat(stringResource(R.string.home_income), income(summary?.income ?: Money.ZERO), Icons.AutoMirrored.Rounded.TrendingUp, c.moneyIncome, Modifier.weight(1f))
+                                Stat(
+                                    label = when {
+                                        !isCurrent -> stringResource(R.string.home_spent)
+                                        span == SpentSpan.TODAY -> stringResource(R.string.home_spent_today)
+                                        span == SpentSpan.WEEK -> stringResource(R.string.home_spent_this_week)
+                                        else -> stringResource(R.string.home_spent_this_month)
+                                    },
+                                    value = money(shown.spent),
+                                    icon = Icons.AutoMirrored.Rounded.TrendingDown,
+                                    tint = c.moneyExpense,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = if (isCurrent) ({ pickingSpan = true }) else null,
+                                )
+                                Stat(
+                                    label = when (span) {
+                                        SpentSpan.TODAY -> stringResource(R.string.home_income_today)
+                                        SpentSpan.WEEK -> stringResource(R.string.home_income_this_week)
+                                        SpentSpan.MONTH -> stringResource(R.string.home_income)
+                                    },
+                                    value = income(shown.income),
+                                    icon = Icons.AutoMirrored.Rounded.TrendingUp,
+                                    tint = c.moneyIncome,
+                                    modifier = Modifier.weight(1f),
+                                )
                             }
                         }
                     }
@@ -201,21 +270,13 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
         }
         val people = summary?.byPerson.orEmpty().filter { it.total.minor > 0 }
         if (people.isNotEmpty()) {
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Each opens the month's entries for that person, as a category row does for its category.
-                    people.take(4).forEach { p ->
-                        BtCard(bordered = true, modifier = Modifier.weight(1f).clip(BtShapes.md).clickable(role = Role.Button) { onOpen(null, p.person.id) }) {
-                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    PersonDot(p.person.color)
-                                    Text(p.person.name, style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1)
-                                }
-                                FittedAmount(money(p.total), BtTheme.type.amountSmall)
-                            }
-                        }
-                    }
-                }
+            item(key = "people") {
+                PersonStrip(
+                    cards = people.take(PEOPLE_CARDS),
+                    money = ::money,
+                    onOpen = { id -> onOpen(null, id) },
+                    onDrop = { ids -> vm.reorderPeople(reorderWithin(summary?.byPerson.orEmpty().map { it.person }, ids)) },
+                )
             }
         }
         item {
@@ -235,9 +296,13 @@ private fun MonthPage(month: YearMonth, state: HomeUiState, vm: HomeViewModel, o
         } else if (state.view == HomeView.CATEGORY) {
             items(loaded.byCategory, key = { "c" + it.category.id }) { row -> CategoryRow(row, ::money) { onOpen(row.category.id, null) } }
         } else {
-            items(loaded.byPerson, key = { "p" + it.person.id }) { row ->
+            // Keyed by the id alone, as the reorder looks for, so a held person can be dragged up or down.
+            items(personOrder, key = { it.person.id }) { row ->
+                val id = row.person.id
                 PersonRow(
                     item = row,
+                    lifted = reorder.draggingId == id,
+                    modifier = Modifier.reorderOnLongPress(reorder, id) { haptics.performHapticFeedback(HapticFeedbackType.LongPress) }.reorderItem(reorder, id),
                     expanded = state.expandedPersonId == row.person.id,
                     money = ::money,
                     onToggle = { vm.togglePerson(row.person.id) },
@@ -312,14 +377,39 @@ private fun SliceRow(slice: PieSlice, fallback: Long) {
     }
 }
 
+/** A figure with its label. One that can [onClick] has a chevron by its label and opens a sheet. */
 @Composable
-private fun Stat(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: androidx.compose.ui.graphics.Color, modifier: Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun Stat(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, tint: androidx.compose.ui.graphics.Color, modifier: Modifier, onClick: (() -> Unit)? = null) {
+    val c = BtTheme.colors
+    val tap = if (onClick == null) Modifier else Modifier.clip(BtShapes.sm).clickable(onClickLabel = stringResource(R.string.home_change_period), role = Role.Button, onClick = onClick)
+    Column(modifier.then(tap), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Icon(icon, null, tint = tint, modifier = Modifier.size(14.dp))
-            Text(label, style = BtTheme.type.caption, color = BtTheme.colors.textSecondary)
+            Text(label, style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+            if (onClick != null) Icon(Icons.Rounded.ExpandMore, null, tint = c.textSecondary, modifier = Modifier.size(16.dp))
         }
         FittedAmount(value, BtTheme.type.amountLarge)
+    }
+}
+
+/** Today, this week or this month, each with what was spent in it. Home remembers the pick. */
+@Composable
+private fun SpanSheet(selected: SpentSpan, totals: Map<SpentSpan, SpanTotals>, onPick: (SpentSpan) -> Unit, onClose: () -> Unit) {
+    val c = BtTheme.colors
+    ChoiceSheet(stringResource(R.string.home_show_spending_for), onClose = onClose) { choose ->
+        SpentSpan.entries.forEach { span ->
+            OptionRow(
+                text = when (span) {
+                    SpentSpan.TODAY -> stringResource(R.string.home_span_today)
+                    SpentSpan.WEEK -> stringResource(R.string.home_span_week)
+                    SpentSpan.MONTH -> stringResource(R.string.home_span_month)
+                },
+                selected = span == selected,
+                onClick = { choose { onPick(span) } },
+                trailing = { totals[span]?.let { Text(MoneyFormat.format(it.spent), style = BtTheme.type.amountSmall, color = c.textSecondary) } },
+            )
+        }
+        Text(stringResource(R.string.home_span_week_note), style = BtTheme.type.caption, color = c.textMuted, modifier = Modifier.padding(start = 4.dp, top = 4.dp))
     }
 }
 
@@ -343,9 +433,17 @@ private fun CategoryRow(item: CategorySpending, money: (Money) -> String, onClic
 }
 
 @Composable
-private fun PersonRow(item: PersonSpending, expanded: Boolean, money: (Money) -> String, onToggle: () -> Unit, onOpen: (categoryId: Long?) -> Unit) {
+private fun PersonRow(
+    item: PersonSpending,
+    expanded: Boolean,
+    money: (Money) -> String,
+    onToggle: () -> Unit,
+    onOpen: (categoryId: Long?) -> Unit,
+    lifted: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
     val c = BtTheme.colors
-    BtCard(bordered = expanded, modifier = Modifier.clip(BtShapes.md).clickable(onClick = onToggle)) {
+    BtCard(bordered = expanded, modifier = modifier.lifted(lifted).clip(BtShapes.md).clickable(onClick = onToggle)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PersonAvatar(item.person)

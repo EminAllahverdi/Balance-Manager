@@ -38,6 +38,8 @@ data class CatalogUiState(
     val allPeople: List<Person> = emptyList(),
     val expandedId: Long? = null,
     val editor: CatalogEditor? = null,
+    /** A category in use the owner asked to remove, whose page should open. */
+    val removing: Long? = null,
 ) {
     private val type: CategoryType get() = if (tab == CatalogTab.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
     val groups: List<CategoryGroup> get() = groupCategories(allCategories, type)
@@ -67,9 +69,10 @@ class CatalogViewModel @Inject constructor(
     private val tab = MutableStateFlow(CatalogTab.EXPENSE)
     private val expanded = MutableStateFlow<Long?>(null)
     private val editor = MutableStateFlow<CatalogEditor?>(null)
+    private val removing = MutableStateFlow<Long?>(null)
 
-    val state: StateFlow<CatalogUiState> = combine(catalog.categories, catalog.people, tab, expanded, editor) { categories, people, t, e, d ->
-        CatalogUiState(t, categories, people, e, d)
+    val state: StateFlow<CatalogUiState> = combine(catalog.categories, catalog.people, tab, expanded, combine(editor, removing) { d, r -> d to r }) { categories, people, t, e, (d, r) ->
+        CatalogUiState(t, categories, people, e, d, r)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CatalogUiState())
 
     fun setTab(t: CatalogTab) = tab.update { t }
@@ -153,6 +156,25 @@ class CatalogViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Removing a category: one in use opens a page of what uses it, to move it all elsewhere or keep it archived, so the
+     * editor closes and [CatalogUiState.removing] says which. One with nothing in it only needs [onUnused] to ask.
+     */
+    fun askToRemoveCategory(onUnused: () -> Unit) {
+        val draft = editor.value as? CatalogEditor.CategoryDraft ?: return
+        viewModelScope.launch {
+            if (catalog.isCategoryUsed(draft.category.id)) {
+                editor.update { null }
+                removing.update { draft.category.id }
+            } else {
+                onUnused()
+            }
+        }
+    }
+
+    /** The remove page is open, so coming back here doesn't open it again. */
+    fun removingShown() = removing.update { null }
 
     /** Removes what's being edited. Anything already used is archived instead, so history keeps it. */
     fun removeEditing() {

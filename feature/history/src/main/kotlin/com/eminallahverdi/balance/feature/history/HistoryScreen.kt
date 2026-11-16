@@ -1,5 +1,10 @@
 package com.eminallahverdi.balance.feature.history
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -58,8 +63,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.common.DateLabels
@@ -68,6 +75,8 @@ import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtChip
 import com.eminallahverdi.balance.core.designsystem.component.BtIconButton
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
+import com.eminallahverdi.balance.core.designsystem.component.DonutChart
+import com.eminallahverdi.balance.core.designsystem.component.FittedAmount
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
 import com.eminallahverdi.balance.core.designsystem.component.SplitBar
@@ -166,7 +175,7 @@ private fun Header(state: HistoryUiState, onBack: (() -> Unit)?) {
     val title = when {
         onBack == null -> stringResource(R.string.history_history)
         filter.kind == TransactionKind.TRANSFER -> stringResource(R.string.history_transfers)
-        else -> state.categories.firstOrNull { it.id == filter.categoryId }?.name ?: state.people.firstOrNull { it.id == filter.personId }?.name ?: stringResource(R.string.history_history)
+        else -> state.categoryName ?: state.people.firstOrNull { it.id == filter.personId }?.name ?: stringResource(R.string.history_history)
     }
     Row(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
@@ -244,7 +253,7 @@ private fun Filters(state: HistoryUiState, onOpen: (FilterSheet) -> Unit, onClea
             leading = person?.let { p -> { PersonDot(p.color) } },
         )
         FilterChip(
-            label = state.categories.firstOrNull { it.id == filter.categoryId }?.name ?: stringResource(R.string.history_category),
+            label = state.categoryName ?: stringResource(R.string.history_category),
             active = filter.categoryId != null,
             onClick = { onOpen(FilterSheet.CATEGORY) },
         )
@@ -277,20 +286,60 @@ private fun Summary(state: HistoryUiState) {
             else -> pluralStringResource(R.plurals.history_transactions, state.count, state.count)
         },
         state.people.firstOrNull { it.id == filter.personId }?.name,
-        state.categories.firstOrNull { it.id == filter.categoryId }?.name,
+        state.categoryName,
         state.accounts.firstOrNull { it.id == filter.accountId }?.name,
         filter.periodLabel { DateLabels.monthName(it.atDay(1)) } ?: stringResource(R.string.history_all_time),
     )
-    BtCard(bordered = true) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(parts.joinToString(" · "), style = BtTheme.type.caption, color = c.textSecondary)
-                Text(amount(state.total, state.hideAmounts && !state.totalIsSpending), style = BtTheme.type.amountMedium, color = c.textPrimary)
+    val total = amount(state.total, state.hideAmounts && !state.totalIsSpending)
+    // Picking a category in place changes the card in place: it grows to the ring's height as the bar fades and the ring
+    // sweeps in, and goes back the same way.
+    BtCard(bordered = true, modifier = Modifier.animateContentSize()) {
+        AnimatedContent(state.ring, transitionSpec = { fadeIn() togetherWith fadeOut() }, contentKey = { it != null }, label = "summary") { ring ->
+            if (ring == null) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(parts.joinToString(" · "), style = BtTheme.type.caption, color = c.textSecondary)
+                        Text(total, style = BtTheme.type.amountMedium, color = c.textPrimary)
+                    }
+                    if (state.shares.isNotEmpty()) SplitBar(state.shares, Modifier.width(120.dp))
+                }
+            } else {
+                SubCategoryRing(parts.joinToString(" · "), total, ring)
             }
-            if (state.shares.isNotEmpty()) SplitBar(state.shares, Modifier.width(120.dp))
         }
     }
 }
+
+/** A category's spending by sub-category: a ring with the total inside, and each part's name, amount and share beside it. */
+@Composable
+private fun SubCategoryRing(caption: String, total: String, ring: List<RingSlice>) {
+    val c = BtTheme.colors
+    val spent = stringResource(R.string.history_spent)
+    val rest = stringResource(R.string.history_the_rest)
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(caption, style = BtTheme.type.caption, color = c.textSecondary)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            DonutChart(ring.map { it.color to it.amount.minor }, description = "$spent $total", modifier = Modifier.size(RING_SIZE), thickness = 12.dp) {
+                Column(Modifier.padding(horizontal = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    FittedAmount(total, BtTheme.type.amountSmall)
+                    Text(spent, style = BtTheme.type.caption, color = c.textMuted)
+                }
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                ring.forEach { slice ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PersonDot(slice.color, 8.dp)
+                        Text(slice.name ?: rest, style = BtTheme.type.caption, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        Text(MoneyFormat.format(slice.amount), style = BtTheme.type.amountSmall.copy(fontSize = 13.sp, lineHeight = 17.sp), color = c.textPrimary)
+                        Text(if (slice.percent == 0L) "<1%" else "${slice.percent}%", style = BtTheme.type.caption, color = c.textSecondary, textAlign = TextAlign.End, modifier = Modifier.width(32.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+private val RING_SIZE = 112.dp
 
 private fun amount(money: Money, hidden: Boolean) = if (hidden) MoneyFormat.HIDDEN else MoneyFormat.format(money)
 

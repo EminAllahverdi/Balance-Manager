@@ -8,6 +8,16 @@
     <string name="home_spent_this_month">Spent this month</string>
     <string name="home_spent">Spent</string>
     <string name="home_income">Income</string>
+    <string name="home_spent_today">Spent today</string>
+    <string name="home_spent_this_week">Spent this week</string>
+    <string name="home_income_today">Income today</string>
+    <string name="home_income_this_week">Income this week</string>
+    <string name="home_show_spending_for">Show spending for</string>
+    <string name="home_span_today">Today</string>
+    <string name="home_span_week">This week</string>
+    <string name="home_span_month">This month</string>
+    <string name="home_span_week_note">A week starts on Monday.</string>
+    <string name="home_change_period">Change the period</string>
     <string name="home_show_the_balance">Show the balance</string>
     <string name="home_show_pie">Show a pie chart</string>
     <string name="home_spending">Spending</string>
@@ -36,4 +46,5 @@
         <item quantity="one">%d category</item>
         <item quantity="other">%d categories</item>
     </plurals>
+    <string name="home_left_after_planned">left after %1$s planned</string>
 </resources>
