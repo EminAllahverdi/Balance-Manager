@@ -25,4 +25,10 @@
     <string name="ds_your_share">Sizin payınız</string>
     <string name="ds_paid_for">%1$s üçün ödənildi</string>
     <string name="ds_ok">Oldu</string>
+    <string name="ds_reason_usual_at">%1$s üçün adi seçiminiz</string>
+    <string name="ds_reason_last_at">%1$s üçün sonuncu dəfəki kimi</string>
+    <string name="ds_reason_like_amount_at">Saat %2$s radələrində təxminən %1$s olan digər ödənişləriniz kimi</string>
+    <string name="ds_reason_like_amount">Təxminən %1$s olan digər ödənişləriniz kimi</string>
+    <string name="ds_reason_recurring">Müntəzəm ödənişiniz: %1$s</string>
+    <string name="ds_reason_words">Bildirişdəki sözlərə görə</string>
 </resources>

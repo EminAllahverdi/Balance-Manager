@@ -59,4 +59,11 @@
         <item quantity="one">%1$s · %2$d ödəniş qalıb</item>
         <item quantity="other">%1$s · %2$d ödəniş qalıb</item>
     </plurals>
+    <string name="recurring_seen_repeating">Təkrarlanan kimi görünür</string>
+    <string name="recurring_seen_repeating_hint">Hər ay və ya hər həftə təxminən eyni məbləği ödədiyiniz mağazalar. Xatırlatma üçün birini əlavə edin və ya tətbiqə onun müntəzəm olmadığını bildirin.</string>
+    <string name="recurring_not_recurring">Müntəzəm deyil</string>
+    <plurals name="recurring_times_running">
+        <item quantity="one">ardıcıl %d dəfə</item>
+        <item quantity="other">ardıcıl %d dəfə</item>
+    </plurals>
 </resources>

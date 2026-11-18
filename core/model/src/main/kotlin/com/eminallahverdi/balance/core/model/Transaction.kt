@@ -33,6 +33,11 @@ data class Transaction(
     val debtId: Long? = null,
     val createdAt: Instant = Instant.EPOCH,
     val updatedAt: Instant = Instant.EPOCH,
+    /**
+     * When the money moved, when that's known: the bank's time for one from a notification, or the moment one dated today
+     * was added. Guessing reads the time of day from it. Older entries and ones added for another day have none.
+     */
+    val paidAt: Instant? = null,
 ) {
     /** Effect of this transaction on the balance of [account]. */
     fun effectOn(account: Long): Money = when (kind) {

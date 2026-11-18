@@ -10,7 +10,7 @@ This repo is the Android app, in Kotlin and Jetpack Compose. This page is the ma
 |---|---|---|
 | `core/model` | Every rule, as pure Kotlin with no Android in it: money, spending sums, reports, loans, debts, the bank notification reader, the voice parser, the receipt reader, CSV | Port it file by file. Its tests (`core/model/src/test`) are worked examples with inputs and expected results, so port them first and make them pass |
 | `core/data` | What saving does: repositories, merchant memory, pending bank entries, the starter template in English and Azerbaijani, first run | The behaviour behind each screen's Save |
-| `core/database` | The Room schema, version 8, with its migrations | The data model. Copy it exactly if backups should move between the two apps |
+| `core/database` | The Room schema, version 9, with its migrations | The data model. Copy it exactly if backups should move between the two apps |
 | `core/backup` | The nightly backup: a zip of a checked database copy, settings and photos, the last 7 kept in the user's Google Drive app folder | The backup format |
 | `feature/*` | One module per area of the app, matching the screens' pages | Each screen's behaviour. Its texts are in `res/values/strings.xml`, with Azerbaijani in `res/values-az/strings.xml` |
 | `core/designsystem` | The Compose theme, fonts (`res/font`, licences in `docs/licenses`), components, and `BtIcons`, which maps icon names to icons | The look, in code |
@@ -20,7 +20,7 @@ This repo is the Android app, in Kotlin and Jetpack Compose. This page is the ma
 The files in `core/model` that hold the trickiest rules:
 
 - `BankAlert.kt`: reading a bank notification into an amount, shop, card and kind, and why one isn't read. Its word lists cover English, Azerbaijani and Russian, and know no bank by name.
-- `EntryGuess.kt`: filling in a pending entry from what the user did before, recurring payments and category hints.
+- `EntryGuess.kt` and `GuessFromHistory.kt`: filling in a pending entry from what the user usually did at that shop, payments like it by amount and time of day, recurring payments and category hints, with the reason shown; and which payments repeat. They read `paid_at`, when the money moved.
 - `SpokenEntry.kt`: reading a spoken sentence in English or Azerbaijani against the user's own names, endings included (yanacağa, çörəyə).
 - `Receipts.kt`: finding items in a receipt's recognised text, including digits text recognition tends to miss.
 - `LoanMath.kt`, `Debts.kt`, `DebtEntry.kt`: loans as banks work them out, debts, bills paid for others, and paying back the oldest first.
@@ -48,7 +48,7 @@ The files in `core/model` that hold the trickiest rules:
 
 - **Money** is a whole number of qəpik (`Int64`), never a `Double`, and always shown with two decimals.
 - **CSV.** Export writes the columns `Date, Type, Amount, Account, To account, Category, Sub-category, For whom, Merchant, Note`, and import reads them by name in any order. This moves data between the two apps whatever each stores it in.
-- **Backups**, only if they should restore on either phone: the same SQLite schema as Room (`core/database`, version 8, migrations included) and the same zip layout (`core/backup/BackupArchive.kt`). Otherwise SwiftData is fine.
+- **Backups**, only if they should restore on either phone: the same SQLite schema as Room (`core/database`, version 9, migrations included) and the same zip layout (`core/backup/BackupArchive.kt`). Otherwise SwiftData is fine.
 - **Icons and colours** are stored by name and number: a category's icon is a Material Symbols name such as `shopping_cart`, and a colour is an ARGB number.
 - **The starter template** keeps its English names as keys, whichever language it's written in.
 - **The bank reader's word lists** know no bank by name. Words for another bank go in both apps' lists, so both read it.

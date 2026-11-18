@@ -94,6 +94,8 @@ data class TransactionEntity(
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long,
     @ColumnInfo(name = "debt_id") val debtId: Long? = null,
+    /** Epoch millis of when the money moved, when known. */
+    @ColumnInfo(name = "paid_at") val paidAt: Long? = null,
 )
 
 @Entity(

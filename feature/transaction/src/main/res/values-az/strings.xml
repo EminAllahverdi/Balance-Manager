@@ -74,6 +74,7 @@
     <string name="quickadd_skip">Keç</string>
     <string name="quickadd_skipped">%1$s keçildi</string>
     <string name="quickadd_undo">Geri qaytar</string>
+    <string name="quickadd_added">%1$s əlavə edildi · %2$s</string>
     <string name="quickadd_suggested">Təklif</string>
     <string name="quickadd_check_it_first">Əvvəlcə yoxla</string>
     <string name="quickadd_add">Əlavə et</string>

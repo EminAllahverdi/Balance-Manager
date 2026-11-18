@@ -149,6 +149,10 @@ private fun EntryCard(row: ConfirmRow, hideAmounts: Boolean, vm: ConfirmViewMode
                         row.person?.takeIf { row.category != null }?.let { PersonDot(it.color, 7.dp) }
                         Text(row.caption.map { it.text() }.joinToString(" · "), style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
+                    // Why it was guessed so, to judge a suggestion at a glance.
+                    row.item.guess.reason?.takeIf { row.item.guess.isSuggested && row.category != null && row.isWaiting }?.let { reason ->
+                        Text(reason.text(), style = BtTheme.type.caption, color = c.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
                 }
                 Text(
                     if (hideAmounts && entry.kind != TransactionKind.EXPENSE) MoneyFormat.HIDDEN else (if (income) "+" else "") + MoneyFormat.format(entry.amount),

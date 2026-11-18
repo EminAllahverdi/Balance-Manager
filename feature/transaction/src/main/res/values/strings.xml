@@ -74,6 +74,7 @@
     <string name="quickadd_skip">Skip</string>
     <string name="quickadd_skipped">Skipped %1$s</string>
     <string name="quickadd_undo">Undo</string>
+    <string name="quickadd_added">Added %1$s · %2$s</string>
     <string name="quickadd_suggested">Suggested</string>
     <string name="quickadd_check_it_first">Check it first</string>
     <string name="quickadd_add">Add</string>

@@ -117,6 +117,8 @@ data class QuickAddUiState(
     val waiting: List<PendingItem> = emptyList(),
     /** A bank entry just swiped away, with Undo beside its name for a few seconds. */
     val skipped: PendingItem? = null,
+    /** A bank entry just added from the list while others still wait, named for a few seconds; the sheet stays open for them. */
+    val added: PendingItem? = null,
     val saved: Boolean = false,
 ) {
     /**
@@ -411,19 +413,26 @@ class QuickAddViewModel @Inject constructor(
         }
     }
 
-    /** A bank entry added as it was guessed, as To confirm's Confirm does; the sheet closes, as after Save. */
+    /**
+     * A bank entry added as it was guessed, as To confirm's Confirm does. With others still waiting here the sheet stays
+     * open for them and names the one added; the last one closes it, as Save does.
+     */
     fun addPending(item: PendingItem) {
+        val more = _state.value.waitingHere.any { it.entry.id != item.entry.id }
         viewModelScope.launch {
             bankAlerts.confirm(item.entry.id)
-            _state.update { it.copy(saved = true) }
+            _state.update { if (more) it.copy(added = item, skipped = null) else it.copy(saved = true) }
         }
     }
+
+    /** The Added note has had its time. */
+    fun forgetAdded() = _state.update { it.copy(added = null) }
 
     /** A bank entry skipped with a swipe, as To confirm's Skip does: it stops waiting, and [undoSkip] brings it back. */
     fun skipPending(item: PendingItem) {
         viewModelScope.launch {
             bankAlerts.skip(item.entry.id)
-            _state.update { it.copy(skipped = item) }
+            _state.update { it.copy(skipped = item, added = null) }
         }
     }
 
@@ -551,6 +560,8 @@ class QuickAddViewModel @Inject constructor(
                     tripName = s.editing?.tripName,
                     debtId = s.editing?.debtId,
                     createdAt = s.editing?.createdAt ?: Instant.EPOCH,
+                    // The bank's time, or now for an entry dated today, so guessing learns when things are paid.
+                    paidAt = s.editing?.paidAt ?: s.pending?.postedAt ?: Instant.now().takeIf { s.date == LocalDate.now() },
                 ),
                 merchantName = if (transfer) null else s.merchant,
                 externalId = s.pending?.externalId,

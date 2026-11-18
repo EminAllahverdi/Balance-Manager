@@ -58,6 +58,8 @@ data class UserPreferences(
     val homeSpentSpan: SpentSpan = SpentSpan.MONTH,
     /** Home shows the accounts four at a time, in a grid that pages sideways, instead of one row. */
     val homeAccountsGrid: Boolean = false,
+    /** Repeating payments the owner said aren't recurring, by [com.eminallahverdi.balance.core.model.RepeatingPayment.key], so they aren't offered again. */
+    val dismissedRepeats: Set<String> = emptySet(),
     val driveBackupEnabled: Boolean = false,
     /** Off, backups wait for Wi-Fi. */
     val backupOnMobileData: Boolean = false,
@@ -91,6 +93,7 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
         val homeChartIncome = booleanPreferencesKey("home_chart_income")
         val homeSpentSpan = stringPreferencesKey("home_spent_span")
         val homeAccountsGrid = booleanPreferencesKey("home_accounts_grid")
+        val dismissedRepeats = stringSetPreferencesKey("dismissed_repeats")
         val driveBackup = booleanPreferencesKey("drive_backup")
         val backupMobileData = booleanPreferencesKey("backup_mobile_data")
         val lastBackup = longPreferencesKey("last_backup_at")
@@ -118,6 +121,7 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
             homeChartIncome = p[K.homeChartIncome] ?: false,
             homeSpentSpan = p[K.homeSpentSpan]?.let { runCatching { SpentSpan.valueOf(it) }.getOrNull() } ?: SpentSpan.MONTH,
             homeAccountsGrid = p[K.homeAccountsGrid] ?: false,
+            dismissedRepeats = p[K.dismissedRepeats].orEmpty(),
             driveBackupEnabled = p[K.driveBackup] ?: false,
             backupOnMobileData = p[K.backupMobileData] ?: false,
             lastBackupAt = p[K.lastBackup],
@@ -153,6 +157,7 @@ class UserPreferencesRepository @Inject constructor(private val store: DataStore
     suspend fun setHomeChartIncome(income: Boolean) { store.edit { it[K.homeChartIncome] = income } }
     suspend fun setHomeSpentSpan(span: SpentSpan) { store.edit { it[K.homeSpentSpan] = span.name } }
     suspend fun setHomeAccountsGrid(grid: Boolean) { store.edit { it[K.homeAccountsGrid] = grid } }
+    suspend fun dismissRepeat(key: String) { store.edit { it[K.dismissedRepeats] = it[K.dismissedRepeats].orEmpty() + key } }
     suspend fun setDriveBackup(enabled: Boolean) { store.edit { it[K.driveBackup] = enabled } }
     suspend fun setBackupOnMobileData(enabled: Boolean) { store.edit { it[K.backupMobileData] = enabled } }
     suspend fun setBackupProblem(problem: BackupProblem) { store.edit { it[K.backupProblem] = problem.name } }

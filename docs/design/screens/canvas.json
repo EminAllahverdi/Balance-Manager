@@ -65,12 +65,28 @@
          "x" : 0,
          "y" : 4896
       },
+      "AddWaitingAdded.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "Add keeps the sheet open while others wait",
+         "w" : 390,
+         "x" : 1410,
+         "y" : 4896
+      },
       "AddWaitingOpen.dc.html" : {
          "h" : 844,
          "page" : "adding",
          "title" : "Tapping one opens it filled in",
          "w" : 390,
          "x" : 470,
+         "y" : 4896
+      },
+      "AddWaitingSwipe.dc.html" : {
+         "h" : 844,
+         "page" : "adding",
+         "title" : "Swiping one left skips it, with Undo",
+         "w" : 390,
+         "x" : 940,
          "y" : 4896
       },
       "AdjustBalance.dc.html" : {
@@ -345,6 +361,14 @@
          "x" : 940,
          "y" : 0
       },
+      "HistoryShops.dc.html" : {
+         "h" : 844,
+         "page" : "history",
+         "title" : "Wife in October, by shop",
+         "w" : 390,
+         "x" : 470,
+         "y" : 3672
+      },
       "HistorySwipe.dc.html" : {
          "h" : 844,
          "page" : "history",
@@ -545,6 +569,118 @@
          "x" : 0,
          "y" : 0
       },
+      "PropGridHome.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Accounts four at a time, sideways for more",
+         "w" : 390,
+         "x" : 0,
+         "y" : 4896
+      },
+      "PropGridPlanned.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "The grid of four with the planned line",
+         "w" : 390,
+         "x" : 470,
+         "y" : 4896
+      },
+      "PropGridSetting.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Settings: one row or a grid of four",
+         "w" : 390,
+         "x" : 940,
+         "y" : 4896
+      },
+      "PropHistoryRing.dc.html" : {
+         "h" : 844,
+         "page" : "history",
+         "title" : "Car in October, by sub-category",
+         "w" : 390,
+         "x" : 0,
+         "y" : 3672
+      },
+      "PropPace.dc.html" : {
+         "h" : 1180,
+         "page" : "insights",
+         "title" : "Spending pace: this month against last, day by day",
+         "w" : 390,
+         "x" : 0,
+         "y" : 3220
+      },
+      "PropPlanned.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Planned payments: this month, from Home or Accounts",
+         "w" : 390,
+         "x" : 470,
+         "y" : 3672
+      },
+      "PropPlannedAdd.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Plan a payment: a name, amount, day and account",
+         "w" : 390,
+         "x" : 940,
+         "y" : 3672
+      },
+      "PropPlannedHome.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Home: one line under the total, while something is planned",
+         "w" : 390,
+         "x" : 0,
+         "y" : 3672
+      },
+      "PropRemoveCategory.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Remove: what uses Car, then move it or keep it archived",
+         "w" : 390,
+         "x" : 0,
+         "y" : 4896
+      },
+      "PropRemoveMove.dc.html" : {
+         "h" : 844,
+         "page" : "settings",
+         "title" : "Move all: pick the category they go to",
+         "w" : 390,
+         "x" : 470,
+         "y" : 4896
+      },
+      "PropReorder.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Person view: Wife held and dragged above Me",
+         "w" : 390,
+         "x" : 0,
+         "y" : 2448
+      },
+      "PropReorderCards.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Home: a person card held and dragged sideways",
+         "w" : 390,
+         "x" : 470,
+         "y" : 2448
+      },
+      "PropSpentSheet.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Tapping Spent: today, this week or this month",
+         "w" : 390,
+         "x" : 470,
+         "y" : 1224
+      },
+      "PropSpentWeek.dc.html" : {
+         "h" : 844,
+         "page" : "home",
+         "title" : "Spent this week, picked from the card",
+         "w" : 390,
+         "x" : 0,
+         "y" : 1224
+      },
       "QuickAdd.dc.html" : {
          "h" : 844,
          "is_interactive" : true,
@@ -644,6 +780,14 @@
          "title" : "Edit recurring payment",
          "w" : 390,
          "x" : 470,
+         "y" : 1360
+      },
+      "RecurringRepeats.dc.html" : {
+         "h" : 844,
+         "page" : "accounts",
+         "title" : "A monthly payment offered as recurring",
+         "w" : 390,
+         "x" : 940,
          "y" : 1360
       },
       "ReminderTime.dc.html" : {
@@ -825,7 +969,14 @@
       "widgetsRow",
       "propDebts",
       "propWaiting",
-      "setLanguage"
+      "setLanguage",
+      "propGrid",
+      "propPace",
+      "propPlanned",
+      "propRemoveCat",
+      "propReorder",
+      "propRing",
+      "propSpent"
    ],
    "notes" : {
       "accRow" : {
@@ -971,6 +1122,69 @@
          "w" : 240,
          "x" : 0,
          "y" : 3412
+      },
+      "propGrid" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "home",
+         "text" : "Accounts as a grid of four, with the planned line",
+         "w" : 240,
+         "x" : 0,
+         "y" : 4636
+      },
+      "propPace" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "insights",
+         "text" : "Spending pace",
+         "w" : 240,
+         "x" : 0,
+         "y" : 2960
+      },
+      "propPlanned" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "home",
+         "text" : "Planned payments, and what’s left after them",
+         "w" : 240,
+         "x" : 0,
+         "y" : 3412
+      },
+      "propRemoveCat" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "settings",
+         "text" : "Removing a category moves what used it",
+         "w" : 240,
+         "x" : 0,
+         "y" : 4636
+      },
+      "propReorder" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "home",
+         "text" : "Hold a person and drag",
+         "w" : 240,
+         "x" : 0,
+         "y" : 2188
+      },
+      "propRing" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "history",
+         "text" : "The summary’s ring, by category or by shop",
+         "w" : 240,
+         "x" : 0,
+         "y" : 3412
+      },
+      "propSpent" : {
+         "kind" : "title1",
+         "maxW" : 1800,
+         "page" : "home",
+         "text" : "Spent today, this week or this month",
+         "w" : 240,
+         "x" : 0,
+         "y" : 964
       },
       "propWaiting" : {
          "kind" : "title1",
@@ -1151,7 +1365,25 @@
       "HomeAz.dc.html",
       "LanguageSheet.dc.html",
       "RenameSheet.dc.html",
-      "SettingsAz.dc.html"
+      "SettingsAz.dc.html",
+      "PropSpentWeek.dc.html",
+      "PropSpentSheet.dc.html",
+      "PropReorder.dc.html",
+      "PropPlannedHome.dc.html",
+      "PropPlanned.dc.html",
+      "PropPlannedAdd.dc.html",
+      "PropGridHome.dc.html",
+      "PropGridSetting.dc.html",
+      "PropPace.dc.html",
+      "PropRemoveCategory.dc.html",
+      "PropRemoveMove.dc.html",
+      "PropHistoryRing.dc.html",
+      "PropReorderCards.dc.html",
+      "PropGridPlanned.dc.html",
+      "AddWaitingSwipe.dc.html",
+      "AddWaitingAdded.dc.html",
+      "HistoryShops.dc.html",
+      "RecurringRepeats.dc.html"
    ],
    "pages" : [
       {

@@ -11,11 +11,9 @@ import com.eminallahverdi.balance.core.designsystem.component.label
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.Money
-import com.eminallahverdi.balance.core.model.Share
 import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.caseKey
-import com.eminallahverdi.balance.core.model.pieSlices
 import com.eminallahverdi.balance.core.model.sum
 import java.time.LocalDate
 import java.time.YearMonth
@@ -120,12 +118,6 @@ internal fun List<TransactionDetails>.hasSpending(): Boolean = any { it.transact
 internal val TransactionDetails.isSensitive: Boolean
     get() = transaction.kind != TransactionKind.EXPENSE
 
-/** Category colour to amount, biggest first, for the summary's split bar. */
-internal fun List<TransactionDetails>.categoryShares(): List<Pair<Long, Long>> =
-    filter { it.transaction.kind == TransactionKind.EXPENSE }
-        .groupBy { (it.parentCategory ?: it.category)?.color ?: 0xFF8A94A3 }
-        .map { (color, rows) -> color to rows.sumOf { it.transaction.amount.minor } }
-        .sortedByDescending { it.second }
 
 /** The list shows a sign: −₼7.70 spent, +₼50.00 received, and either way for a debt. A transfer is neither. */
 internal fun TransactionDetails.signedAmount(): String = when (transaction.kind) {
@@ -178,20 +170,99 @@ internal fun TransactionDetails.removal(hideAmounts: Boolean, today: LocalDate =
     }
 }
 
-/** One part of the ring a category's sub-categories make in the summary. A null [name] is everything too small for its own. */
-data class RingSlice(val name: String?, val color: Long, val amount: Money, val percent: Long)
+/** What the summary's ring splits the list's spending by. */
+enum class RingBy { CATEGORY, SHOP }
 
 /**
- * With a category picked, its spending split by sub-category, biggest first, for the summary's ring: up to five and then
- * the rest. What's filed on the category itself is a part of its own, under its name. A sub-category that kept its parent's
- * colour takes one from [palette] by its place among its parent's, so it's the same colour every month. Null when the
- * category has no sub-categories, which leaves the bar.
+ * One part of the summary's ring, biggest first. Tapping one narrows the list to it: [categoryId] for a category, [shop]
+ * for a shop's name. A null [name] is either the rest, too small for parts of their own ([isRest]), or the entries with no
+ * shop.
  */
-internal fun List<TransactionDetails>.subCategoryRing(parent: Category, all: List<Category>, palette: List<Long>, restColor: Long): List<RingSlice>? {
-    val children = all.filter { it.parentId == parent.id }.sortedWith(compareBy({ it.sortOrder }, { it.id }))
-    if (children.isEmpty()) return null
+data class RingSlice(
+    val name: String?,
+    val color: Long,
+    val amount: Money,
+    val percent: Long,
+    val categoryId: Long? = null,
+    val shop: String? = null,
+    val isRest: Boolean = false,
+)
+
+/** Parts a ring shows before the rest go together, as Home's chart does. */
+private const val RING_PARTS = 5
+
+/** Entries with no shop, which no palette colour should stand for. */
+internal const val NO_SHOP_COLOR = 0xFF5C6570
+
+/** The biggest [RING_PARTS] and the rest as one, under a null key; a lone leftover keeps its own. */
+private fun <K> biggestFirst(shares: Map<K, Money>): List<Pair<K?, Money>> {
+    val sorted = shares.entries.filter { it.value.minor > 0 }.sortedByDescending { it.value.minor }.map { it.key to it.value }
+    if (sorted.size <= RING_PARTS + 1) return sorted
+    return sorted.take(RING_PARTS) + (null to sorted.drop(RING_PARTS).map { it.second }.sum())
+}
+
+private fun percentOf(amount: Money, total: Long): Long = (amount.minor * 100 + total / 2) / total.coerceAtLeast(1)
+
+/**
+ * The list's spending by category, for the summary's ring. With a category that has sub-categories picked, it splits into
+ * them, and what's filed on the category itself is a part under its name; any other category picked is one part; with
+ * none picked, it's the categories at the top. A sub-category shows as [Category.shownColour] has it, as on Categories.
+ * Null when nothing in the list is spending.
+ */
+internal fun List<TransactionDetails>.categoryRing(picked: Category?, all: List<Category>, palette: List<Long>, restColor: Long): List<RingSlice>? {
     val spent = filter { it.transaction.kind == TransactionKind.EXPENSE }
     if (spent.isEmpty()) return null
-    val shares = spent.groupBy { it.category ?: parent }.map { (category, rows) -> Share(category, rows.map { it.transaction.amount }.sum()) }
-    return pieSlices(shares).map { slice -> RingSlice(slice.category?.name, slice.category?.shownColour(parent, children, palette) ?: restColor, slice.amount, slice.percent) }
+    val parent = picked?.takeIf { p -> p.parentId == null && all.any { it.parentId == p.id } }
+    val byCategory = spent.groupBy { d ->
+        when {
+            parent != null -> d.category ?: parent
+            picked != null -> picked
+            else -> d.parentCategory ?: d.category
+        }
+    }.filterKeys { it != null }.mapKeys { it.key!! }.mapValues { (_, rows) -> rows.map { it.transaction.amount }.sum() }
+    val total = byCategory.values.sumOf { it.minor }
+    fun colourOf(category: Category): Long {
+        val above = all.firstOrNull { it.id == category.parentId } ?: return category.color
+        return category.shownColour(above, all.filter { it.parentId == above.id }, palette)
+    }
+    return biggestFirst(byCategory).map { (category, amount) ->
+        if (category == null) {
+            RingSlice(null, restColor, amount, percentOf(amount, total), isRest = true)
+        } else {
+            RingSlice(category.name, colourOf(category), amount, percentOf(amount, total), categoryId = category.id)
+        }
+    }
 }
+
+/** Whether [categoryRing] splits [picked] into its sub-categories, which the ring's switch then says. */
+internal fun splitsIntoSubCategories(picked: Category?, all: List<Category>): Boolean =
+    picked != null && picked.parentId == null && all.any { it.parentId == picked.id }
+
+/**
+ * The list's spending by shop, for the summary's ring: where the money went most, like the Groceries report's shops. A
+ * shop's spellings count as one. Shops take [palette]'s colours in order, as they have none of their own, and entries with
+ * no shop are a grey part of their own. Null when nothing in the list is spending.
+ */
+internal fun List<TransactionDetails>.shopRing(palette: List<Long>, restColor: Long): List<RingSlice>? {
+    val spent = filter { it.transaction.kind == TransactionKind.EXPENSE }
+    if (spent.isEmpty()) return null
+    val groups = spent.groupBy { d -> d.merchant?.name?.trim()?.takeIf { it.isNotEmpty() }?.caseKey() }
+    val names = groups.mapValues { (_, rows) -> rows.firstNotNullOfOrNull { it.merchant?.name?.trim() } }
+    val byShop = groups.mapValues { (_, rows) -> rows.map { it.transaction.amount }.sum() }
+    val total = byShop.values.sumOf { it.minor }
+    val colours = palette.filter { it != restColor && it != NO_SHOP_COLOR }
+    var next = 0
+    return biggestFirst(byShop.mapKeys { Optional(it.key) }).map { (key, amount) ->
+        when {
+            key == null -> RingSlice(null, restColor, amount, percentOf(amount, total), isRest = true)
+            key.value == null -> RingSlice(null, NO_SHOP_COLOR, amount, percentOf(amount, total))
+            else -> {
+                val name = names[key.value]
+                RingSlice(name, colours[next++ % colours.size], amount, percentOf(amount, total), shop = name)
+            }
+        }
+    }
+}
+
+/** A key that can itself be null, so "no shop" stays apart from the null that means the rest. */
+private data class Optional<T>(val value: T?)

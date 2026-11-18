@@ -43,6 +43,7 @@ import com.eminallahverdi.balance.core.designsystem.component.PrimaryButton
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.RecurringFrequency
 import com.eminallahverdi.balance.core.model.RecurringPayment
+import com.eminallahverdi.balance.core.model.RepeatingPayment
 
 internal val RecurringFrequency.label: String
     @Composable get() = when (this) {
@@ -109,6 +110,22 @@ fun RecurringRoute(onBack: () -> Unit, onAddPayment: (Long) -> Unit, viewModel: 
                 }
             }
         }
+        if (state.repeats.isNotEmpty()) {
+            item(key = "repeats") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Overline(stringResource(R.string.recurring_seen_repeating), Modifier.padding(top = 8.dp, start = 4.dp))
+                    BtCard {
+                        Column {
+                            state.repeats.forEachIndexed { i, repeat ->
+                                if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.borderDefault))
+                                RepeatRow(repeat, state, viewModel)
+                            }
+                        }
+                    }
+                    Text(stringResource(R.string.recurring_seen_repeating_hint), style = BtTheme.type.caption, color = c.textMuted, modifier = Modifier.padding(horizontal = 4.dp))
+                }
+            }
+        }
     }
 
     state.editor?.let { draft ->
@@ -129,6 +146,36 @@ private fun DueCard(payment: RecurringPayment, state: RecurringUiState, vm: Recu
                 BtChip(stringResource(R.string.recurring_skip), selected = false, onClick = { vm.skip(payment) })
                 BtChip(stringResource(R.string.recurring_add), selected = true, onClick = { onAddPayment(payment.id) })
             }
+        }
+    }
+}
+
+/**
+ * A shop paid about the same at a steady pace: how often and how many times, with Add, which opens the editor filled in
+ * to check and save, and No, which stops offering it.
+ */
+@Composable
+private fun RepeatRow(repeat: RepeatingPayment, state: RecurringUiState, vm: RecurringViewModel) {
+    val c = BtTheme.colors
+    val category = state.category(repeat.categoryId)
+    Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            CategoryTile(category?.icon ?: "event_repeat", category?.color ?: 0xFF8A94A3)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(repeat.shop, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    "${repeat.frequency.label} · ${pluralStringResource(R.plurals.recurring_times_running, repeat.times, repeat.times)} · ${DateLabels.relative(repeat.lastDate, state.today)}",
+                    style = BtTheme.type.caption,
+                    color = c.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(MoneyFormat.format(repeat.amount), style = BtTheme.type.amountMedium, color = c.textPrimary)
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+            BtChip(stringResource(R.string.recurring_not_recurring), selected = false, onClick = { vm.dismiss(repeat) })
+            BtChip(stringResource(R.string.recurring_add), selected = true, onClick = { vm.adopt(repeat) })
         }
     }
 }

@@ -44,4 +44,9 @@
     </plurals>
     <string name="history_spent">Spent</string>
     <string name="history_the_rest">The rest</string>
+    <string name="history_by_category">Categories</string>
+    <string name="history_by_sub_category">Sub-categories</string>
+    <string name="history_by_shop">Shops</string>
+    <string name="history_no_shop">No shop</string>
+    <string name="history_show_only">Show only %1$s</string>
 </resources>

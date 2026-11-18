@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -43,6 +44,7 @@ import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtChip
 import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.Overline
+import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import java.time.ZoneId
@@ -61,11 +63,18 @@ internal fun WaitingFromBank(state: QuickAddUiState, vm: QuickAddViewModel) {
     val c = BtTheme.colors
     val waiting = state.waitingHere
     val skipped = state.skipped
-    if (waiting.isEmpty() && skipped == null) return
+    val added = state.added
+    if (waiting.isEmpty() && skipped == null && added == null) return
     LaunchedEffect(skipped) {
         if (skipped != null) {
             delay(UNDO_MILLIS)
             vm.forgetSkipped()
+        }
+    }
+    LaunchedEffect(added) {
+        if (added != null) {
+            delay(UNDO_MILLIS)
+            vm.forgetAdded()
         }
     }
     Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
@@ -81,6 +90,7 @@ internal fun WaitingFromBank(state: QuickAddUiState, vm: QuickAddViewModel) {
             }
         }
         if (skipped != null) SkippedNote(skipped, vm::undoSkip)
+        if (added != null) AddedNote(added)
         if (waiting.isNotEmpty()) {
             Text(stringResource(R.string.quickadd_tap_to_check_or_add), style = BtTheme.type.caption, color = c.textMuted, modifier = Modifier.padding(start = 4.dp, top = 6.dp))
         }
@@ -151,6 +161,23 @@ private fun SkippedNote(item: PendingItem, onUndo: () -> Unit) {
     }
 }
 
+/** "Added Bravo · ₼12.40" under the list for a few seconds, while the rest still wait to be decided. */
+@Composable
+private fun AddedNote(item: PendingItem) {
+    val c = BtTheme.colors
+    val name = item.guess.merchantName.ifBlank { item.entry.merchant.ifBlank { item.entry.source } }
+    Row(Modifier.fillMaxWidth().padding(top = 6.dp).heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(Icons.Rounded.Check, null, tint = c.accentText, modifier = Modifier.padding(start = 4.dp).size(16.dp))
+        Text(
+            stringResource(R.string.quickadd_added, name, MoneyFormat.format(item.entry.amount)),
+            style = BtTheme.type.caption,
+            color = c.textSecondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
 @Composable
 private fun WaitingRow(item: PendingItem, state: QuickAddUiState, vm: QuickAddViewModel) {
     val c = BtTheme.colors
@@ -175,6 +202,10 @@ private fun WaitingRow(item: PendingItem, state: QuickAddUiState, vm: QuickAddVi
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(guess.merchantName.ifBlank { item.entry.merchant.ifBlank { item.entry.source } }, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(caption, style = BtTheme.type.caption, color = c.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // Why it was guessed so, to judge it before adding it as it is.
+            guess.reason?.takeIf { guess.isSuggested && category != null }?.let { reason ->
+                Text(reason.text(), style = BtTheme.type.caption, color = c.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
         }
         Text(MoneyFormat.format(item.entry.amount), style = BtTheme.type.amountSmall, color = c.textPrimary)
         if (canAdd) {

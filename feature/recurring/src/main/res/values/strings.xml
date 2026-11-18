@@ -59,4 +59,11 @@
         <item quantity="one">%1$s · %2$d left to pay</item>
         <item quantity="other">%1$s · %2$d left to pay</item>
     </plurals>
+    <string name="recurring_seen_repeating">Seen repeating</string>
+    <string name="recurring_seen_repeating_hint">Shops you\'ve paid about the same every month or week. Add one to be reminded of it, or tell the app it isn\'t recurring.</string>
+    <string name="recurring_not_recurring">Not recurring</string>
+    <plurals name="recurring_times_running">
+        <item quantity="one">%d time running</item>
+        <item quantity="other">%d times running</item>
+    </plurals>
 </resources>

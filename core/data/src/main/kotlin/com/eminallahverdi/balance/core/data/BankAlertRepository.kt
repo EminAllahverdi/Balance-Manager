@@ -10,12 +10,14 @@ import com.eminallahverdi.balance.core.datastore.UserPreferences
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.Category
+import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.EntryGuess
 import com.eminallahverdi.balance.core.model.Merchant
 import com.eminallahverdi.balance.core.model.PendingEntry
 import com.eminallahverdi.balance.core.model.PendingStatus
 import com.eminallahverdi.balance.core.model.RecurringPayment
 import com.eminallahverdi.balance.core.model.Transaction
+import com.eminallahverdi.balance.core.model.TransactionDetails
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.caseKey
 import com.eminallahverdi.balance.core.model.guessFor
@@ -23,6 +25,7 @@ import com.eminallahverdi.balance.core.model.parseBankNotification
 import com.eminallahverdi.balance.core.model.whyNotRead
 import java.security.MessageDigest
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
@@ -47,7 +50,10 @@ data class UnreadNotification(val source: String, val title: String, val text: S
 
 private const val UNREAD_TO_KEEP = 10
 
-private class Known(val aliases: Map<String, Long>, val merchants: List<Merchant>, val categories: List<Category>, val payments: List<RecurringPayment>)
+private class Known(val aliases: Map<String, Long>, val merchants: List<Merchant>, val categories: List<Category>, val payments: List<RecurringPayment>, val history: List<TransactionDetails>)
+
+/** How far back guessing looks at the owner's entries: long enough for a habit, short enough to follow a change of one. */
+private const val DAYS_OF_HISTORY = 180L
 
 /**
  * Turns bank notifications into ready-made entries. Nothing reaches the list until the user confirms it, with one
@@ -72,13 +78,19 @@ class BankAlertRepository @Inject constructor(
 
     /** Everything waiting, and what was added since [since], with what each would be saved as. */
     fun items(since: Instant): Flow<List<PendingItem>> {
-        val known = combine(dao.observeAliases(), catalog.merchants, catalog.categories, recurring.payments) { aliases, merchants, categories, payments ->
-            Known(aliases.associate { it.raw to it.merchantId }, merchants, categories, payments)
+        val known = combine(dao.observeAliases(), catalog.merchants, catalog.categories, recurring.payments, recentHistory()) { aliases, merchants, categories, payments, history ->
+            Known(aliases.associate { it.raw to it.merchantId }, merchants, categories, payments, history)
         }
         return combine(dao.observe(since.toEpochMilli()), known, catalog.accounts, preferences.preferences) { entries, k, accounts, settings ->
             val defaultAccount = defaultAccountId(settings, accounts)
-            entries.map { it.toModel() }.map { PendingItem(it, guessFor(it, k.aliases, k.merchants, k.categories, defaultAccount, k.payments, accounts)) }
+            entries.map { it.toModel() }.map { PendingItem(it, guessFor(it, k.aliases, k.merchants, k.categories, defaultAccount, k.payments, accounts, k.history)) }
         }
+    }
+
+    /** The owner's entries of the last months, which guessing learns their habits from. */
+    private fun recentHistory(): Flow<List<TransactionDetails>> {
+        val today = LocalDate.now()
+        return transactions.observeDetails(DateRange(today.minusDays(DAYS_OF_HISTORY), today.plusDays(1)))
     }
 
     suspend fun entry(id: Long): PendingEntry? = dao.get(id)?.toModel()
@@ -87,7 +99,7 @@ class BankAlertRepository @Inject constructor(
         val aliases = dao.observeAliases().first().associate { it.raw to it.merchantId }
         val accounts = catalog.accounts.first()
         val defaultAccount = defaultAccountId(preferences.current(), accounts)
-        return guessFor(entry, aliases, catalog.merchants.first(), catalog.categories.first(), defaultAccount, recurring.payments.first(), accounts)
+        return guessFor(entry, aliases, catalog.merchants.first(), catalog.categories.first(), defaultAccount, recurring.payments.first(), accounts, recentHistory().first())
     }
 
     /** Remembers which apps send notifications, so bank apps can be picked from them. Only their names. */
@@ -155,6 +167,7 @@ class BankAlertRepository @Inject constructor(
                     accountId = accountId,
                     categoryId = categoryId,
                     personId = personId,
+                    paidAt = entry.postedAt,
                 ),
                 merchantName = guess.merchantName,
                 externalId = entry.externalId,
@@ -176,6 +189,7 @@ class BankAlertRepository @Inject constructor(
                     date = entry.postedAt.atZone(ZoneId.systemDefault()).toLocalDate(),
                     accountId = accountId,
                     toAccountId = toAccountId,
+                    paidAt = entry.postedAt,
                 ),
                 merchantName = null,
                 externalId = entry.externalId,

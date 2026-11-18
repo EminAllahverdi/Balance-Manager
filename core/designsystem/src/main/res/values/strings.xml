@@ -25,4 +25,10 @@
     <string name="ds_paid_back_by">Paid back by %1$s</string>
     <string name="ds_your_share">Your share</string>
     <string name="ds_paid_for">Paid for %1$s</string>
+    <string name="ds_reason_usual_at">Usual at %1$s</string>
+    <string name="ds_reason_last_at">As last time at %1$s</string>
+    <string name="ds_reason_like_amount_at">Like your other payments of about %1$s around %2$s</string>
+    <string name="ds_reason_like_amount">Like your other payments of about %1$s</string>
+    <string name="ds_reason_recurring">Your recurring payment %1$s</string>
+    <string name="ds_reason_words">From the words in the notification</string>
 </resources>

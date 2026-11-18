@@ -44,4 +44,9 @@
     </plurals>
     <string name="history_spent">Xərclənib</string>
     <string name="history_the_rest">Qalanı</string>
+    <string name="history_by_category">Kateqoriyalar</string>
+    <string name="history_by_sub_category">Alt kateqoriyalar</string>
+    <string name="history_by_shop">Mağazalar</string>
+    <string name="history_no_shop">Mağazasız</string>
+    <string name="history_show_only">Yalnız %1$s göstər</string>
 </resources>

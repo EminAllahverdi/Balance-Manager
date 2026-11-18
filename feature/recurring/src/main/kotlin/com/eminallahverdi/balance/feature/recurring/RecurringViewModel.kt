@@ -5,23 +5,29 @@ import androidx.lifecycle.viewModelScope
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.RecurringRepository
+import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.Category
 import com.eminallahverdi.balance.core.model.CategoryType
+import com.eminallahverdi.balance.core.model.DateRange
 import com.eminallahverdi.balance.core.model.LoanTerms
 import com.eminallahverdi.balance.core.model.Money
 import com.eminallahverdi.balance.core.model.Person
 import com.eminallahverdi.balance.core.model.RecurringFrequency
 import com.eminallahverdi.balance.core.model.RecurringPayment
+import com.eminallahverdi.balance.core.model.RepeatingPayment
+import com.eminallahverdi.balance.core.model.repeatingPayments
 import com.eminallahverdi.balance.core.model.sum
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -64,6 +70,9 @@ data class RecurringDraft(
 /** What a typed field starts with: 16.31, and 1184.00 without the separator. */
 internal fun Money.toFieldText(): String = MoneyFormat.format(this).removePrefix(MoneyFormat.SYMBOL).replace(",", "")
 
+/** How far back repeating payments are looked for. */
+private const val DAYS_OF_HISTORY = 200L
+
 /** A new payment starts a period away, so it doesn't remind about today's the moment it's saved. */
 internal fun newDraft(today: LocalDate, accountId: Long?) = RecurringDraft(nextDate = today.plusMonths(1), accountId = accountId)
 
@@ -92,6 +101,8 @@ data class RecurringUiState(
     val accounts: List<Account> = emptyList(),
     val today: LocalDate = LocalDate.now(),
     val editor: RecurringDraft? = null,
+    /** Shops paid about the same every month or week that aren't recurring payments yet, offered to add. */
+    val repeats: List<RepeatingPayment> = emptyList(),
 ) {
     val due: List<RecurringPayment> get() = payments.filter { it.isDue(today) }
     val upcoming: List<RecurringPayment> get() = payments.filterNot { it.isDue(today) }
@@ -110,12 +121,26 @@ data class RecurringUiState(
 class RecurringViewModel @Inject constructor(
     private val recurring: RecurringRepository,
     catalog: CatalogRepository,
+    transactions: TransactionRepository,
     private val prefs: UserPreferencesRepository,
 ) : ViewModel() {
 
     private val editor = MutableStateFlow<RecurringDraft?>(null)
 
-    val state: StateFlow<RecurringUiState> = combine(recurring.payments, catalog.categories, catalog.people, catalog.accounts, editor) { payments, categories, people, accounts, draft ->
+    /** What the owner's last months say repeats, less what's already a recurring payment or was turned down. */
+    private val repeats = combine(
+        transactions.observeDetails(DateRange(LocalDate.now().minusDays(DAYS_OF_HISTORY), LocalDate.now().plusDays(1))),
+        recurring.payments,
+        prefs.preferences,
+    ) { history, payments, p -> repeatingPayments(history, payments, LocalDate.now(), p.dismissedRepeats) }
+
+    val state: StateFlow<RecurringUiState> = combine(
+        combine(recurring.payments, repeats) { payments, offered -> payments to offered },
+        catalog.categories,
+        catalog.people,
+        catalog.accounts,
+        editor,
+    ) { (payments, offered), categories, people, accounts, draft ->
         RecurringUiState(
             loading = false,
             payments = payments.filterNot { it.isFinished },
@@ -124,8 +149,27 @@ class RecurringViewModel @Inject constructor(
             accounts = accounts,
             today = LocalDate.now(),
             editor = draft,
+            repeats = offered,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecurringUiState())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), RecurringUiState())
+
+    /** A repeating payment as a new recurring one, filled in from its last entry, for the owner to check and save. */
+    fun adopt(repeat: RepeatingPayment) {
+        val payment = RecurringPayment(
+            id = 0,
+            name = repeat.shop,
+            amount = repeat.amount,
+            accountId = repeat.accountId,
+            categoryId = repeat.categoryId,
+            personId = repeat.personId,
+            frequency = repeat.frequency,
+            nextDate = repeat.nextDate,
+        )
+        editor.update { payment.toDraft(state.value.categories) }
+    }
+
+    /** Not a recurring payment, so it isn't offered again. */
+    fun dismiss(repeat: RepeatingPayment) { viewModelScope.launch { prefs.dismissRepeat(repeat.key) } }
 
     init {
         viewModelScope.launch { recurring.settleLogged() }

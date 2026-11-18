@@ -21,12 +21,16 @@ data class EntryGuess(
     val isKnown: Boolean,
     val isSuggested: Boolean = false,
     val toAccountId: Long? = null,
+    /** Why the category is what it is, shown with a suggestion. */
+    val reason: GuessReason? = null,
 )
 
 /**
- * Works out a pending entry, trying what's most likely first: a merchant the user confirmed, one they've used by another
- * spelling, a recurring payment or loan by name or by amount, then the words themselves. None of it depends on which bank
- * sent the notification. The card named in the notification beats every guess at the account.
+ * Works out a pending entry, trying what's most likely first: what the owner usually files this shop as, by any of its
+ * spellings, or else what it was last time; a recurring payment or loan by name or by amount; the words themselves; and
+ * for a shop never seen, the owner's other payments of about this amount, at about this time of day when that's known.
+ * [history] is the owner's recent entries, for the first and the last of those. None of it depends on which bank sent the
+ * notification. The card named in the notification beats every guess at the account.
  *
  * Cash taken out goes from the card to the cash account, whichever shop's machine it came from, so it's never spending
  * and auto-confirm never acts on it.
@@ -39,6 +43,8 @@ fun guessFor(
     defaultAccountId: Long?,
     recurring: List<RecurringPayment> = emptyList(),
     accounts: List<Account> = emptyList(),
+    history: List<TransactionDetails> = emptyList(),
+    zone: ZoneId = ZoneId.systemDefault(),
 ): EntryGuess {
     val active = accounts.filterNot { it.isArchived }
     val cardAccountId = active.firstOrNull { entry.cardEnding.isNotEmpty() && it.cardEnding == entry.cardEnding }?.id
@@ -52,19 +58,38 @@ fun guessFor(
     val merchant = confirmed
         ?: merchants.firstOrNull { it.name.equals(prettyMerchant(entry.merchant), ignoreCase = true) }
         ?: merchants.filter { it.lastCategoryId != null }.sortedByDescending { it.useCount }.firstOrNull { nameIsIn(it.name, words) }
-    val remembered = categories.firstOrNull { it.id == merchant?.lastCategoryId && !it.isArchived }
     val expense = entry.kind == TransactionKind.EXPENSE
+    fun live(id: Long?) = categories.firstOrNull { it.id == id && !it.isArchived }
+    // What the shop is usually filed as wins over what it was last time, so one odd purchase doesn't steer the next.
+    val usual = if (expense) usualFiling(merchant?.name ?: prettyMerchant(entry.merchant), history)?.takeIf { live(it.categoryId) != null } else null
+    val remembered = live(usual?.categoryId) ?: live(merchant?.lastCategoryId)
     val payment = if (expense && remembered == null) paymentFor(entry, words, recurring) else null
-    val category = remembered
-        ?: categories.firstOrNull { it.id == payment?.categoryId && !it.isArchived }
-        ?: if (expense) categoryFromWords(words, categories) else null
+    val fromPayment = live(payment?.categoryId)
+    val fromWords = if (expense && remembered == null && fromPayment == null) categoryFromWords(words, categories) else null
+    val alike = if (expense && remembered == null && fromPayment == null && fromWords == null) {
+        alikeFiling(entry.amount, entry.postedAt, history, zone)?.takeIf { live(it.categoryId) != null }
+    } else {
+        null
+    }
+    val category = remembered ?: fromPayment ?: fromWords ?: live(alike?.categoryId)
+    val shopName = merchant?.name ?: usual?.shop
+    val reason = when {
+        category == null -> null
+        remembered != null -> GuessReason.UsualAt(shopName ?: prettyMerchant(entry.merchant), usual?.times ?: 1)
+        fromPayment != null -> GuessReason.Recurring(payment!!.name)
+        fromWords != null -> GuessReason.Words
+        else -> alike?.reason
+    }
+    val known = confirmed != null && remembered != null
     return EntryGuess(
-        merchantName = merchant?.name ?: payment?.name ?: prettyMerchant(entry.merchant),
+        merchantName = shopName ?: payment?.name ?: prettyMerchant(entry.merchant),
         categoryId = category?.id,
-        personId = merchant?.lastPersonId ?: payment?.personId ?: category?.defaultPersonId ?: categories.firstOrNull { it.id == category?.parentId }?.defaultPersonId,
-        accountId = cardAccountId ?: merchant?.lastAccountId ?: payment?.accountId ?: defaultAccountId,
-        isKnown = confirmed != null && remembered != null,
-        isSuggested = category != null && !(confirmed != null && remembered != null),
+        personId = usual?.personId ?: merchant?.lastPersonId ?: payment?.personId ?: alike?.personId
+            ?: category?.defaultPersonId ?: categories.firstOrNull { it.id == category?.parentId }?.defaultPersonId,
+        accountId = cardAccountId ?: usual?.accountId ?: merchant?.lastAccountId ?: payment?.accountId ?: defaultAccountId,
+        isKnown = known,
+        isSuggested = category != null && !known,
+        reason = reason,
     )
 }
 

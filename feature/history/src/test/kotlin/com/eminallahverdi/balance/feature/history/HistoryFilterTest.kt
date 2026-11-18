@@ -38,6 +38,7 @@ class HistoryFilterTest {
         parent: Category? = transport,
         toAccount: Account? = null,
         note: String = "",
+        merchant: Merchant? = bolt,
     ) = TransactionDetails(
         transaction = Transaction(1, kind, Money(amount), LocalDate.of(2026, 10, 31), accountId = card.id, toAccountId = toAccount?.id, note = note),
         account = card,
@@ -45,7 +46,7 @@ class HistoryFilterTest {
         category = category,
         parentCategory = parent,
         person = me,
-        merchant = bolt,
+        merchant = merchant,
     )
 
     @Test fun `opens on this month with nothing narrowed by default`() {
@@ -246,15 +247,40 @@ class HistoryFilterTest {
         val bus = Category(12, "Bus", CategoryType.EXPENSE, parentId = 10, icon = "directions_bus", color = 0xFF222222, sortOrder = 1)
         val all = listOf(transport, taxi, bus)
         val palette = listOf(0xFF111111, 0xFFAAAAAA, 0xFFBBBBBB)
-        val ring = listOf(row(700), row(300), row(500, category = bus), row(200, category = transport, parent = null)).subCategoryRing(transport, all, palette, 0xFF000000)!!
+        val ring = listOf(row(700), row(300), row(500, category = bus), row(200, category = transport, parent = null)).categoryRing(transport, all, palette, 0xFF000000)!!
         assertThat(ring.map { it.name }).containsExactly("Taxi", "Bus", "Transport").inOrder()
         assertThat(ring.map { it.amount }).containsExactly(Money(1_000), Money(500), Money(200)).inOrder()
         // Taxi kept Transport's colour, so it takes the palette's first that isn't Transport's; Bus has its own.
         assertThat(ring.map { it.color }).containsExactly(0xFFAAAAAA, 0xFF222222, 0xFF111111).inOrder()
+        assertThat(ring.map { it.categoryId }).containsExactly(11L, 12L, 10L).inOrder()
+        assertThat(splitsIntoSubCategories(transport, all)).isTrue()
     }
 
-    @Test fun `a category with no sub-categories keeps the bar`() {
-        assertThat(listOf(row(700)).subCategoryRing(transport.copy(id = 99), listOf(transport), listOf(0xFFAAAAAA), 0)).isNull()
+    @Test fun `with no category picked the ring is the categories at the top, and a list with no spending has none`() {
+        val food = Category(20, "Food", CategoryType.EXPENSE, icon = "restaurant", color = 0xFF333333)
+        val ring = listOf(row(700), row(200, category = food, parent = null), row(5_000, kind = TransactionKind.INCOME)).categoryRing(null, listOf(transport, taxi, food), listOf(0xFFAAAAAA), 0)!!
+        assertThat(ring.map { it.name to it.color }).containsExactly("Transport" to 0xFF111111, "Food" to 0xFF333333).inOrder()
+        assertThat(ring.map { it.percent }).containsExactly(78L, 22L).inOrder()
+        assertThat(listOf(row(5_000, kind = TransactionKind.INCOME)).categoryRing(null, listOf(transport), listOf(0xFFAAAAAA), 0)).isNull()
+    }
+
+    @Test fun `the shop ring counts a shop's spellings as one and keeps entries with no shop apart`() {
+        val bravo = Merchant(2, "Bravo")
+        val ring = listOf(row(500, merchant = bravo), row(300, merchant = bravo.copy(id = 3, name = "BRAVO ")), row(400), row(100, merchant = null))
+            .shopRing(listOf(0xFF8A94A3, 0xFFAAAAAA, 0xFFBBBBBB), 0xFF8A94A3)!!
+        assertThat(ring.map { it.shop }).containsExactly("Bravo", "Bolt", null).inOrder()
+        assertThat(ring.map { it.amount }).containsExactly(Money(800), Money(400), Money(100)).inOrder()
+        // The rest's grey isn't a shop's colour, and no shop has a grey of its own.
+        assertThat(ring.map { it.color }).containsExactly(0xFFAAAAAA, 0xFFBBBBBB, NO_SHOP_COLOR).inOrder()
+        assertThat(ring.last().isRest).isFalse()
+    }
+
+    @Test fun `past five parts the rest go together`() {
+        val shops = (1..7).map { row(100L * it, merchant = Merchant(it.toLong() + 10, "Shop $it")) }
+        val ring = shops.shopRing(listOf(0xFFAAAAAA), 0xFF8A94A3)!!
+        assertThat(ring).hasSize(6)
+        assertThat(ring.last().isRest).isTrue()
+        assertThat(ring.last().amount).isEqualTo(Money(300))
     }
 
     @Test fun `all time asked for as days is all time, not a span`() {

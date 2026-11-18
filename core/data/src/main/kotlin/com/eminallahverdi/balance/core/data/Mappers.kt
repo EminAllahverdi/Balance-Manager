@@ -86,6 +86,7 @@ internal fun TransactionEntity.toModel() = Transaction(
     debtId = debtId,
     createdAt = Instant.ofEpochMilli(createdAt),
     updatedAt = Instant.ofEpochMilli(updatedAt),
+    paidAt = paidAt?.let(Instant::ofEpochMilli),
 )
 
 internal fun Transaction.toEntity(externalId: String? = null) = TransactionEntity(
@@ -104,6 +105,7 @@ internal fun Transaction.toEntity(externalId: String? = null) = TransactionEntit
     debtId = debtId,
     createdAt = createdAt.toEpochMilli(),
     updatedAt = updatedAt.toEpochMilli(),
+    paidAt = paidAt?.toEpochMilli(),
 )
 
 internal fun DebtEntity.toModel() = Debt(id, counterparty, DebtDirection.valueOf(direction), Money(amountMinor), categoryId, note, LocalDate.ofEpochDay(date), Money(paidBeforeMinor), monthlyMinor?.let(::Money))

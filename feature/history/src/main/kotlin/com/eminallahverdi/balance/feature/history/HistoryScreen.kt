@@ -1,10 +1,6 @@
 package com.eminallahverdi.balance.feature.history
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -79,7 +75,7 @@ import com.eminallahverdi.balance.core.designsystem.component.DonutChart
 import com.eminallahverdi.balance.core.designsystem.component.FittedAmount
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
-import com.eminallahverdi.balance.core.designsystem.component.SplitBar
+import com.eminallahverdi.balance.core.designsystem.component.SegmentedToggle
 import com.eminallahverdi.balance.core.designsystem.component.text
 import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
@@ -122,7 +118,13 @@ fun HistoryRoute(onOpen: (Long) -> Unit, onBack: (() -> Unit)? = null, viewModel
                     Text(state.filter.emptyMessage(YearMonth.now()).text(), style = BtTheme.type.body, color = BtTheme.colors.textMuted, modifier = Modifier.padding(vertical = 24.dp))
                 }
             } else {
-                item(key = "summary") { Summary(state) }
+                item(key = "summary") {
+                    Summary(state, viewModel::setRingBy) { slice ->
+                        // A shop narrows through the search, so the field shows what it's searching for.
+                        slice.shop?.let { query = it }
+                        viewModel.narrowTo(slice)
+                    }
+                }
                 items(state.days, key = { it.date.toEpochDay() }) { DayGroup(it, state.hideAmounts, actions) }
             }
         }
@@ -276,8 +278,13 @@ private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit, lead
     )
 }
 
+/**
+ * What the list comes to, and where its spending went: a ring by category, or by sub-category with one picked that has
+ * them, or by shop, with each part's name, amount and share beside it. A part narrows the list to itself when tapped. A
+ * list with no spending in it, like transfers, keeps the plain figure.
+ */
 @Composable
-private fun Summary(state: HistoryUiState) {
+private fun Summary(state: HistoryUiState, onRingBy: (RingBy) -> Unit, onSlice: (RingSlice) -> Unit) {
     val c = BtTheme.colors
     val filter = state.filter
     val parts = listOfNotNull(
@@ -291,48 +298,64 @@ private fun Summary(state: HistoryUiState) {
         filter.periodLabel { DateLabels.monthName(it.atDay(1)) } ?: stringResource(R.string.history_all_time),
     )
     val total = amount(state.total, state.hideAmounts && !state.totalIsSpending)
-    // Picking a category in place changes the card in place: it grows to the ring's height as the bar fades and the ring
-    // sweeps in, and goes back the same way.
+    // Narrowing changes the card in place: it grows or shrinks to fit, and a new ring sweeps in.
     BtCard(bordered = true, modifier = Modifier.animateContentSize()) {
-        AnimatedContent(state.ring, transitionSpec = { fadeIn() togetherWith fadeOut() }, contentKey = { it != null }, label = "summary") { ring ->
-            if (ring == null) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(parts.joinToString(" · "), style = BtTheme.type.caption, color = c.textSecondary)
-                        Text(total, style = BtTheme.type.amountMedium, color = c.textPrimary)
-                    }
-                    if (state.shares.isNotEmpty()) SplitBar(state.shares, Modifier.width(120.dp))
+        val ring = state.ring
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(parts.joinToString(" · "), style = BtTheme.type.caption, color = c.textSecondary, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                if (ring != null) {
+                    SegmentedToggle(
+                        options = listOf(
+                            stringResource(if (state.ringOfSubCategories) R.string.history_by_sub_category else R.string.history_by_category),
+                            stringResource(R.string.history_by_shop),
+                        ),
+                        selected = state.ringBy.ordinal,
+                        onSelect = { onRingBy(RingBy.entries[it]) },
+                        compact = true,
+                    )
                 }
+            }
+            if (ring == null) {
+                Text(total, style = BtTheme.type.amountMedium, color = c.textPrimary)
             } else {
-                SubCategoryRing(parts.joinToString(" · "), total, ring)
+                SummaryRing(total, ring, onSlice)
             }
         }
     }
 }
 
-/** A category's spending by sub-category: a ring with the total inside, and each part's name, amount and share beside it. */
+/** The ring with the total inside, and its parts beside it, each narrowing the list when tapped. */
 @Composable
-private fun SubCategoryRing(caption: String, total: String, ring: List<RingSlice>) {
+private fun SummaryRing(total: String, ring: List<RingSlice>, onSlice: (RingSlice) -> Unit) {
     val c = BtTheme.colors
     val spent = stringResource(R.string.history_spent)
     val rest = stringResource(R.string.history_the_rest)
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(caption, style = BtTheme.type.caption, color = c.textSecondary)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            DonutChart(ring.map { it.color to it.amount.minor }, description = "$spent $total", modifier = Modifier.size(RING_SIZE), thickness = 12.dp) {
-                Column(Modifier.padding(horizontal = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    FittedAmount(total, BtTheme.type.amountSmall)
-                    Text(spent, style = BtTheme.type.caption, color = c.textMuted)
-                }
+    val noShop = stringResource(R.string.history_no_shop)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        DonutChart(ring.map { it.color to it.amount.minor }, description = "$spent $total", modifier = Modifier.size(RING_SIZE), thickness = 12.dp) {
+            Column(Modifier.padding(horizontal = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                FittedAmount(total, BtTheme.type.amountSmall)
+                Text(spent, style = BtTheme.type.caption, color = c.textMuted)
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                ring.forEach { slice ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PersonDot(slice.color, 8.dp)
-                        Text(slice.name ?: rest, style = BtTheme.type.caption, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                        Text(MoneyFormat.format(slice.amount), style = BtTheme.type.amountSmall.copy(fontSize = 13.sp, lineHeight = 17.sp), color = c.textPrimary)
-                        Text(if (slice.percent == 0L) "<1%" else "${slice.percent}%", style = BtTheme.type.caption, color = c.textSecondary, textAlign = TextAlign.End, modifier = Modifier.width(32.dp))
-                    }
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            ring.forEach { slice ->
+                val name = slice.name ?: if (slice.isRest) rest else noShop
+                val narrows = slice.categoryId != null || slice.shop != null
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(BtShapes.sm)
+                        .then(if (narrows) Modifier.clickable(role = Role.Button, onClickLabel = stringResource(R.string.history_show_only, name)) { onSlice(slice) } else Modifier)
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    PersonDot(slice.color, 8.dp)
+                    Text(name, style = BtTheme.type.caption, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    Text(MoneyFormat.format(slice.amount), style = BtTheme.type.amountSmall.copy(fontSize = 13.sp, lineHeight = 17.sp), color = c.textPrimary)
+                    Text(if (slice.percent == 0L) "<1%" else "${slice.percent}%", style = BtTheme.type.caption, color = c.textSecondary, textAlign = TextAlign.End, modifier = Modifier.width(32.dp))
                 }
             }
         }
