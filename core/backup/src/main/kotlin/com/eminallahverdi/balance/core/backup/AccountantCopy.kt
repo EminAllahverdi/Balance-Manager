@@ -34,6 +34,10 @@ internal fun accountantTag(file: String, environment: AppEnvironment): String =
 internal fun accountantFolderName(environment: AppEnvironment): String =
     if (environment == AppEnvironment.DEV) "Cibim Dev – accountant" else "Cibim – accountant"
 
+/** Dev's files say they're test data in their own names, so a search by name can't pick one up for the real thing. */
+internal fun accountantFileName(file: String, environment: AppEnvironment): String =
+    if (environment == AppEnvironment.DEV) "Cibim Dev $file – test data" else "Cibim $file"
+
 /**
  * The owner's own extra: after each backup, a copy their accountant can read, in a visible folder of their Drive. A Doc
  * with where the money stands and the last months worked out, and a Sheet of every entry in those months. Both are
@@ -82,19 +86,20 @@ class AccountantCopy @Inject constructor(
             recurring = recurring.payments.first(),
             planned = planned.statuses.first(),
             receipts = receipts.receipts.first().filter { it.date in window },
+            testData = environment == AppEnvironment.DEV,
         )
     }
 
     private fun upload(token: String, input: AccountantInput) {
         val folderTag = accountantTag("folder", environment)
         val folder = drive.find(token, folderTag) ?: drive.createFolder(token, accountantFolderName(environment), folderTag)
-        put(token, folder, accountantTag("snapshot", environment), "Cibim snapshot", DOC_TYPE, "text/html", accountantSnapshotHtml(input))
-        put(token, folder, accountantTag("transactions", environment), "Cibim transactions", SHEET_TYPE, "text/csv", accountantTransactionsCsv(input))
+        put(token, folder, accountantTag("snapshot", environment), accountantFileName("snapshot", environment), DOC_TYPE, "text/html", accountantSnapshotHtml(input))
+        put(token, folder, accountantTag("transactions", environment), accountantFileName("transactions", environment), SHEET_TYPE, "text/csv", accountantTransactionsCsv(input))
     }
 
     private fun put(token: String, folder: String, tag: String, name: String, googleType: String, contentType: String, text: String) {
         val bytes = text.toByteArray()
         val existing = drive.find(token, tag)
-        if (existing != null) drive.replaceContent(token, existing, contentType, bytes) else drive.createConverted(token, name, googleType, folder, tag, contentType, bytes)
+        if (existing != null) drive.replaceContent(token, existing, name, contentType, bytes) else drive.createConverted(token, name, googleType, folder, tag, contentType, bytes)
     }
 }

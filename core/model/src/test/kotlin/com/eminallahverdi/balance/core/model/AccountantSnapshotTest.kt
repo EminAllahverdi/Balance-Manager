@@ -110,6 +110,12 @@ class AccountantSnapshotTest {
         assertThat(accountantSnapshotHtml(input)).doesNotContain("not yet logged")
     }
 
+    @Test fun `Dev's copy says it's test data, at the top`() {
+        val html = accountantSnapshotHtml(input.copy(testData = true))
+        assertThat(html).contains("<h1>Cibim Dev snapshot – test data</h1><p>Test data from the Dev app")
+        assertThat(accountantSnapshotHtml(input)).doesNotContain("test data")
+    }
+
     @Test fun `names are escaped`() {
         val odd = input.copy(people = listOf(Person(9, "<b>Me</b>", 0)))
         assertThat(accountantSnapshotHtml(odd)).contains("&lt;b&gt;Me&lt;/b&gt;")

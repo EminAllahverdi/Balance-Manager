@@ -45,6 +45,11 @@ internal fun findQuery(tag: String): String =
 internal fun newItemJson(name: String, mimeType: String, parent: String?, tag: String): String =
     json.encodeToString(NewItem(name, mimeType, parent?.let { listOf(it) }, mapOf(TAG_KEY to tag)))
 
+@Serializable
+private data class Rename(val name: String)
+
+internal fun renameJson(name: String): String = json.encodeToString(Rename(name))
+
 internal fun parseFound(body: String): String? = json.decodeFromString<Found>(body).files.firstOrNull()?.id
 
 /**
@@ -80,15 +85,24 @@ class AccountantDrive @Inject constructor() {
         return json.decodeFromString<Created>(connection.readAll()).id
     }
 
-    /** New content for a Doc or Sheet made by [createConverted]: the same file, so its link and place stay. */
-    fun replaceContent(token: String, id: String, contentType: String, content: ByteArray) {
+    /**
+     * New content for a Doc or Sheet made by [createConverted], and its [name] set again: the same file, so its link and
+     * place stay, and one made under an older name takes the current one.
+     */
+    fun replaceContent(token: String, id: String, name: String, contentType: String, content: ByteArray) {
+        val head = "--$BOUNDARY\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${renameJson(name)}\r\n--$BOUNDARY\r\nContent-Type: $contentType\r\n\r\n".toByteArray()
+        val tail = "\r\n--$BOUNDARY--\r\n".toByteArray()
         // HttpURLConnection can't send PATCH, and Google's APIs take it as a POST that says so.
-        val connection = connect("$UPLOAD/$id?uploadType=media&fields=id", token, "POST")
+        val connection = connect("$UPLOAD/$id?uploadType=multipart&fields=id", token, "POST")
         connection.setRequestProperty("X-HTTP-Method-Override", "PATCH")
         connection.doOutput = true
-        connection.setRequestProperty("Content-Type", contentType)
-        connection.setFixedLengthStreamingMode(content.size)
-        connection.outputStream.use { it.write(content) }
+        connection.setRequestProperty("Content-Type", "multipart/related; boundary=$BOUNDARY")
+        connection.setFixedLengthStreamingMode(head.size + content.size + tail.size)
+        connection.outputStream.use { out ->
+            out.write(head)
+            out.write(content)
+            out.write(tail)
+        }
         connection.readAll()
     }
 

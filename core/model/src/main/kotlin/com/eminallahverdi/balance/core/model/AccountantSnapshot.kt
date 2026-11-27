@@ -30,6 +30,8 @@ data class AccountantInput(
     val recurring: List<RecurringPayment>,
     val planned: List<PlannedStatus>,
     val receipts: List<Receipt>,
+    /** Made by Dev, the app for trying things: said at the top, in its title and in its file names, so it's never taken for real. */
+    val testData: Boolean = false,
 ) {
     val today: LocalDate get() = madeAt.toLocalDate()
 }
@@ -57,8 +59,10 @@ private val TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Local
 fun accountantSnapshotHtml(input: AccountantInput): String = buildString {
     val months = accountantMonths(input.today)
     val window = accountantWindow(input.today)
-    append("<html><head><meta charset=\"utf-8\"><title>Cibim snapshot</title></head><body>")
-    h(1, "Cibim snapshot")
+    val title = if (input.testData) "Cibim Dev snapshot – test data" else "Cibim snapshot"
+    append("<html><head><meta charset=\"utf-8\"><title>").append(escape(title)).append("</title></head><body>")
+    h(1, title)
+    if (input.testData) p("Test data from the Dev app, which the owner uses to try things. Not the owner's real money: never use it for advice.")
     p(
         "Made ${DAY.format(input.madeAt)} at ${TIME.format(input.madeAt)}, phone time. " +
             "Covers ${DAY.format(window.start)} to ${DAY.format(window.endInclusive)}. " +
