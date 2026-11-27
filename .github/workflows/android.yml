@@ -63,6 +63,8 @@ jobs:
       KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
       KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
       KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      # Only a hash of the accountant copy's PIN, never the PIN. Missing, the copy just can't be unlocked.
+      ACCOUNTANT_PIN_HASH: ${{ secrets.ACCOUNTANT_PIN_HASH }}
     steps:
       - uses: actions/checkout@v4
         with:

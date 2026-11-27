@@ -63,6 +63,8 @@ internal fun BackupSection(viewModel: BackupViewModel = hiltViewModel()) {
             Divider()
             SettingRow(icon = Icons.Rounded.CloudUpload, title = stringResource(R.string.settings_back_up_now), onClick = viewModel::backUpNow) { Chevron() }
         }
+        // The owner's copy for their accountant, which goes with each backup. Nothing shows until it's unlocked.
+        AccountantRow()
         Divider()
         SettingRow(
             icon = Icons.Rounded.CloudDownload,
@@ -140,7 +142,7 @@ private fun backupCaption(backup: DriveBackup, showSource: Boolean): String? {
 }
 
 @Composable
-private fun backupTime(millis: Long): String {
+internal fun backupTime(millis: Long): String {
     val time = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault())
     val today = LocalDate.now()
     val day = when (time.toLocalDate()) {

@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.eminallahverdi.balance.core.designsystem.R
 import com.eminallahverdi.balance.core.designsystem.icon.BtIcons
@@ -61,6 +62,8 @@ fun BtTextField(
     onChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     keyboardOptions: KeyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+    /** How the text shows, like dots for a PIN. */
+    visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     val c = BtTheme.colors
     Box(modifier.fillMaxWidth().heightIn(min = 52.dp).clip(BtShapes.md).background(c.bgSurfaceRaised).padding(horizontal = 16.dp), contentAlignment = Alignment.CenterStart) {
@@ -72,6 +75,7 @@ fun BtTextField(
             textStyle = BtTheme.type.body.copy(color = c.textPrimary),
             cursorBrush = SolidColor(c.accentFill),
             keyboardOptions = keyboardOptions,
+            visualTransformation = visualTransformation,
             modifier = Modifier.fillMaxWidth(),
         )
     }

@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -96,6 +97,8 @@ fun SettingsRoute(
     var pickingTime by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxSize()) {
         SettingsList(state, viewModel, onBack, onOpenCatalog, onOpenConfirm, onPickTime = { pickingTime = true })
+        // A wrong round at the accountant copy's PIN leaves Settings, back to Home.
+        AccountantEffects(onLeave = onBack)
         BtTimePickerSheet(
             visible = pickingTime,
             title = stringResource(R.string.settings_reminder_time),
@@ -164,17 +167,26 @@ private fun SettingsList(
                 Divider()
                 ImportRow(viewModel)
             }
-            VersionLine()
+            VersionLine(onTap = hiltViewModel<AccountantViewModel>()::tapVersion)
         }
     }
 }
 
-/** Which app and build this is, so it's plain which one is installed when two sit side by side. */
+/**
+ * Which app and build this is, so it's plain which one is installed when two sit side by side. Taps on it count quietly,
+ * with no ripple, towards opening the accountant copy.
+ */
 @Composable
-private fun VersionLine() {
+private fun VersionLine(onTap: () -> Unit) {
     val context = LocalContext.current
     val version = remember { context.appVersion() }
-    Text(version, style = BtTheme.type.caption, color = BtTheme.colors.textMuted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+    Text(
+        version,
+        style = BtTheme.type.caption,
+        color = BtTheme.colors.textMuted,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onTap).padding(vertical = 8.dp),
+    )
 }
 
 private fun Context.appVersion(): String {

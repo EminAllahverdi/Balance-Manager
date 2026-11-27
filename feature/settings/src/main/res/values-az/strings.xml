@@ -136,4 +136,12 @@
     <string name="settings_accounts_grid">Dördlü cədvəl</string>
     <string name="settings_accounts_grid_caption">Qalanları üçün yana sürüşdürün.</string>
     <string name="settings_accounts_tap">Hər iki halda hesaba toxunanda onun əməliyyatları açılır.</string>
+    <string name="settings_accountant">Mühasibim üçün nüsxə</string>
+    <string name="settings_accountant_sending">Nüsxə göndərilir…</string>
+    <string name="settings_accountant_off">Hər ehtiyat nüsxə ilə mühasibinizin oxuya biləcəyi nüsxə, Drive-ınızdakı qovluqda</string>
+    <string name="settings_accountant_needs_backup">Hər ehtiyat nüsxə ilə gedir, ehtiyat nüsxə isə söndürülüb</string>
+    <string name="settings_accountant_failed">Son nüsxə göndərilmədi. Növbəti ehtiyat nüsxə ilə yenə cəhd ediləcək</string>
+    <string name="settings_accountant_not_yet">Aktivdir. İlk nüsxə növbəti ehtiyat nüsxə ilə gedəcək</string>
+    <string name="settings_accountant_copied">Son nüsxə: %1$s</string>
+    <string name="settings_accountant_pin">PIN</string>
 </resources>

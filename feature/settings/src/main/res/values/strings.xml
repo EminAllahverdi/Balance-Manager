@@ -136,4 +136,12 @@
     <string name="settings_accounts_grid">Grid of four</string>
     <string name="settings_accounts_grid_caption">Swipe sideways for the rest.</string>
     <string name="settings_accounts_tap">Either way, tapping an account opens its transactions.</string>
+    <string name="settings_accountant">Copy for my accountant</string>
+    <string name="settings_accountant_sending">Sending a copy…</string>
+    <string name="settings_accountant_off">With each backup, a copy your accountant can read, in a folder of your Drive</string>
+    <string name="settings_accountant_needs_backup">Goes with each backup, and backups are off</string>
+    <string name="settings_accountant_failed">The last copy didn\'t go. It tries again with the next backup</string>
+    <string name="settings_accountant_not_yet">On. The first copy goes with the next backup</string>
+    <string name="settings_accountant_copied">Last copied %1$s</string>
+    <string name="settings_accountant_pin">PIN</string>
 </resources>

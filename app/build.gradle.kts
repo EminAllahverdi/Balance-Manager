@@ -25,6 +25,10 @@ android {
         applicationId = "com.eminallahverdi.balance"
         versionCode = commitCount
         versionName = providers.gradleProperty("appVersion").getOrElse("1.0.0")
+        // The accountant copy's PIN, as a hash only, from CI's ACCOUNTANT_PIN_HASH secret. Without it the copy can't be
+        // unlocked. The PIN itself is never in this repo or its builds.
+        val pinHash = providers.environmentVariable("ACCOUNTANT_PIN_HASH").orElse(providers.gradleProperty("accountantPinHash")).getOrElse("")
+        buildConfigField("String", "ACCOUNTANT_PIN_HASH", "\"${pinHash.trim()}\"")
     }
 
     buildFeatures {

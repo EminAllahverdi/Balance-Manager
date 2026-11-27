@@ -28,6 +28,7 @@ class DriveBackups @Inject constructor(
     private val drive: DriveFiles,
     private val preferences: UserPreferencesRepository,
     private val environment: AppEnvironment,
+    private val accountant: AccountantCopy,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) {
     /** Sends one backup and clears out old ones, and records how it went for the indicators. It never throws. */
@@ -45,6 +46,8 @@ class DriveBackups @Inject constructor(
         }.isSuccess
         file.delete()
         if (sent) preferences.setBackedUp(Instant.now().toEpochMilli()) else preferences.setBackupProblem(BackupProblem.FAILED)
+        // The accountant's copy goes with every backup, the 03:00 one and Back up now alike. It's off unless unlocked.
+        accountant.send()
         sent
     }
 

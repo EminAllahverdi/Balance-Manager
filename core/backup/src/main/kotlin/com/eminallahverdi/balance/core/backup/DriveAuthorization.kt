@@ -20,6 +20,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 /** Only the app's own hidden folder in Drive. It can't see anything else the user keeps there. */
 private const val APP_FOLDER_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
 
+/** Only files this app made itself, for the accountant's copy. Like the hidden folder, it can't see anything else. */
+private const val OWN_FILES_SCOPE = "https://www.googleapis.com/auth/drive.file"
+
 sealed interface DriveAccess {
     data class Granted(val token: String) : DriveAccess
 
@@ -36,8 +39,14 @@ sealed interface DriveAccess {
 class DriveAuthorization @Inject constructor(@ApplicationContext private val context: Context) {
     private val client get() = Identity.getAuthorizationClient(context)
     private val request = AuthorizationRequest.builder().setRequestedScopes(listOf(Scope(APP_FOLDER_SCOPE))).build()
+    private val accountantRequest = AuthorizationRequest.builder().setRequestedScopes(listOf(Scope(APP_FOLDER_SCOPE), Scope(OWN_FILES_SCOPE))).build()
 
-    suspend fun access(): DriveAccess = try {
+    suspend fun access(): DriveAccess = authorize(request)
+
+    /** The backup's folder and the files the app makes for the accountant. Google asks once, when the copy is turned on. */
+    suspend fun accountantAccess(): DriveAccess = authorize(accountantRequest)
+
+    private suspend fun authorize(request: AuthorizationRequest): DriveAccess = try {
         client.authorize(request).await().toAccess()
     } catch (failure: ApiException) {
         if (failure.statusCode == CommonStatusCodes.DEVELOPER_ERROR) DriveAccess.NotSetUp else DriveAccess.Unavailable
