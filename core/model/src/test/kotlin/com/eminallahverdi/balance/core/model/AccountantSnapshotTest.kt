@@ -2,10 +2,8 @@ package com.eminallahverdi.balance.core.model
 
 import com.google.common.truth.Truth.assertThat
 import java.io.File
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
 import org.junit.Test
 
 /**
@@ -57,7 +55,6 @@ class AccountantSnapshotTest {
 
     private val input = AccountantInput(
         madeAt = LocalDateTime.of(2026, 1, 20, 3, 0),
-        zone = ZoneId.of("Asia/Baku"),
         appVersion = "1.8.0",
         balances = listOf(AccountBalance(card, Money(1_204_870)), AccountBalance(cash, Money(18_260)), AccountBalance(savings, Money(500_000))),
         entries = entries,
@@ -73,7 +70,6 @@ class AccountantSnapshotTest {
             RecurringPayment(2, "Internet", Money(3_500), 1, 1, 2, RecurringFrequency.MONTHLY, LocalDate.of(2026, 1, 25)),
         ),
         planned = listOf(PlannedStatus(PlannedPayment(1, "Car insurance", Money(12_000), LocalDate.of(2026, 1, 28), plannedOn = LocalDate.of(2026, 1, 3)))),
-        waiting = listOf(PendingEntry(1, "x", "Bank", Money(1_250), TransactionKind.EXPENSE, "YANGO", Instant.parse("2026-01-19T19:40:00Z"))),
         receipts = listOf(
             Receipt(1, "Bravo", LocalDate.of(2025, 12, 3), Money(4_240), "F1", listOf(ReceiptItem("Milk 1l", 2_000, Money(180), Money(360), ItemGroup.entries.first()))),
         ),
@@ -108,6 +104,10 @@ class AccountantSnapshotTest {
         val html = accountantSnapshotHtml(input)
         assertThat(html).contains("<td>Kamal</td><td>Owner owes them</td><td>Owner borrowed</td><td>₼300.00</td><td>₼150.00</td>")
         assertThat(html).doesNotContain("<td>Settled</td>")
+    }
+
+    @Test fun `unconfirmed bank payments are never in it`() {
+        assertThat(accountantSnapshotHtml(input)).doesNotContain("not yet logged")
     }
 
     @Test fun `names are escaped`() {

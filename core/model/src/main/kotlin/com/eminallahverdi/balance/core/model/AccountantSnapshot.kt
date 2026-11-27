@@ -3,7 +3,6 @@ package com.eminallahverdi.balance.core.model
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.absoluteValue
@@ -12,7 +11,7 @@ import kotlin.math.absoluteValue
  * Bumped whenever the snapshot's sections or their meaning change, so whoever reads it can tell. The guide in the
  * snapshot says the same, in words.
  */
-const val ACCOUNTANT_FORMAT = 1
+const val ACCOUNTANT_FORMAT = 2
 
 /** Full months shown before the one running: enough to see a trend, and January still has last year behind it. */
 const val ACCOUNTANT_MONTHS_BEFORE = 6
@@ -20,8 +19,6 @@ const val ACCOUNTANT_MONTHS_BEFORE = 6
 /** Everything the accountant's copy is made from. Gathered by the app, turned into text here, so a test can pin it down. */
 data class AccountantInput(
     val madeAt: LocalDateTime,
-    /** The phone's, for the time a bank payment arrived. */
-    val zone: ZoneId,
     val appVersion: String,
     /** Accounts that aren't archived, with today's balance. */
     val balances: List<AccountBalance>,
@@ -32,8 +29,6 @@ data class AccountantInput(
     val debts: List<DebtBalance>,
     val recurring: List<RecurringPayment>,
     val planned: List<PlannedStatus>,
-    /** Bank payments read but not yet confirmed, so not in any balance. */
-    val waiting: List<PendingEntry>,
     val receipts: List<Receipt>,
 ) {
     val today: LocalDate get() = madeAt.toLocalDate()
@@ -180,19 +175,6 @@ fun accountantSnapshotHtml(input: AccountantInput): String = buildString {
         table(listOf("Payment", "Amount", "Date"), due.map { listOf(it.payment.name, money(it.payment.amount), DAY.format(it.payment.date)) })
     }
 
-    h(2, "Bank payments not yet logged")
-    p("Read from bank notifications but not confirmed yet, so not in any balance or total above.")
-    if (input.waiting.isEmpty()) {
-        p("None.")
-    } else {
-        table(
-            listOf("When", "From the bank", "Amount"),
-            input.waiting.sortedBy { it.postedAt }.map { w ->
-                listOf("${DAY.format(w.postedAt.atZone(input.zone))} ${TIME.format(w.postedAt.atZone(input.zone))}", w.merchant, if (w.kind == TransactionKind.INCOME) "+" + money(w.amount) else money(w.amount))
-            },
-        )
-    }
-
     h(2, "Groceries from receipts")
     val inWindow = input.receipts.filter { it.date in window }
     if (inWindow.isEmpty()) {
@@ -219,6 +201,7 @@ private val GUIDE = listOf(
     "Bank loan payments are spending, in the loan's category. What's left of a loan is in Bank loans.",
     "In the transactions sheet, spending and transfers out of an account are negative, so the Amount column adds up. Type says which kind each row is: Expense, Income, Transfer, Adjustment, Internal or Debt.",
     "Every expense says who it was for. Family means shared things, like groceries.",
+    "Only what the owner has logged or confirmed is here. Bank notifications the app read but the owner hasn't confirmed are left out, because until then they may be wrong, doubled, or not a payment at all.",
 )
 
 private fun every(frequency: RecurringFrequency): String = when (frequency) {

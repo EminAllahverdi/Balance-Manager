@@ -2,7 +2,6 @@ package com.eminallahverdi.balance.core.backup
 
 import android.content.Context
 import com.eminallahverdi.balance.core.common.IoDispatcher
-import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.DebtRepository
 import com.eminallahverdi.balance.core.data.PlannedRepository
@@ -12,14 +11,12 @@ import com.eminallahverdi.balance.core.data.TransactionRepository
 import com.eminallahverdi.balance.core.datastore.InstallPreferences
 import com.eminallahverdi.balance.core.model.AccountantInput
 import com.eminallahverdi.balance.core.model.AppEnvironment
-import com.eminallahverdi.balance.core.model.PendingStatus
 import com.eminallahverdi.balance.core.model.accountantSnapshotHtml
 import com.eminallahverdi.balance.core.model.accountantTransactionsCsv
 import com.eminallahverdi.balance.core.model.accountantWindow
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
@@ -54,7 +51,6 @@ class AccountantCopy @Inject constructor(
     private val debts: DebtRepository,
     private val recurring: RecurringRepository,
     private val planned: PlannedRepository,
-    private val bankAlerts: BankAlertRepository,
     private val receipts: ReceiptRepository,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) {
@@ -77,7 +73,6 @@ class AccountantCopy @Inject constructor(
         val window = accountantWindow(now.toLocalDate())
         return AccountantInput(
             madeAt = now,
-            zone = ZoneId.systemDefault(),
             appVersion = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty(),
             balances = transactions.balances.first().filterNot { it.account.isArchived },
             entries = transactions.observeDetails(window).first(),
@@ -86,7 +81,6 @@ class AccountantCopy @Inject constructor(
             debts = debts.debts.first(),
             recurring = recurring.payments.first(),
             planned = planned.statuses.first(),
-            waiting = bankAlerts.items(Instant.now()).first().map { it.entry }.filter { it.status == PendingStatus.WAITING },
             receipts = receipts.receipts.first().filter { it.date in window },
         )
     }
