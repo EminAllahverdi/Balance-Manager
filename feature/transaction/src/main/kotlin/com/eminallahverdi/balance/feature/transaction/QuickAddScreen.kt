@@ -114,6 +114,9 @@ private const val SHORT_SCREEN_DP = 800
 /** How much of the screen a page with the tabs takes: room for the full grid, or the keypad page of a transfer. */
 private const val TABBED_SHEET_SHARE = 0.84f
 
+/** A bank payment's pages, with where it came from above the tabs: as tall as the sheet goes, the same on every tab. */
+private const val BANK_SHEET_SHARE = 0.92f
+
 /** Names offered while one is typed. */
 private const val NAME_MATCHES = 4
 
@@ -153,9 +156,9 @@ fun QuickAddRoute(onClose: () -> Unit, onVoice: (() -> Unit)? = null, viewModel:
             if (!viewModel.back()) scope.launch { sheet.hide() }.invokeOnCompletion { onClose() }
         }
         // Every page with the tabs on it is one height, so switching between them never moves the tabs under the thumb. A bank
-        // payment's own page grows to fit, as a typed entry's does, so its share and the rest show without scrolling.
-        val tabbed = state.showsKinds && !(state.pending != null && state.step == QuickAddStep.ENTRY)
-        val tabbedHeight = (LocalConfiguration.current.screenHeightDp * TABBED_SHEET_SHARE).dp
+        // payment's pages are a little taller, all alike, for the line saying where it came from and a bill's share below it.
+        val tabbed = state.showsKinds
+        val tabbedHeight = (LocalConfiguration.current.screenHeightDp * (if (state.pending != null) BANK_SHEET_SHARE else TABBED_SHEET_SHARE)).dp
         Column(Modifier.fillMaxWidth().then(if (tabbed) Modifier.height(tabbedHeight) else Modifier.animateContentSize()).navigationBarsPadding().imePadding()) {
             if (state.editing != null) EditHeader(onDelete = { confirmDelete = true })
             state.heard?.let { HeardLine(it) }
