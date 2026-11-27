@@ -58,6 +58,13 @@ class MainActivity : FragmentActivity() {
                             onEditPending = { id ->
                                 startActivity(Intent(this, QuickAddActivity::class.java).putExtra(QuickAddViewModel.ARG_PENDING, id))
                             },
+                            onDebtPending = { id ->
+                                startActivity(
+                                    Intent(this, QuickAddActivity::class.java)
+                                        .putExtra(QuickAddViewModel.ARG_PENDING, id)
+                                        .putExtra(QuickAddViewModel.ARG_PENDING_AS_DEBT, true),
+                                )
+                            },
                             onAddReceipt = { entry ->
                                 val intent = Intent(this, QuickAddActivity::class.java)
                                     .putExtra(QuickAddViewModel.ARG_RECEIPT_TOTAL, entry.total.minor)

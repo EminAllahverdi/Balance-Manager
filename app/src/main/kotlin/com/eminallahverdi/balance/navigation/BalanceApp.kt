@@ -79,6 +79,7 @@ fun BalanceApp(
     onOpenTransaction: (Long) -> Unit,
     onAddPayment: (Long) -> Unit,
     onEditPending: (Long) -> Unit,
+    onDebtPending: (Long) -> Unit,
     onAddReceipt: (ReceiptEntry) -> Unit,
     openRecurring: Boolean,
     onRecurringOpened: () -> Unit,
@@ -147,7 +148,7 @@ fun BalanceApp(
             }
             composable<DeleteAccountDestination> { DeleteAccountRoute(onBack = { nav.popBackStack() }, onOpen = onOpenTransaction) }
             composable<LoansDestination> { LoansRoute(onBack = { nav.popBackStack() }) }
-            composable<ConfirmDestination> { ConfirmRoute(onBack = { nav.popBackStack() }, onEdit = onEditPending) }
+            composable<ConfirmDestination> { ConfirmRoute(onBack = { nav.popBackStack() }, onEdit = onEditPending, onDebt = onDebtPending) }
             composable<SettingsDestination> {
                 SettingsRoute(
                     onBack = { nav.popBackStack() },

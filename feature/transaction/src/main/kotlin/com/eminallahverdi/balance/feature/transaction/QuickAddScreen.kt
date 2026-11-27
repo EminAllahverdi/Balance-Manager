@@ -152,8 +152,9 @@ fun QuickAddRoute(onClose: () -> Unit, onVoice: (() -> Unit)? = null, viewModel:
         BackHandler {
             if (!viewModel.back()) scope.launch { sheet.hide() }.invokeOnCompletion { onClose() }
         }
-        // Every page with the tabs on it is one height, so switching between them never moves the tabs under the thumb.
-        val tabbed = state.showsKinds
+        // Every page with the tabs on it is one height, so switching between them never moves the tabs under the thumb. A bank
+        // payment's own page grows to fit, as a typed entry's does, so its share and the rest show without scrolling.
+        val tabbed = state.showsKinds && !(state.pending != null && state.step == QuickAddStep.ENTRY)
         val tabbedHeight = (LocalConfiguration.current.screenHeightDp * TABBED_SHEET_SHARE).dp
         Column(Modifier.fillMaxWidth().then(if (tabbed) Modifier.height(tabbedHeight) else Modifier.animateContentSize()).navigationBarsPadding().imePadding()) {
             if (state.editing != null) EditHeader(onDelete = { confirmDelete = true })
@@ -161,7 +162,7 @@ fun QuickAddRoute(onClose: () -> Unit, onVoice: (() -> Unit)? = null, viewModel:
             when (state.step) {
                 QuickAddStep.CATEGORY -> CategoryStep(state, viewModel, onVoice.takeIf { state.editing == null && state.pending == null && state.payment == null }, Modifier.weight(1f, fill = tabbed))
                 QuickAddStep.ENTRY -> EntryStep(state, viewModel, onOpenCalendar = { showCalendar = true }, Modifier.weight(1f, fill = tabbed), fill = tabbed)
-                QuickAddStep.DEBT -> DebtStep(state, viewModel, onVoice, Modifier.weight(1f, fill = tabbed))
+                QuickAddStep.DEBT -> DebtStep(state, viewModel, onVoice.takeIf { state.pending == null }, Modifier.weight(1f, fill = tabbed))
             }
         }
     }
@@ -221,8 +222,9 @@ private fun HeardLine(text: String) {
 
 @Composable
 internal fun KindToggle(state: QuickAddUiState, vm: QuickAddViewModel) {
-    // A debt is only ever new here: something being edited, or arriving filled in, stays the kind it is.
-    val new = state.editing == null && state.pending == null && state.payment == null
+    // A debt is only ever new here: something being edited, or a reminder, stays the kind it is. A bank payment can become
+    // one, because the bank can't tell a bill split with friends, or a loan, from spending.
+    val new = state.editing == null && state.payment == null
     val kinds = listOfNotNull(TransactionKind.EXPENSE, TransactionKind.INCOME, TransactionKind.TRANSFER, TransactionKind.DEBT.takeIf { new })
     SegmentedToggle(
         options = kinds.map { kind -> stringResource(kind.tab) },
@@ -238,6 +240,8 @@ internal fun KindToggle(state: QuickAddUiState, vm: QuickAddViewModel) {
 @Composable
 private fun CategoryStep(state: QuickAddUiState, vm: QuickAddViewModel, onVoice: (() -> Unit)?, modifier: Modifier) {
     Column(modifier.verticalScroll(rememberScrollState())) {
+        // Where a bank payment came from, above the tabs, as on its other pages.
+        state.pending?.let { BankSource(it) }
         Row(verticalAlignment = Alignment.Bottom) {
             Box(Modifier.weight(1f)) { KindToggle(state, vm) }
             onVoice?.let { BtIconButton(Icons.Rounded.Mic, stringResource(R.string.quickadd_add_by_voice), it, Modifier.padding(end = 16.dp)) }
@@ -315,6 +319,9 @@ private fun EntryStep(state: QuickAddUiState, vm: QuickAddViewModel, onOpenCalen
         // [fill]: the sheet is a fixed height, and the keypad keeps to its bottom.
         Column(Modifier.weight(1f, fill = fill).verticalScroll(rememberScrollState())) {
             val debt = state.debt.takeIf { state.isDebt }
+            // A bank payment keeps the tabs on its page, to make it a debt, or income read as spending, without retyping it.
+            state.pending?.let { BankSource(it) }
+            if (state.pending != null && !transfer) KindToggle(state, vm)
             when {
                 transfer -> KindToggle(state, vm)
                 debt != null && !debt.type.hasCategory -> DebtHeader(state, vm)

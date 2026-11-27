@@ -12,7 +12,7 @@
     <string name="confirm_cancel">Ləğv et</string>
     <string name="confirm_intro_off">Ayarlarda Bank bildirişlərini aktiv edin: bank tətbiqlərinizdən gələn ödənişlər burada əlavə etməyə hazır görünəcək.</string>
     <string name="confirm_intro_empty">Gözləyən heç nə yoxdur. Bank tətbiqlərinizdən gələn yeni ödənişlər burada əlavə etməyə hazır görünəcək.</string>
-    <string name="confirm_intro_rows">Bank bildirişlərinizdən oxunub. Kateqoriya, şəxs və hesab əvvəlki seçimlərinizdən götürülür. «Təklif» yazılanlar ehtimaldır, əvvəlcə yoxlayın.</string>
+    <string name="confirm_intro_rows">Bank bildirişlərinizdən oxunub. Kateqoriya, şəxs və hesab əvvəlki seçimlərinizdən götürülür. «Təklif» yazılanlar ehtimaldır, əvvəlcə yoxlayın. Bölüşdüyünüz hesab, borc verilən və ya qaytarılan pul «Borc»a gedir.</string>
     <string name="confirm_edit">Düzəlt</string>
     <string name="confirm_skip">Keç</string>
     <string name="confirm_confirm">Təsdiqlə</string>
@@ -27,4 +27,9 @@
     <string name="confirm_pick_account_to_move">Köçürüləcək hesabı seçin</string>
     <string name="confirm_pick_a_category">Kateqoriya seçin</string>
     <string name="confirm_suggested">Təklif</string>
+    <string name="confirm_debt">Borc</string>
+    <string name="confirm_swipe_hint">Ödənişi keçmək üçün sola sürüşdürün</string>
+    <string name="confirm_got_it">Aydındır</string>
+    <string name="confirm_skipped">%1$s keçildi · %2$s</string>
+    <string name="confirm_undo">Geri qaytar</string>
 </resources>

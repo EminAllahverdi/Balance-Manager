@@ -25,4 +25,11 @@ class InstallPreferences @Inject constructor(@ApplicationContext private val con
     val notificationsAsked: Flow<Boolean> = context.installStore.data.map { it[notificationsAskedKey] ?: false }
 
     suspend fun setNotificationsAsked() { context.installStore.edit { it[notificationsAskedKey] = true } }
+
+    private val confirmSwipeShownKey = booleanPreferencesKey("confirm_swipe_shown")
+
+    /** Whether To confirm has shown that a payment swipes left to skip, which it does until Got it or a first swipe. */
+    val confirmSwipeShown: Flow<Boolean> = context.installStore.data.map { it[confirmSwipeShownKey] ?: false }
+
+    suspend fun setConfirmSwipeShown() { context.installStore.edit { it[confirmSwipeShownKey] = true } }
 }

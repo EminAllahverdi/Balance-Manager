@@ -98,4 +98,10 @@
         <item quantity="one">Bankdan · %d gözləyir</item>
         <item quantity="other">Bankdan · %d gözləyir</item>
     </plurals>
+    <string name="quickadd_new_debts_money_left">Pul hesabdan çıxıb, deməli yenidir</string>
+    <string name="quickadd_new_debts_money_came">Pul daxil olub, deməli yenidir</string>
+    <string name="quickadd_debts_money_left_hint">«Mənim üçün ödədilər» və «Borc aldım» pul gətirir, ona görə ödənişə uyğun gəlmir.</string>
+    <string name="quickadd_debts_money_came_hint">Borc alınan pul hesaba daxil olur və gəlir sayılmır. Onu qaytarmalı olacaqsınız.</string>
+    <string name="quickadd_i_paid_someone_back">Və ya kiməsə borcu qaytardım</string>
+    <string name="quickadd_they_paid_me_back">Və ya borcu mənə qaytardılar</string>
 </resources>

@@ -20,11 +20,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -33,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.common.MoneyFormat
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtChip
@@ -45,11 +48,17 @@ import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.DebtDirection
 import com.eminallahverdi.balance.core.model.DebtType
 import com.eminallahverdi.balance.core.model.OwedTo
+import com.eminallahverdi.balance.core.model.PendingEntry
+import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.caseKey
 import com.eminallahverdi.balance.core.model.evenShare
+import java.time.ZoneId
 
 /** Grey, like every debt's tile elsewhere: a debt isn't a category, so it doesn't borrow one's colour. */
 private const val DEBT_TILE = 0xFF8A94A3
+
+/** A kind that doesn't fit the bank payment: still there, so nothing moves, but plainly not for this one. */
+private const val DISABLED_ALPHA = 0.3f
 
 /** The four new kinds, in the order the tab shows them. */
 private val NEW_DEBTS = listOf(DebtType.PAID_FOR_OTHERS, DebtType.PAID_FOR_ME, DebtType.LENT, DebtType.BORROWED)
@@ -83,17 +92,47 @@ private val PARTS = listOf<Int?>(null, 2, 3, 6, 12)
 internal fun DebtStep(state: QuickAddUiState, vm: QuickAddViewModel, onVoice: (() -> Unit)?, modifier: Modifier) {
     val c = BtTheme.colors
     Column(modifier.verticalScroll(rememberScrollState())) {
+        state.pending?.let { BankSource(it) }
         Row(verticalAlignment = Alignment.Bottom) {
             Box(Modifier.weight(1f)) { KindToggle(state, vm) }
             onVoice?.let { BtIconButton(Icons.Rounded.Mic, stringResource(R.string.quickadd_add_by_voice), it, Modifier.padding(end = 16.dp)) }
         }
-        Overline(stringResource(R.string.quickadd_new_debts), Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 10.dp))
+        val flow = state.bankFlow
+        Overline(
+            stringResource(
+                when (flow) {
+                    null -> R.string.quickadd_new_debts
+                    BankFlow.OUT -> R.string.quickadd_new_debts_money_left
+                    BankFlow.IN -> R.string.quickadd_new_debts_money_came
+                },
+            ),
+            Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 10.dp),
+        )
+        val allowed = state.newDebts
         Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            NEW_DEBTS.forEach { type -> DebtKindCell(type, Modifier.weight(1f)) { vm.pickDebt(type) } }
+            // The order never changes, so each kind stays where the thumb knows it; those that don't fit fade out.
+            NEW_DEBTS.forEach { type -> DebtKindCell(type, type in allowed, Modifier.weight(1f)) { vm.pickDebt(type) } }
+        }
+        if (flow != null) {
+            Text(
+                stringResource(if (flow == BankFlow.OUT) R.string.quickadd_debts_money_left_hint else R.string.quickadd_debts_money_came_hint),
+                style = BtTheme.type.caption,
+                color = c.textMuted,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+            )
         }
         val owed = state.owedLines
         if (owed.isNotEmpty()) {
-            Overline(stringResource(R.string.quickadd_paid_back), Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 8.dp))
+            Overline(
+                stringResource(
+                    when (flow) {
+                        null -> R.string.quickadd_paid_back
+                        BankFlow.OUT -> R.string.quickadd_i_paid_someone_back
+                        BankFlow.IN -> R.string.quickadd_they_paid_me_back
+                    },
+                ),
+                Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 8.dp),
+            )
             BtCard(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 20.dp), shape = BtShapes.md) {
                 Column {
                     owed.forEachIndexed { i, line ->
@@ -113,10 +152,38 @@ internal fun DebtStep(state: QuickAddUiState, vm: QuickAddViewModel, onVoice: ((
     }
 }
 
+/** Where a bank payment came from: the app, the time and what the notification called it, with how much moved and which way. */
 @Composable
-private fun DebtKindCell(type: DebtType, modifier: Modifier, onClick: () -> Unit) {
+internal fun BankSource(entry: PendingEntry) {
     val c = BtTheme.colors
-    Column(modifier.clip(BtShapes.md).clickable(role = Role.Button, onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+    val posted = entry.postedAt.atZone(ZoneId.systemDefault())
+    val income = entry.kind == TransactionKind.INCOME
+    Row(
+        Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp).fillMaxWidth().clip(BtShapes.md).background(c.bgSurfaceRaised).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(Icons.Rounded.Notifications, null, tint = c.accentText, modifier = Modifier.size(16.dp))
+        Text(
+            listOf(entry.source, DateLabels.timeOfDay(posted.hour * 60 + posted.minute), entry.merchant).filter { it.isNotBlank() }.joinToString(" · "),
+            style = BtTheme.type.caption,
+            color = c.textSecondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Text((if (income) "+" else "") + MoneyFormat.format(entry.amount), style = BtTheme.type.amountSmall, color = if (income) c.moneyIncome else c.textPrimary)
+    }
+}
+
+@Composable
+private fun DebtKindCell(type: DebtType, enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val c = BtTheme.colors
+    Column(
+        modifier.clip(BtShapes.md).clickable(enabled = enabled, role = Role.Button, onClick = onClick).alpha(if (enabled) 1f else DISABLED_ALPHA),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
         Box(Modifier.padding(3.dp)) { CategoryTile(type.icon, DEBT_TILE, size = 60.dp, iconSize = 28.dp, corner = 18.dp) }
         Text(type.label, style = BtTheme.type.caption.copy(lineHeight = 15.sp), color = c.textSecondary, textAlign = TextAlign.Center, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }

@@ -5,14 +5,22 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,29 +30,46 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Handshake
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SwipeLeft
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eminallahverdi.balance.core.common.DateLabels
 import com.eminallahverdi.balance.core.common.MoneyFormat
+import com.eminallahverdi.balance.core.data.PendingItem
 import com.eminallahverdi.balance.core.data.UnreadNotification
 import com.eminallahverdi.balance.core.designsystem.component.BtCard
 import com.eminallahverdi.balance.core.designsystem.component.BtChip
@@ -54,45 +79,79 @@ import com.eminallahverdi.balance.core.designsystem.component.CategoryTile
 import com.eminallahverdi.balance.core.designsystem.component.Overline
 import com.eminallahverdi.balance.core.designsystem.component.PersonDot
 import com.eminallahverdi.balance.core.designsystem.component.text
+import com.eminallahverdi.balance.core.designsystem.theme.BtShapes
 import com.eminallahverdi.balance.core.designsystem.theme.BtTheme
 import com.eminallahverdi.balance.core.model.TransactionKind
 import com.eminallahverdi.balance.core.model.showHidden
 import java.time.ZoneId
+import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
-/** Ready-made entries read from bank notifications. [onEdit] opens one in quick add. */
+/**
+ * Ready-made entries read from bank notifications. [onEdit] opens one in quick add, and [onDebt] opens it there on the Debt
+ * tab, for a bill split with friends, money lent or borrowed, or a payback. Swiping one left skips it.
+ */
 @Composable
-fun ConfirmRoute(onBack: () -> Unit, onEdit: (Long) -> Unit, viewModel: ConfirmViewModel = hiltViewModel()) {
+fun ConfirmRoute(onBack: () -> Unit, onEdit: (Long) -> Unit, onDebt: (Long) -> Unit, viewModel: ConfirmViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val c = BtTheme.colors
-    LazyColumn(
-        Modifier.fillMaxSize().background(c.bgCanvas).navigationBarsPadding(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.confirm_back), onBack)
-                Text(stringResource(R.string.confirm_to_confirm), style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
-                if (state.waiting > 0) BtChip(stringResource(R.string.confirm_n_new, state.waiting), selected = false, onClick = {})
-            }
+    LaunchedEffect(state.skipped) {
+        if (state.skipped != null) {
+            delay(UNDO_MILLIS)
+            viewModel.forgetSkipped()
         }
-        item {
-            Text(hint(state), style = BtTheme.type.caption, color = c.textSecondary, modifier = Modifier.padding(horizontal = 4.dp))
-        }
-        items(state.rows, key = { it.item.entry.id }) { row -> EntryCard(row, state.hideAmounts, viewModel, onEdit) }
-        if (state.listening) item(key = "auto") { AutoConfirmRow(state.autoConfirm, viewModel::setAutoConfirm) }
-        if (state.unread.isNotEmpty()) {
-            item(key = "unread") {
-                Column(Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Overline(stringResource(R.string.confirm_not_read))
-                    Text(
-                        stringResource(R.string.confirm_not_read_hint),
-                        style = BtTheme.type.caption,
-                        color = c.textSecondary,
-                    )
+    }
+    val firstWaiting = state.rows.firstOrNull { it.isWaiting }?.item?.entry?.id
+    Box(Modifier.fillMaxSize().background(c.bgCanvas).navigationBarsPadding()) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    BtIconButton(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.confirm_back), onBack)
+                    Text(stringResource(R.string.confirm_to_confirm), style = BtTheme.type.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
+                    if (state.waiting > 0) BtChip(stringResource(R.string.confirm_n_new, state.waiting), selected = false, onClick = {})
                 }
             }
-            items(state.unread, key = { "u${it.postedAt.toEpochMilli()}${it.title.hashCode()}${it.text.hashCode()}" }) { UnreadCard(it) }
+            item {
+                Text(hint(state), style = BtTheme.type.caption, color = c.textSecondary, modifier = Modifier.padding(horizontal = 4.dp))
+            }
+            items(state.rows, key = { it.item.entry.id }) { row ->
+                if (row.isWaiting) {
+                    SwipeToSkip(row.item, nudge = state.swipeHint && row.item.entry.id == firstWaiting, onSkip = viewModel::skip) {
+                        EntryCard(row, state.hideAmounts, viewModel, onEdit, onDebt)
+                    }
+                } else {
+                    EntryCard(row, state.hideAmounts, viewModel, onEdit, onDebt)
+                }
+            }
+            if (state.listening) item(key = "auto") { AutoConfirmRow(state.autoConfirm, viewModel::setAutoConfirm) }
+            if (state.unread.isNotEmpty()) {
+                item(key = "unread") {
+                    Column(Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Overline(stringResource(R.string.confirm_not_read))
+                        Text(
+                            stringResource(R.string.confirm_not_read_hint),
+                            style = BtTheme.type.caption,
+                            color = c.textSecondary,
+                        )
+                    }
+                }
+                items(state.unread, key = { "u${it.postedAt.toEpochMilli()}${it.title.hashCode()}${it.text.hashCode()}" }) { UnreadCard(it) }
+            }
+        }
+        // Undo first: it's about what the user just did. The hint waits until it's gone.
+        val skipped = state.skipped
+        when {
+            skipped != null -> BottomNote(
+                stringResource(R.string.confirm_skipped, skipped.guess.merchantName.ifBlank { skipped.entry.merchant.ifBlank { skipped.entry.source } }, MoneyFormat.format(skipped.entry.amount)),
+                Icons.Rounded.SkipNext,
+                stringResource(R.string.confirm_undo),
+                viewModel::undoSkip,
+            )
+            state.swipeHint -> BottomNote(stringResource(R.string.confirm_swipe_hint), Icons.Rounded.SwipeLeft, stringResource(R.string.confirm_got_it), viewModel::dismissSwipeHint)
         }
     }
     if (state.askingAutoConfirm) {
@@ -116,7 +175,7 @@ private fun hint(state: ConfirmUiState): String = when {
 }
 
 @Composable
-private fun EntryCard(row: ConfirmRow, hideAmounts: Boolean, vm: ConfirmViewModel, onEdit: (Long) -> Unit) {
+private fun EntryCard(row: ConfirmRow, hideAmounts: Boolean, vm: ConfirmViewModel, onEdit: (Long) -> Unit, onDebt: (Long) -> Unit) {
     val c = BtTheme.colors
     val entry = row.item.entry
     val tileCategory = row.category ?: row.parent
@@ -163,7 +222,16 @@ private fun EntryCard(row: ConfirmRow, hideAmounts: Boolean, vm: ConfirmViewMode
             if (row.isWaiting) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     CardButton(stringResource(R.string.confirm_edit), Icons.Rounded.Edit, false, { onEdit(entry.id) }, Modifier.weight(1f))
-                    CardButton(stringResource(R.string.confirm_skip), Icons.Rounded.Close, false, { vm.skip(entry.id) }, Modifier.weight(1f))
+                    // A cash withdrawal is money moving to the cash account, never a debt.
+                    if (!row.isTransfer) {
+                        BtChip(
+                            stringResource(R.string.confirm_debt),
+                            selected = false,
+                            onClick = { onDebt(entry.id) },
+                            modifier = Modifier.weight(1f).border(1.dp, c.accentFill, BtShapes.full),
+                            leading = { Icon(Icons.Rounded.Handshake, null, tint = c.accentText, modifier = Modifier.size(16.dp)) },
+                        )
+                    }
                     if (row.canConfirm) {
                         CardButton(stringResource(R.string.confirm_confirm), Icons.Rounded.Check, true, { vm.confirm(entry.id) }, Modifier.weight(1.4f))
                     }
@@ -175,6 +243,88 @@ private fun EntryCard(row: ConfirmRow, hideAmounts: Boolean, vm: ConfirmViewMode
                 }
             }
         }
+    }
+}
+
+/** How long Undo stays after a payment is skipped. */
+private const val UNDO_MILLIS = 4_000L
+
+/** How far a row has to go before letting go skips it. A quick flick skips too. */
+private const val SKIP_THRESHOLD = 0.4f
+
+/** How far the top card slides, the first time, to show that it swipes. */
+private val NUDGE = 96.dp
+
+/**
+ * A payment swiped left is skipped. It moves no money, so it goes without a question, and Undo brings it back. With
+ * [nudge], the card slides a little twice and back, so it's clear it can be swiped without the card saying so.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeToSkip(item: PendingItem, nudge: Boolean, onSkip: (PendingItem) -> Unit, content: @Composable () -> Unit) {
+    val current by rememberUpdatedState(item)
+    val skipLabel = stringResource(R.string.confirm_skip)
+    val swipe = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) onSkip(current)
+            value == SwipeToDismissBoxValue.EndToStart
+        },
+        positionalThreshold = { width -> width * SKIP_THRESHOLD },
+    )
+    val shift = remember { Animatable(0f) }
+    val far = with(LocalDensity.current) { -NUDGE.toPx() }
+    LaunchedEffect(nudge) {
+        if (!nudge) return@LaunchedEffect
+        delay(600)
+        repeat(2) {
+            shift.animateTo(far, tween(450, easing = FastOutSlowInEasing))
+            delay(350)
+            shift.animateTo(0f, tween(450, easing = FastOutSlowInEasing))
+            delay(500)
+        }
+    }
+    SwipeToDismissBox(
+        state = swipe,
+        // Only while it moves: at rest the card covers it.
+        backgroundContent = { if (swipe.dismissDirection == SwipeToDismissBoxValue.EndToStart || shift.value != 0f) SkipBehind(skipLabel) },
+        enableDismissFromStartToEnd = false,
+        modifier = Modifier.clip(BtShapes.md).semantics { customActions = listOf(CustomAccessibilityAction(skipLabel) { onSkip(current); true }) },
+    ) {
+        Box(Modifier.offset { IntOffset(shift.value.roundToInt(), 0) }) { content() }
+    }
+}
+
+/** What a swipe uncovers: Skip, in plain colours, since nothing is lost. */
+@Composable
+private fun SkipBehind(label: String) {
+    val c = BtTheme.colors
+    Row(
+        Modifier.fillMaxSize().background(c.bgSurfaceHigh).padding(horizontal = 22.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+    ) {
+        Icon(Icons.Rounded.SkipNext, null, tint = c.textSecondary, modifier = Modifier.size(20.dp))
+        Text(label, style = BtTheme.type.label, color = c.textSecondary)
+    }
+}
+
+/** A line over the bottom of the page: what was skipped with Undo, or the first-time hint with Got it. */
+@Composable
+private fun BoxScope.BottomNote(text: String, icon: ImageVector, action: String, onAction: () -> Unit) {
+    val c = BtTheme.colors
+    Row(
+        Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp, bottom = 24.dp).fillMaxWidth().clip(BtShapes.sm).background(c.bgSurfaceHigh).padding(start = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(icon, null, tint = c.accentText, modifier = Modifier.size(20.dp))
+        Text(text, style = BtTheme.type.bodyStrong, color = c.textPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(vertical = 14.dp))
+        Text(
+            action,
+            style = BtTheme.type.label,
+            color = c.accentText,
+            modifier = Modifier.clickable(role = Role.Button, onClick = onAction).padding(horizontal = 16.dp, vertical = 14.dp),
+        )
     }
 }
 

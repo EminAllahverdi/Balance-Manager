@@ -12,7 +12,7 @@
     <string name="confirm_cancel">Cancel</string>
     <string name="confirm_intro_off">Turn on Bank notifications in Settings, and payments from your bank apps will appear here, ready to add.</string>
     <string name="confirm_intro_empty">Nothing waiting. New payments from your bank apps will appear here, ready to add.</string>
-    <string name="confirm_intro_rows">Read from your bank notifications. The category, person and account come from what you picked last time. Anything marked Suggested is a best guess, so check it first.</string>
+    <string name="confirm_intro_rows">Read from your bank notifications. The category, person and account come from what you picked last time. Anything marked Suggested is a best guess, so check it first. A bill you split, or money lent or paid back, goes to Debt.</string>
     <string name="confirm_edit">Edit</string>
     <string name="confirm_skip">Skip</string>
     <string name="confirm_confirm">Confirm</string>
@@ -27,4 +27,9 @@
     <string name="confirm_pick_account_to_move">Pick an account to move it to</string>
     <string name="confirm_pick_a_category">Pick a category</string>
     <string name="confirm_suggested">Suggested</string>
+    <string name="confirm_debt">Debt</string>
+    <string name="confirm_swipe_hint">Swipe a payment left to skip it</string>
+    <string name="confirm_got_it">Got it</string>
+    <string name="confirm_skipped">Skipped %1$s · %2$s</string>
+    <string name="confirm_undo">Undo</string>
 </resources>

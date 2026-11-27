@@ -9,6 +9,7 @@ import com.eminallahverdi.balance.core.data.BankAlertRepository
 import com.eminallahverdi.balance.core.data.CatalogRepository
 import com.eminallahverdi.balance.core.data.PendingItem
 import com.eminallahverdi.balance.core.data.UnreadNotification
+import com.eminallahverdi.balance.core.datastore.InstallPreferences
 import com.eminallahverdi.balance.core.datastore.UserPreferencesRepository
 import com.eminallahverdi.balance.core.model.Account
 import com.eminallahverdi.balance.core.model.Category
@@ -53,7 +54,8 @@ data class ConfirmRow(
     val caption: List<UiText>
         get() = when {
             isTransfer -> listOf(if (toAccount == null) uiText(R.string.confirm_pick_account_to_move) else rawText("${account?.name} → ${toAccount.name}"))
-            category == null -> listOf(uiText(R.string.confirm_pick_a_category))
+            // Done with, as a debt for one: nothing left to pick.
+            category == null -> if (isWaiting) listOf(uiText(R.string.confirm_pick_a_category)) else emptyList()
             else -> listOfNotNull(uiText(R.string.confirm_suggested).takeIf { item.guess.isSuggested }, person?.name?.let(::rawText), account?.name?.let(::rawText))
         }
 }
@@ -67,6 +69,10 @@ data class ConfirmUiState(
     val hideAmounts: Boolean = false,
     /** Notifications from picked bank apps that weren't read, so the user can see why. */
     val unread: List<UnreadNotification> = emptyList(),
+    /** A payment just swiped away, named with Undo for a few seconds. */
+    val skipped: PendingItem? = null,
+    /** Whether swiping hasn't been shown yet: the top card slides a little, and a line says so until Got it. */
+    val swipeHint: Boolean = false,
 ) {
     val waiting: Int get() = rows.count { it.isWaiting }
 }
@@ -76,17 +82,19 @@ class ConfirmViewModel @Inject constructor(
     private val alerts: BankAlertRepository,
     catalog: CatalogRepository,
     private val prefs: UserPreferencesRepository,
+    private val install: InstallPreferences,
 ) : ViewModel() {
 
     private val asking = MutableStateFlow(false)
+    private val skipped = MutableStateFlow<PendingItem?>(null)
     private val startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()
 
     val state: StateFlow<ConfirmUiState> = combine(
         alerts.items(startOfToday),
         combine(catalog.categories, catalog.people, catalog.accounts) { c, p, a -> Triple(c, p, a) },
         combine(prefs.preferences, alerts.unread) { settings, unread -> settings to unread },
-        asking,
-    ) { items, (categories, people, accounts), (settings, unread), askingNow ->
+        combine(asking, skipped, install.confirmSwipeShown) { a, s, shown -> Triple(a, s, shown) },
+    ) { items, (categories, people, accounts), (settings, unread), (askingNow, skippedNow, swipeShown) ->
         ConfirmUiState(
             loading = false,
             rows = items.map { item ->
@@ -105,11 +113,33 @@ class ConfirmViewModel @Inject constructor(
             askingAutoConfirm = askingNow,
             hideAmounts = settings.hideAmountsInApp,
             unread = unread,
+            skipped = skippedNow,
+            swipeHint = !swipeShown && items.any { it.entry.status == PendingStatus.WAITING },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ConfirmUiState())
 
     fun confirm(id: Long) { viewModelScope.launch { alerts.confirm(id) } }
-    fun skip(id: Long) { viewModelScope.launch { alerts.skip(id) } }
+
+    /** Swiped left. Nothing is lost, so it asks nothing, and [undoSkip] brings it back for a few seconds. */
+    fun skip(item: PendingItem) {
+        skipped.value = item
+        viewModelScope.launch {
+            alerts.skip(item.entry.id)
+            install.setConfirmSwipeShown()
+        }
+    }
+
+    fun undoSkip() {
+        val item = skipped.value ?: return
+        skipped.value = null
+        viewModelScope.launch { alerts.unskip(item.entry.id) }
+    }
+
+    /** The Undo has had its time. */
+    fun forgetSkipped() { skipped.value = null }
+
+    /** Got it: swiping has been seen, so the hint doesn't come back. */
+    fun dismissSwipeHint() { viewModelScope.launch { install.setConfirmSwipeShown() } }
 
     /** Turning it on always asks first. Turning it off never needs to. */
     fun setAutoConfirm(enabled: Boolean) {

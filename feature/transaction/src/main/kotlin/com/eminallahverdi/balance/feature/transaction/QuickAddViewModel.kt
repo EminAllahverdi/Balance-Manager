@@ -105,6 +105,11 @@ data class QuickAddUiState(
     val payment: RecurringPayment? = null,
     /** Set when this is a bank notification being edited. It keeps the bank's merchant and account when the category changes. */
     val pending: PendingEntry? = null,
+    /** What the bank payment was guessed as, which comes back when its own tab is picked again, and a bill starts from. */
+    val pendingCategoryId: Long? = null,
+    val pendingSubCategoryId: Long? = null,
+    /** Set when the bank payment was opened from the list in +, which stays open after it for the rest. */
+    val openedFromList: Boolean = false,
     /** What a spoken sentence named, kept so picking a category afterwards doesn't overwrite it. */
     val spoken: SpokenEntry? = null,
     /** The sentence as it was heard, shown so the user can see what was understood. */
@@ -129,15 +134,24 @@ data class QuickAddUiState(
         get() = if (editing != null || pending != null || payment != null || spoken != null) emptyList() else waiting.filter { it.entry.kind == kind }
     val amount: Money? get() = Money.parse(amountText)?.takeIf { it.minor > 0 }
 
-    /** A new entry on a page with the kind tabs: the grid, the Debt tab's first page, or a transfer, which skips the grid. */
+    /**
+     * A page with the kind tabs: a new entry's grid, the Debt tab's first page, or a transfer, which skips the grid. A bank
+     * payment has them on every page, because the bank can't tell a bill split with friends, or a loan, from spending.
+     */
     val showsKinds: Boolean
-        get() = editing == null && pending == null && payment == null &&
-            (step == QuickAddStep.CATEGORY || step == QuickAddStep.DEBT || kind == TransactionKind.TRANSFER)
+        get() = editing == null && payment == null &&
+            (pending != null || step == QuickAddStep.CATEGORY || step == QuickAddStep.DEBT || kind == TransactionKind.TRANSFER)
 
     val isDebt: Boolean get() = kind == TransactionKind.DEBT
 
-    /** Everyone owed or owing, one line each, for Paid back. */
-    val owedLines: List<OwedTo> get() = debts.owedByPerson()
+    /** Which way a bank payment's money went, or null for anything typed in. */
+    val bankFlow: BankFlow? get() = pending?.flow
+
+    /** The new debts the Debt tab can start, which for a bank payment are those that move money its way. */
+    val newDebts: Set<DebtType> get() = newDebtsFor(bankFlow)
+
+    /** Everyone owed or owing, one line each, for Paid back. For a bank payment, only those it can settle, named ones first. */
+    val owedLines: List<OwedTo> get() = debts.owedByPerson().forBank(pending)
 
     /** Names already used, one person each even from a shared bill, so someone is picked again without retyping. */
     val knownNames: List<String> get() = debts.flatMap { namesIn(it.debt.counterparty) }.distinctBy { it.caseKey() }
@@ -202,6 +216,7 @@ class QuickAddViewModel @Inject constructor(
         val requestedCategory = savedState.get<Long>(ARG_CATEGORY)
         val paymentId = savedState.get<Long>(ARG_PAYMENT)
         val pendingId = savedState.get<Long>(ARG_PENDING)
+        val pendingAsDebt = savedState.get<Boolean>(ARG_PENDING_AS_DEBT) == true
         val spokenText = savedState.get<String>(ARG_SPOKEN)?.takeIf { it.isNotBlank() }
         val spokenLanguage = savedState.get<String>(ARG_SPOKEN_LANGUAGE).let { tag -> SpokenLanguage.entries.firstOrNull { it.tag == tag } } ?: SpokenLanguage.ENGLISH
         val receiptTotal = savedState.get<Long>(ARG_RECEIPT_TOTAL)
@@ -211,9 +226,12 @@ class QuickAddViewModel @Inject constructor(
             paymentId?.let { recurring.get(it) }?.let { loadFromPayment(it) }
             val pending = pendingId?.let { bankAlerts.entry(it) }
             pending?.let { loadFromPending(it) }
+            // To confirm's Debt: the Debt tab's first page, with the bank's amount, account and day kept for whichever kind.
+            val asDebt = pending != null && pendingAsDebt
+            if (asDebt) _state.update { it.copy(categoryId = null, subCategoryId = null) }
             val spoken = spokenText?.let { loadFromSpeech(it, spokenLanguage) }
             if (receiptTotal != null) loadFromReceipt(Money(receiptTotal), savedState.get<String>(ARG_RECEIPT_STORE).orEmpty(), savedState.get<Long>(ARG_RECEIPT_DATE), savedState.get<Long>(ARG_RECEIPT_CATEGORY))
-            val startKind = editing?.kind ?: pending?.kind ?: spoken?.kind ?: requestedKind
+            val startKind = editing?.kind ?: (if (asDebt) TransactionKind.DEBT else pending?.kind) ?: spoken?.kind ?: requestedKind
             val defaultAccount = prefs.current().defaultExpenseAccountId
             combine(catalog.accounts, catalog.categories, catalog.people, catalog.merchants) { a, c, p, m -> Catalog(a, c, p, m) }
                 .collect { (accounts, categories, people, merchants) ->
@@ -301,6 +319,8 @@ class QuickAddViewModel @Inject constructor(
                 toAccountId = guess.toAccountId,
                 categoryId = category?.parentId ?: category?.id,
                 subCategoryId = category?.id?.takeIf { category.parentId != null },
+                pendingCategoryId = category?.parentId ?: category?.id,
+                pendingSubCategoryId = category?.id?.takeIf { category.parentId != null },
                 merchant = guess.merchantName,
                 personId = guess.personId,
                 date = entry.postedAt.atZone(ZoneId.systemDefault()).toLocalDate(),
@@ -368,33 +388,27 @@ class QuickAddViewModel @Inject constructor(
         }
     }
 
-    private fun topLevel(all: List<Category>, kind: TransactionKind): List<Category> =
-        all.filter { it.parentId == null && it.type == categoryType(kind) && !it.isArchived }
-
-    fun setKind(kind: TransactionKind) = _state.update {
-        if (kind == it.kind) return@update it
-        it.withDistinctAccounts().copy(
-            kind = kind,
-            categories = topLevel(it.allCategories, kind),
-            categoryId = null,
-            subCategoryId = null,
-            step = startStep(kind, categoryId = null),
-            pickedFromGrid = false,
-            debt = null,
-        )
+    fun setKind(kind: TransactionKind) {
+        _state.update { it.withKind(kind) }
+        _state.value.category?.let { category -> viewModelScope.launch { loadUsualMerchants(category) } }
     }
 
     /**
      * One of the Debt tab's four kinds. Money lent or borrowed goes straight to its page; a bill, or a share of one, picks
-     * its category first, as an expense does, because some of it becomes spending.
+     * its category first, as an expense does, because some of it becomes spending. A bill from the bank starts in the
+     * category it was guessed as.
      */
-    fun pickDebt(type: DebtType) = _state.update {
-        it.copy(debt = QuickDebt(type), categoryId = null, subCategoryId = null, step = if (type.hasCategory) QuickAddStep.CATEGORY else QuickAddStep.ENTRY, pickedFromGrid = false)
+    fun pickDebt(type: DebtType) {
+        _state.update { it.withDebt(type) }
+        _state.value.category?.takeIf { _state.value.step == QuickAddStep.ENTRY }?.let { category -> viewModelScope.launch { loadUsualMerchants(category) } }
     }
 
-    /** Paying someone back, or them paying: what's left starts in the amount, and the account is where it goes or comes from. */
+    /**
+     * Paying someone back, or them paying: what's left starts in the amount, and the account is where it goes or comes from.
+     * A bank payment keeps the amount the bank sent, up to what's left.
+     */
     fun payBack(owed: OwedTo) = _state.update {
-        it.copy(debt = QuickDebt(DebtType.PAID_BACK, who = owed.name, owed = owed), amountText = owed.left.toInputText(), categoryId = null, step = QuickAddStep.ENTRY)
+        it.copy(debt = QuickDebt(DebtType.PAID_BACK, who = owed.name, owed = owed), amountText = bankPayBack(it.pending?.amount, owed.left).toInputText(), categoryId = null, step = QuickAddStep.ENTRY)
     }
 
     /** A bank entry, opened to check: filled in as To confirm's Edit does, and saving it takes it off To confirm. */
@@ -407,10 +421,22 @@ class QuickAddViewModel @Inject constructor(
                     categories = topLevel(it.allCategories, item.entry.kind),
                     step = if (item.entry.kind == TransactionKind.TRANSFER || it.categoryId != null) QuickAddStep.ENTRY else QuickAddStep.CATEGORY,
                     pickedFromGrid = false,
+                    openedFromList = true,
+                    debt = null,
                 )
             }
             _state.value.category?.let { loadUsualMerchants(it) }
         }
+    }
+
+    /**
+     * After a bank payment opened from the list in + is saved, as an entry or as a debt: with others still waiting the
+     * sheet goes back to a new entry and names the one just added, as Add does; otherwise it closes.
+     */
+    private fun finishSave(s: QuickAddUiState) {
+        val item = s.pending?.let { entry -> s.waiting.firstOrNull { it.entry.id == entry.id } }
+        val more = s.waiting.any { it.entry.id != s.pending?.id }
+        _state.update { if (s.openedFromList && item != null && more) it.freshAfter(item) else it.copy(saved = true) }
     }
 
     /**
@@ -539,7 +565,9 @@ class QuickAddViewModel @Inject constructor(
         if (s.isDebt) {
             viewModelScope.launch {
                 saveDebt(s, amount)
-                _state.update { it.copy(saved = true) }
+                // Off To confirm and out of +, so it can't be added a second time as spending.
+                s.pending?.let { bankAlerts.markAddedAsDebt(it.id) }
+                finishSave(s)
             }
             return
         }
@@ -568,7 +596,7 @@ class QuickAddViewModel @Inject constructor(
             )
             s.payment?.let { recurring.logged(it) }
             s.pending?.let { bankAlerts.markAdded(it, s.merchant) }
-            _state.update { it.copy(saved = true) }
+            finishSave(s)
         }
     }
 
@@ -637,10 +665,71 @@ class QuickAddViewModel @Inject constructor(
 
         /** Set to start filled in from a bank notification on To confirm. */
         const val ARG_PENDING = "pendingId"
+
+        /** With [ARG_PENDING]: start on the Debt tab, as To confirm's Debt does. */
+        const val ARG_PENDING_AS_DEBT = "pendingAsDebt"
     }
 }
 
 private fun categoryType(kind: TransactionKind) = if (kind == TransactionKind.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
+
+internal fun topLevel(all: List<Category>, kind: TransactionKind): List<Category> =
+    all.filter { it.parentId == null && it.type == categoryType(kind) && !it.isArchived }
+
+/**
+ * Another tab. What was typed or sent stays: amount, account, day, shop and note. The category belongs to a tab, so it
+ * goes, except that going back to a bank payment's own tab brings back what it was guessed as.
+ */
+internal fun QuickAddUiState.withKind(kind: TransactionKind): QuickAddUiState {
+    if (kind == this.kind) return this
+    val own = pending?.kind == kind
+    val categoryId = if (own) pendingCategoryId else null
+    return withDistinctAccounts().copy(
+        kind = kind,
+        categories = topLevel(allCategories, kind),
+        categoryId = categoryId,
+        subCategoryId = if (own) pendingSubCategoryId else null,
+        step = startStep(kind, categoryId),
+        pickedFromGrid = false,
+        debt = null,
+        typing = null,
+    )
+}
+
+/** One of the Debt tab's kinds. A bill paid by card starts in the category the bank payment was guessed as. */
+internal fun QuickAddUiState.withDebt(type: DebtType): QuickAddUiState {
+    val keep = pendingCategoryId.takeIf { type == DebtType.PAID_FOR_OTHERS && pending?.kind == TransactionKind.EXPENSE }
+    return copy(
+        debt = QuickDebt(type),
+        categoryId = keep,
+        subCategoryId = keep?.let { pendingSubCategoryId },
+        step = if (type.hasCategory && keep == null) QuickAddStep.CATEGORY else QuickAddStep.ENTRY,
+        pickedFromGrid = false,
+    )
+}
+
+/** A new entry again, on the grid, naming [added] for a few seconds, with the rest of the bank's payments above it. */
+internal fun QuickAddUiState.freshAfter(added: PendingItem): QuickAddUiState = copy(
+    step = QuickAddStep.CATEGORY,
+    kind = TransactionKind.EXPENSE,
+    categories = topLevel(allCategories, TransactionKind.EXPENSE),
+    amountText = "",
+    categoryId = null,
+    subCategoryId = null,
+    merchant = "",
+    recentMerchants = emptyList(),
+    typing = null,
+    pickedFromGrid = false,
+    date = LocalDate.now(),
+    note = "",
+    pending = null,
+    pendingCategoryId = null,
+    pendingSubCategoryId = null,
+    openedFromList = false,
+    debt = null,
+    added = added,
+    skipped = null,
+)
 
 /**
  * A transfer has no category, and an entry that arrives with one goes straight to its page. A debt starts on the Debt

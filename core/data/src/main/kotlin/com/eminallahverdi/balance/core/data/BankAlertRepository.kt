@@ -205,6 +205,12 @@ class BankAlertRepository @Inject constructor(
         merchantDao.findByName(merchantName.trim())?.let { dao.upsertAlias(MerchantAliasEntity(entry.merchant.caseKey(), it.id)) }
     }
 
+    /**
+     * Saved as a debt instead, from quick add's Debt tab. It's done with as Added is, but teaches no merchant: a friend's
+     * name on a transfer isn't a shop.
+     */
+    suspend fun markAddedAsDebt(id: Long) = dao.setStatus(id, PendingStatus.ADDED.name)
+
     suspend fun skip(id: Long) = dao.setStatus(id, PendingStatus.SKIPPED.name)
 
     /** Takes back a skip made a moment ago, so the entry waits on To confirm again. */

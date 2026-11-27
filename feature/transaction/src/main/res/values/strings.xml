@@ -98,4 +98,10 @@
         <item quantity="one">From your bank · %d waiting</item>
         <item quantity="other">From your bank · %d waiting</item>
     </plurals>
+    <string name="quickadd_new_debts_money_left">Money left your account, so it\'s new</string>
+    <string name="quickadd_new_debts_money_came">Money came in, so it\'s new</string>
+    <string name="quickadd_debts_money_left_hint">They paid for me and I borrowed bring money in, so they don\'t fit a payment.</string>
+    <string name="quickadd_debts_money_came_hint">Borrowed money comes into the account and isn\'t income. You\'ll owe it back.</string>
+    <string name="quickadd_i_paid_someone_back">Or I paid someone back</string>
+    <string name="quickadd_they_paid_me_back">Or they paid me back</string>
 </resources>
